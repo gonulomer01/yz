@@ -1192,9 +1192,45 @@ main {
 .auth-body {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-evenly;
   min-height: 100vh;
-  padding: 20px;
+  padding: 40px 6%;
+  gap: 40px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.auth-body .ambient-bg {
+  position: relative;
+  inset: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.auth-body .melikgazi-bg-watermark {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 480px;
+  height: 480px;
+  max-width: 90%;
+  opacity: 0.95;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-body .melikgazi-bg-watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 45px rgba(255, 255, 255, 0.18));
 }
 
 .auth-container {
@@ -1202,6 +1238,23 @@ main {
   z-index: 10;
   width: 100%;
   max-width: 440px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .auth-body {
+    flex-direction: column;
+    justify-content: center;
+    gap: 30px;
+    padding: 30px 20px;
+  }
+  .auth-body .ambient-bg {
+    flex: none;
+  }
+  .auth-body .melikgazi-bg-watermark {
+    width: 200px;
+    height: 200px;
+  }
 }
 
 .auth-card {

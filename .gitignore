@@ -54,3 +54,4 @@ wwwroot/generated-gemini/*
 !wwwroot/generated-gemini/.gitkeep
 wwwroot/generated-stability/*
 !wwwroot/generated-stability/.gitkeep
+_sync_temp/
