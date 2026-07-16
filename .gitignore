@@ -1,0 +1,56 @@
+## Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+bin/
+obj/
+
+## Visual Studio / VS Code / Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Project specific ignores
+Yayinla/
+yayinla/
+publish/
+
+## API Credentials & Google Chrome Selenium Sessions
+ai_credentials.json
+GeminiChromeProfile_*
+
+## Databases
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+## Scripts, clean copies and archives
+*.ps1
+ai_automation_project_*
+*.zip
+
+# Ignore generated images inside wwwroot but keep the folders
+wwwroot/generated/*
+!wwwroot/generated/.gitkeep
+wwwroot/generated-free/*
+!wwwroot/generated-free/.gitkeep
+wwwroot/generated-gemini/*
+!wwwroot/generated-gemini/.gitkeep
+wwwroot/generated-stability/*
+!wwwroot/generated-stability/.gitkeep

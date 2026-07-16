@@ -1,0 +1,508 @@
+@{
+    Layout = null;
+    bool isAdmin = User.IsInRole("Yönetici");
+    string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Melikgazi Belediyesi — Akıllı Şehircilik ve Yapay Zeka Görsel Üretim Platformu</title>
+  <meta name="description" content="Melikgazi Belediyesi Yapay Zeka Görsel Üretim ve Çoklu Hesap Rotasyon Platformu.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="icon" href="https://www.melikgazi.bel.tr/images/favicon.webp" type="image/webp">
+</head>
+<body data-is-admin="@(isAdmin ? "true" : "false")">
+
+  <!-- Arka Plan Yarı Şeffaf Büyük Melikgazi Logosu (Watermark) -->
+  <div class="ambient-bg">
+    <div class="melikgazi-bg-watermark">
+      <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logosu">
+    </div>
+  </div>
+
+  <!-- Minimal Üst Header -->
+  <header class="glass-header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="brand-logo">
+        <div class="brand-text">
+          <span class="brand-primary">MELİKGAZİ BELEDİYESİ</span>
+          <span class="brand-secondary"><i class="fa-solid fa-microchip"></i> AKILLI ŞEHİRCİLİK & YZ GÖRSEL PLATFORMU</span>
+        </div>
+      </a>
+      <div class="header-actions">
+        <button id="nav-studio" class="nav-pill active">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Stüdyo
+        </button>
+
+        @if (isAdmin)
+        {
+            <button id="nav-dashboard" class="nav-pill">
+              <i class="fa-solid fa-sliders"></i> Yönetim Paneli
+            </button>
+        }
+
+        <button id="btn-profile" class="nav-pill profile-pill" title="Profil Bilgilerimi Düzenle">
+          <i class="fa-solid fa-user-gear"></i> @displayName
+          <span class="role-badge @(isAdmin ? "role-admin" : "role-user")">@(isAdmin ? "Yönetici" : "Kullanıcı")</span>
+        </button>
+
+        <button id="btn-gallery-toggle" class="nav-pill gallery-pill" title="Görsel Arşivi">
+          <i class="fa-solid fa-images"></i>
+          <span class="gallery-count" id="gallery-count">0</span>
+        </button>
+
+        <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="nav-pill logout-pill" title="Çıkış Yap">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- === STÜDYO EKRANI === -->
+    <section id="section-studio" class="page active">
+      <div class="studio-centered">
+
+        <!-- Ortalanmış Görsel Önizleme Alanı -->
+        <div class="canvas-area glass-card" id="canvas-area">
+
+          <div id="canvas-placeholder" class="canvas-state">
+            <div class="placeholder-content">
+              <div class="placeholder-art">
+                <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logo" class="placeholder-main-logo">
+              </div>
+              <h3>Melikgazi YZ Stüdyosu</h3>
+              <p>Aşağıdaki alana bir görsel tarifi yazın ve modeli seçerek üretimi başlatın.</p>
+            </div>
+          </div>
+
+          <div id="canvas-loading" class="canvas-state" style="display:none">
+            <div class="pulse-ring"></div>
+            <p class="loading-text">Yapay Zeka Motoru Görseli İşliyor…</p>
+            <p class="loading-sub" id="loading-status">API sunucularına bağlanılıyor…</p>
+          </div>
+
+          <div id="canvas-success" class="studio-feed-container" style="display:none">
+            <div id="studio-feed-list" class="studio-feed-list"></div>
+          </div>
+
+          <div id="canvas-error" class="canvas-state" style="display:none">
+            <i class="fa-solid fa-circle-exclamation error-icon"></i>
+            <p id="error-message" style="font-weight: 600; font-size: 1.05rem; margin-bottom: 6px;">İşlem sırasında bir hata oluştu.</p>
+            <button id="btn-retry" class="action-btn" style="background: var(--color-primary); color:#fff; border-color:var(--color-primary); margin-top: 14px;">
+              <i class="fa-solid fa-rotate-right"></i> Tekrar Dene
+            </button>
+          </div>
+        </div>
+
+        <!-- Prompt Alanı -->
+        <div class="prompt-container glass-card">
+          <form id="generator-form" class="prompt-form">
+            <div class="prompt-field">
+              <textarea id="prompt-input" rows="3" placeholder="Bir görsel hayal edin ve buraya yazın..."></textarea>
+              <div class="prompt-inline-actions">
+                <button type="button" id="btn-translate" class="inline-btn" title="Türkçe → İngilizce Çevir">
+                  <i class="fa-solid fa-language"></i>
+                </button>
+                <button type="button" id="btn-random" class="inline-btn" title="Rastgele Fikir">
+                  <i class="fa-solid fa-lightbulb"></i>
+                </button>
+                <button type="button" id="btn-clear" class="inline-btn" title="Temizle">
+                  <i class="fa-solid fa-eraser"></i>
+                </button>
+                <div class="prompt-divider"></div>
+                <button type="submit" id="btn-generate" class="btn-generate">
+                  <span class="btn-label"><i class="fa-solid fa-bolt-lightning"></i> Oluştur</span>
+                  <span class="btn-loader" style="display:none"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Gemini Web Bilgi Bandı -->
+        <div id="gemini-web-info" class="gemini-info-banner" style="display: none;">
+          <i class="fa-brands fa-google" id="gemini-banner-icon"></i>
+          <div>
+            <strong>Çoklu Google Hesabı Rotasyon Modu Aktif</strong>
+            <span id="gemini-mode-desc">Bir hesabın günlük kotası dolduğunda sistem otomatik olarak sıradaki aktif Google hesabına geçer. @(!isAdmin ? "Arkaplan otomasyonu sekmesi gizli olarak çalıştırılır." : "")</span>
+          </div>
+        </div>
+
+        <!-- Üretim Ayarları -->
+        <div class="settings-row">
+          <div class="setting-chip glass-card">
+            <label for="model-select"><i class="fa-solid fa-robot"></i> Model</label>
+            <div class="select-wrap">
+              <select id="model-select">
+                <optgroup label="🤖 Web Tarayıcı AI Otomasyonu">
+                  <option value="gemini-web-profile">🤖 Google Gemini Web (Çoklu Hesap Rotasyon)</option>
+                </optgroup>
+                <optgroup label="🌟 Ücretsiz & Sınırsız">
+                  <option value="pollinations-flux-realism">FLUX.1 Realism (En Kaliteli) — Ücretsiz</option>
+                </optgroup>
+                <optgroup label="💳 Stability AI (Kredili)">
+                  <option value="sdxl" selected>SDXL 1.0 (~1 Kredi - En Stabil)</option>
+                  <option value="core">Stable Image Core (3 Kredi)</option>
+                  <option value="sd3.5-medium">SD 3.5 Medium (3.5 Kredi)</option>
+                  <option value="sd3.5-large-turbo">SD 3.5 Turbo (4 Kredi)</option>
+                  <option value="sd3.5-large">SD 3.5 Large (6.5 Kredi)</option>
+                  <option value="ultra">Stable Image Ultra (8 Kredi - En Kaliteli)</option>
+                </optgroup>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="setting-chip glass-card">
+            <label for="style-select"><i class="fa-solid fa-palette"></i> Tarz</label>
+            <div class="select-wrap">
+              <select id="style-select">
+                <option value="none">Doğal (Tarz Yok)</option>
+                <option value="cinematic">Sinematik</option>
+                <option value="photorealistic">Fotogerçekçi</option>
+                <option value="anime">Anime</option>
+                <option value="digital-art">Dijital Sanat</option>
+                <option value="3d-render">3D Render</option>
+                <option value="watercolor">Suluboya</option>
+                <option value="oil-painting">Yağlı Boya</option>
+                <option value="comic">Çizgi Roman</option>
+                <option value="cyberpunk">Siberpunk</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="setting-chip glass-card">
+            <label><i class="fa-solid fa-expand"></i> Oran</label>
+            <div class="ratio-group">
+              <input type="radio" name="ratio" id="r1" value="1:1" checked>
+              <label for="r1" class="ratio-chip"><i class="fa-regular fa-square"></i> 1:1</label>
+              <input type="radio" name="ratio" id="r2" value="16:9">
+              <label for="r2" class="ratio-chip"><i class="fa-solid fa-display"></i> 16:9</label>
+              <input type="radio" name="ratio" id="r3" value="9:16">
+              <label for="r3" class="ratio-chip"><i class="fa-solid fa-mobile-screen"></i> 9:16</label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    @if (isAdmin)
+    {
+        <!-- === YÖNETİM PANELİ EKRANI (SADECE YÖNETİCİLER İÇİN) === -->
+        <section id="section-dashboard" class="page">
+          <div class="dash-stats">
+            <div class="stat-card glass-card">
+              <div class="stat-icon"><i class="fa-solid fa-key"></i></div>
+              <div>
+                <span class="stat-num" id="stats-active">0</span>
+                <span class="stat-label">Aktif Stability Yuvası</span>
+              </div>
+            </div>
+            <div class="stat-card glass-card">
+              <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
+              <div>
+                <span class="stat-num" id="stats-today">0</span>
+                <span class="stat-label">Bugünkü Kredi</span>
+              </div>
+            </div>
+            <div class="stat-card glass-card">
+              <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+              <div>
+                <span class="stat-num" id="stats-total">0</span>
+                <span class="stat-label">Toplam Kredi</span>
+              </div>
+            </div>
+            <div class="stat-card glass-card">
+              <div class="stat-icon"><i class="fa-solid fa-arrows-spin"></i></div>
+              <div>
+                <span class="stat-num" id="stats-index">#1</span>
+                <span class="stat-label">Sıradaki Anahtar</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-actions">
+            <button id="btn-reset-limits" class="action-btn" title="Tüm sayaçları sıfırla">
+              <i class="fa-solid fa-rotate-left"></i> Sayaçları Sıfırla
+            </button>
+          </div>
+
+          <!-- KULLANICI & ROL YÖNETİMİ BÖLÜMÜ -->
+          <div class="glass-card dash-section-card">
+            <div class="dash-section-header">
+              <div>
+                <h3><i class="fa-solid fa-users-gear" style="color: var(--color-secondary);"></i> Kullanıcılar & Yetkiler</h3>
+                <p>Kullanıcı hesaplarını düzenleyin, standart kullanıcılara yönetici yetkisi verin veya silin. Diğer yöneticiler hariç, tüm kullanıcıların ürettiği görselleri inceleyebilirsiniz.</p>
+              </div>
+              <button id="btn-add-user" class="action-btn primary-btn">
+                <i class="fa-solid fa-user-plus"></i> Yeni Kullanıcı Ekle
+              </button>
+            </div>
+            <div class="keys-grid" id="users-grid"></div>
+          </div>
+
+          <!-- Google Gemini Hesapları -->
+          <div class="glass-card dash-section-card">
+            <div class="dash-section-header">
+              <div>
+                <h3><i class="fa-brands fa-google" style="color: var(--color-primary);"></i> Google Gemini — Çoklu Hesap Havuzu</h3>
+                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+              </div>
+              <button id="btn-add-gemini-acc" class="action-btn primary-btn">
+                <i class="fa-solid fa-plus"></i> Yeni Hesap
+              </button>
+            </div>
+            <div class="keys-grid" id="gemini-accounts-grid"></div>
+          </div>
+
+          <!-- Stability Anahtarları -->
+          <div class="glass-card dash-section-card">
+            <div class="dash-section-header">
+              <div>
+                <h3><i class="fa-solid fa-key" style="color: var(--color-secondary);"></i> Stability AI — Anahtar Havuzu</h3>
+                <p>Stability AI modelleri için API anahtar havuzu. Kısıtlama olduğunda sistem otomatik olarak bir sonrakine geçer.</p>
+              </div>
+              <button id="btn-add-key" class="action-btn primary-btn">
+                <i class="fa-solid fa-plus"></i> Yeni Anahtar
+              </button>
+            </div>
+            <div class="keys-grid" id="keys-grid"></div>
+          </div>
+
+          <!-- Stability Düzenleme Modalı -->
+          <div id="edit-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> API Anahtarı Düzenle</h3>
+                <button id="btn-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="edit-form">
+                <input type="hidden" id="edit-id">
+                <div class="field">
+                  <label for="edit-label">Etiket</label>
+                  <input type="text" id="edit-label" placeholder="Ör: Ana Anahtar #1">
+                </div>
+                <div class="field">
+                  <label for="edit-key">API Anahtarı (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
+                  <div class="key-input-wrap">
+                    <input type="password" id="edit-key" placeholder="sk-... (Değiştirmiyorsanız boş bırakın)">
+                    <button type="button" id="btn-toggle-key" class="chip-btn"><i class="fa-solid fa-eye"></i></button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="edit-status">Durum</label>
+                  <div class="select-wrap">
+                    <select id="edit-status">
+                      <option value="Active">Aktif</option>
+                      <option value="Exhausted">Pasif</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-modal-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Gemini Düzenleme Modalı -->
+          <div id="gemini-edit-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> Google Profil Düzenle</h3>
+                <button id="btn-gemini-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="gemini-edit-form">
+                <input type="hidden" id="gemini-edit-id">
+                <div class="field">
+                  <label for="gemini-edit-label">Hesap Adı</label>
+                  <input type="text" id="gemini-edit-label" placeholder="Ör: Kişisel Gmail (#1)">
+                </div>
+                <div class="field">
+                  <label for="gemini-edit-status">Durum</label>
+                  <div class="select-wrap">
+                    <select id="gemini-edit-status">
+                      <option value="Active">Aktif</option>
+                      <option value="Exhausted">Pasif / Limit Doldu</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-gemini-modal-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Kullanıcı Düzenleme Modalı -->
+          <div id="user-edit-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-user-pen" style="color: var(--color-secondary);"></i> Kullanıcı Düzenle</h3>
+                <button id="btn-user-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="user-edit-form">
+                <input type="hidden" id="user-edit-id">
+                <div class="field">
+                  <label for="user-edit-displayName">Ad Soyad / Görünen Ad</label>
+                  <input type="text" id="user-edit-displayName" required>
+                </div>
+                <div class="field">
+                  <label for="user-edit-password">Yeni Şifre (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
+                  <input type="password" id="user-edit-password" placeholder="Şifre değişmeyecekse boş bırakın">
+                </div>
+                <div class="field">
+                  <label for="user-edit-role">Yetki Rolü</label>
+                  <div class="select-wrap">
+                    <select id="user-edit-role">
+                      <option value="Kullanıcı">Standart Kullanıcı</option>
+                      <option value="Yönetici">Yönetici (Admin)</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-user-modal-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Yeni Kullanıcı Ekleme Modalı -->
+          <div id="user-add-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus" style="color: var(--color-primary);"></i> Yeni Kullanıcı Ekle</h3>
+                <button id="btn-user-add-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="user-add-form">
+                <div class="field">
+                  <label for="user-add-username">Kullanıcı Adı</label>
+                  <input type="text" id="user-add-username" placeholder="Örn: ahmet123" required>
+                </div>
+                <div class="field">
+                  <label for="user-add-displayName">Ad Soyad / Görünen Ad</label>
+                  <input type="text" id="user-add-displayName" placeholder="Örn: Ahmet Yılmaz" required>
+                </div>
+                <div class="field">
+                  <label for="user-add-password">Şifre</label>
+                  <input type="password" id="user-add-password" placeholder="En az 4 karakter" required>
+                </div>
+                <div class="field">
+                  <label for="user-add-role">Yetki Rolü</label>
+                  <div class="select-wrap">
+                    <select id="user-add-role">
+                      <option value="Kullanıcı">Standart Kullanıcı</option>
+                      <option value="Yönetici">Yönetici (Admin)</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-user-add-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Ekle
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Kullanıcı Görsellerini İnceleme Modalı -->
+          <div id="user-images-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card" style="width: 760px; max-width: 96vw; max-height: 85vh; display: flex; flex-direction: column;">
+              <div class="modal-header">
+                <h3 id="user-images-modal-title"><i class="fa-solid fa-images" style="color: var(--color-primary);"></i> Kullanıcı Görselleri</h3>
+                <button id="btn-user-images-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div id="user-images-container" style="overflow-y: auto; flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;"></div>
+            </div>
+          </div>
+        </section>
+    }
+
+    <!-- === KULLANICI PROFİLİM MODALI (HEM YÖNETİCİ HEM KULLANICI İÇİN) === -->
+    <div id="profile-modal" class="modal-overlay" style="display:none">
+      <div class="modal-box glass-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-user-gear" style="color: var(--color-primary);"></i> Profil Bilgilerimi Düzenle</h3>
+          <button id="btn-profile-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form id="profile-form">
+          <div class="field">
+            <label>Kullanıcı Adı</label>
+            <input type="text" id="profile-username" disabled style="opacity: 0.6; cursor: not-allowed;">
+          </div>
+          <div class="field">
+            <label>Mevcut Rol</label>
+            <input type="text" id="profile-role" disabled style="opacity: 0.6; cursor: not-allowed;">
+          </div>
+          <div class="field">
+            <label for="profile-displayName">Ad Soyad / Görünen Ad</label>
+            <input type="text" id="profile-displayName" required>
+          </div>
+          <div class="field">
+            <label for="profile-password">Yeni Şifre (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
+            <input type="password" id="profile-password" placeholder="Şifrenizi değiştirmiyorsanız boş bırakın">
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="btn-profile-cancel" class="action-btn">İptal</button>
+            <button type="submit" class="action-btn primary-btn">
+              <i class="fa-solid fa-check"></i> Güncelle & Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Sağdan Açılan Galeri Paneli -->
+  <div id="gallery-overlay" class="gallery-overlay-bg" style="display:none"></div>
+  <aside id="gallery-panel" class="gallery-panel">
+    <div class="gallery-panel-header">
+      <h3><i class="fa-solid fa-images"></i> Görsel Arşivim (@displayName)</h3>
+      <div class="gallery-header-actions">
+        <button id="btn-sync-images" class="chip-btn sync-btn" title="Klasörleri Tara & Senkronize Et"><i class="fa-solid fa-arrows-rotate"></i></button>
+        <button id="btn-gallery-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="gallery-folder-tabs" id="gallery-folder-tabs">
+      <button class="folder-tab active" data-folder="all"><i class="fa-solid fa-layer-group"></i> Tümü</button>
+      <button class="folder-tab" data-folder="stability"><i class="fa-solid fa-key"></i> Stability AI</button>
+      <button class="folder-tab" data-folder="gemini"><i class="fa-brands fa-google"></i> Gemini Web</button>
+      <button class="folder-tab" data-folder="free"><i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz</button>
+    </div>
+    <div id="gallery-grid" class="gallery-grid-panel"></div>
+  </aside>
+
+  <script src="~/js/app.js" asp-append-version="true"></script>
+</body>
+</html>

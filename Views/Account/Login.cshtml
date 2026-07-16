@@ -1,0 +1,77 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap — Melikgazi Belediyesi YZ Platformu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="https://www.melikgazi.bel.tr/images/favicon.webp" type="image/webp">
+</head>
+<body class="auth-body">
+
+    <div class="ambient-bg">
+        <div class="melikgazi-bg-watermark">
+            <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logosu">
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-card glass-card">
+            <div class="auth-header">
+                <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="auth-logo">
+                <h2>Melikgazi Belediyesi</h2>
+                <p>Akıllı Şehircilik & YZ Görsel Platformu Girişi</p>
+            </div>
+
+            @if (ViewBag.Success != null)
+            {
+                <div class="auth-alert success-alert">
+                    <i class="fa-solid fa-circle-check"></i> @ViewBag.Success
+                </div>
+            }
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="auth-alert error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i> @ViewBag.Error
+                </div>
+            }
+
+            <form asp-controller="Account" asp-action="Login" method="post" class="auth-form">
+                @Html.AntiForgeryToken()
+                @if (ViewBag.ReturnUrl != null)
+                {
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                }
+
+                <div class="field">
+                    <label for="username"><i class="fa-solid fa-user"></i> Kullanıcı Adı</label>
+                    <input type="text" id="username" name="username" placeholder="Örn: admin" required autocomplete="username" autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="password"><i class="fa-solid fa-lock"></i> Şifre</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="action-btn primary-btn auth-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Giriş Yap
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Henüz hesabınız yok mu?</span>
+                <a asp-controller="Account" asp-action="Register" class="auth-link">Yeni Kullanıcı Kayıt Ol <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

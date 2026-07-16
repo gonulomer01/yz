@@ -1,0 +1,76 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol — Melikgazi Belediyesi YZ Platformu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="https://www.melikgazi.bel.tr/images/favicon.webp" type="image/webp">
+</head>
+<body class="auth-body">
+
+    <div class="ambient-bg">
+        <div class="melikgazi-bg-watermark">
+            <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logosu">
+        </div>
+    </div>
+
+    <div class="auth-container">
+        <div class="auth-card glass-card">
+            <div class="auth-header">
+                <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="auth-logo">
+                <h2>Melikgazi Belediyesi</h2>
+                <p>Standart Kullanıcı Kayıt Ekranı</p>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="auth-alert error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i> @ViewBag.Error
+                </div>
+            }
+
+            <form asp-controller="Account" asp-action="Register" method="post" class="auth-form">
+                @Html.AntiForgeryToken()
+
+                <div class="field">
+                    <label for="username"><i class="fa-solid fa-user"></i> Kullanıcı Adı</label>
+                    <input type="text" id="username" name="username" placeholder="Örn: ahmet_yilmaz" required autocomplete="username" autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="displayName"><i class="fa-solid fa-id-card"></i> Ad Soyad / Görünen Ad</label>
+                    <input type="text" id="displayName" name="displayName" placeholder="Örn: Ahmet Yılmaz" required>
+                </div>
+
+                <div class="field">
+                    <label for="password"><i class="fa-solid fa-lock"></i> Şifre</label>
+                    <input type="password" id="password" name="password" placeholder="En az 4 karakter" required autocomplete="new-password">
+                </div>
+
+                <div class="field">
+                    <label for="passwordConfirm"><i class="fa-solid fa-lock"></i> Şifre Tekrar</label>
+                    <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="Şifrenizi tekrar girin" required autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="action-btn primary-btn auth-btn">
+                    <i class="fa-solid fa-user-plus"></i> Kayıt Ol (Standart Kullanıcı)
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Zaten hesabınız var mı?</span>
+                <a asp-controller="Account" asp-action="Login" class="auth-link"><i class="fa-solid fa-arrow-left"></i> Giriş Ekranına Dön</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
