@@ -42,6 +42,7 @@ GeminiChromeProfile_*
 
 ## Scripts, clean copies and archives
 *.ps1
+!Temiz-Paketle.ps1
 ai_automation_project_*
 *.zip
 
@@ -54,4 +55,3 @@ wwwroot/generated-gemini/*
 !wwwroot/generated-gemini/.gitkeep
 wwwroot/generated-stability/*
 !wwwroot/generated-stability/.gitkeep
-_sync_temp/
