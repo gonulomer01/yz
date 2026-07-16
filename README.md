@@ -122,6 +122,34 @@ yz/
 │   ├── js/app.js                # Dinamik sekme filtreleme, akış ve API haberleşmesi
 │   ├── generated-stability/     # Stability AI ile üretilen resimler (.gitkeep)
 │   ├── generated-gemini/        # Google Gemini ile üretilen resimler (.gitkeep)
-│   └── generated-free/          # Ücretsiz FLUX.1 modelleri ile üretilen resimler (.gitkeep)
-└── ai_credentials.template.json # İlk kurulum için şablon anahtar yapısı
+│   ├── generated-free/          # Ücretsiz FLUX.1 modelleri ile üretilen resimler (.gitkeep)
+├── ai_credentials.template.json # İlk kurulum için şablon anahtar yapısı
+└── Temiz-Paketle.ps1            # Projeyi temizleyerek paylaşım paketi (ZIP) oluşturan betik
 ```
+
+---
+
+## 🧹 Proje Temizleme ve Paylaşım Paketi Aracı (`Temiz-Paketle.ps1`)
+
+Projenizi başka bir geliştiriciyle paylaşmak, GitHub veya sunucu ortamına aktarmak ya da temiz bir arşiv kopyası almak istediğinizde, yerel çalışma ortamınızdaki **API anahtarlarınızın**, **Google Chrome oturum çerezlerinizin (`GeminiChromeProfile_*`)**, **üretilmiş görsel arşivinizin** ve **derleme dosyanızın (`bin`, `obj`)** kazara dışarı sızmasını önlemek hayati önem taşır.
+
+Bu amaçla projenin ana dizininde **`Temiz-Paketle.ps1`** adında özel bir PowerShell güvenlik ve paketleme otomasyonu bulunmaktadır.
+
+### ⚙️ Betiğin Çalışma Prensibi (5 Adımlı Temizlik)
+Betik çalıştırıldığında, mevcut ana projenize veya yerel ayarlarınıza **hiçbir zarar vermeden** bir üst klasörde tamamen temiz bir kopya ve ZIP arşivi oluşturur:
+
+1. **Önceki Temizlik:** Varsa eski temiz kopya klasörünü (`ai_automation_project_Temiz_Kopya`) ve arşiv dosyasını (`ai_automation_project_Paylasim.zip`) temizler.
+2. **Kodu Ayıklayarak Kopyalama:** Derleme çıktılarını (`bin`, `obj`), IDE önbelleklerini (`.vs`), Git geçmişini (`.git`), veritabanı dosyalarını (`*.db`, `*.db-shm`, `*.db-wal`) ve tarayıcı profillerini (`GeminiChromeProfile_*`) hariç tutarak sadece kaynak kodları yeni klasöre kopyalar.
+3. **Görsel Arşivi Temizliği:** `wwwroot/generated/`, `generated-free/`, `generated-gemini/` ve `generated-stability/` klasörleri içindeki tüm resimleri silerek yalnızca klasör yapısının bozulmasını önleyen `.gitkeep` dosyalarını bırakır.
+4. **API Anahtarlarının Sıfırlanması:** Kopyalanan projedeki `ai_credentials.json` ve `ai_credentials.template.json` dosyalarını varsayılan boş şablonla ezerek, girilmiş olan tüm **Stability AI** anahtarlarını ve **Google hesabı oturum kayıtlarını** tamamen sıfırlar.
+5. **ZIP Paketlenmesi:** Temizlenen projeyi, paylaşıma hazır tek bir sıkıştırılmış dosya (**`ai_automation_project_Paylasim.zip`**) haline getirir.
+
+### 💻 Nasıl Çalıştırılır?
+Terminal veya PowerShell üzerinden proje klasöründeyken aşağıdaki komutu çalıştırmanız yeterlidir:
+
+```powershell
+.\Temiz-Paketle.ps1
+```
+
+İşlem tamamlandığında, projenizin bulunduğu dizinin bir üst klasöründe **hiçbir gizli bilgi içermeyen, tertemiz `ai_automation_project_Paylasim.zip`** dosyası paylaşımınıza hazır hale gelecektir.
+
