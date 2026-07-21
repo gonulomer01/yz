@@ -566,8 +566,24 @@ namespace yz.Controllers
                     id = img.Id,
                     image = img.ImagePath,
                     prompt = img.Prompt,
-                    model = img.ModelUsed,
-                    createdAt = img.CreatedAt
+                    model = img.ModelUsed != null && (img.ModelUsed.Contains("Kredi") || img.ModelUsed.Contains("Ücretsiz") || img.ModelUsed.Contains("Dışarıdan") || img.ModelUsed.Contains("Google") || img.ModelUsed.Contains("FLUX")) ? img.ModelUsed : (img.ModelUsed + " (" + (
+                        img.ModelUsed != null && img.ModelUsed.Contains("Ultra") ? "8 Kredi" :
+                        img.ModelUsed != null && img.ModelUsed.Contains("Core") ? "3 Kredi" :
+                        img.ModelUsed != null && img.ModelUsed.Contains("Turbo") ? "4 Kredi" :
+                        img.ModelUsed != null && img.ModelUsed.Contains("Large") ? "6.5 Kredi" :
+                        img.ModelUsed != null && img.ModelUsed.Contains("Medium") ? "3.5 Kredi" : "~1 Kredi"
+                    ) + ")"),
+                    key = img.KeyUsedLabel,
+                    apiKeyId = img.ApiKeyId,
+                    userId = img.UserId,
+                    createdAt = img.CreatedAt,
+                    folder = img.ImagePath != null && img.ImagePath.Contains("/generated-gemini/") ? "gemini" :
+                             img.ImagePath != null && img.ImagePath.Contains("/generated-free/") ? "free" :
+                             img.ImagePath != null && img.ImagePath.Contains("/generated-chatgpt/") ? "chatgpt" :
+                             img.ImagePath != null && img.ImagePath.Contains("/generated-copilot/") ? "copilot" :
+                             img.ImagePath != null && img.ImagePath.Contains("/generated-stability/") ? "stability" : "general",
+                    groupId = img.GroupId,
+                    sourceSite = img.SourceSite
                 }).ToList()
             }).ToList();
 

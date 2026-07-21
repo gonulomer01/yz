@@ -13,8 +13,8 @@ Platform, farklı ihtiyaç ve bütçe senaryolarına uygun çoklu yapay zeka mot
   - `SDXL 1.0 (~1 Kredi)`: Yüksek stabilite ve düşük maliyetli kurumsal görsel üretimi.
   - `Stable Image Core (3 Kredi)`: Gelişmiş detay, aydınlatma ve kompozisyon desteği.
   - *Not:* Güvenlik veya kredi yetersizliği nedeniyle hata üretebilen eski/pahalı modeller sistemden temizlenmiştir.
-- **🤖 Google Gemini, ChatGPT ve Copilot Web Otomasyonu (Selenium Çoklu Hesap Rotasyonu):**
-  - Arka planda Chrome tarayıcı profillerini (`GeminiChromeProfile_1`, `ChatGptChromeProfile_1`, `CopilotChromeProfile_1` vb.) yöneterek yapay zeka platformlarının web arayüzleri üzerinden görsel üretir.
+- **🤖 Google Gemini, ChatGPT, Copilot ve Grok Web Otomasyonu (Selenium Çoklu Hesap Rotasyonu):**
+  - Arka planda Chrome tarayıcı profillerini (`GeminiChromeProfile_1` (1-16), `ChatGptChromeProfile_1` (1-6), `CopilotChromeProfile_1` (1-6) vb.) yöneterek yapay zeka platformlarının web arayüzleri üzerinden görsel üretir.
   - Bir hesabın günlük kotası dolduğunda sistem otomatik olarak sıradaki aktif hesaba geçiş yapar (Akıllı Rotasyon).
 - **🌟 Ücretsiz & Sınırsız FLUX.1 / SDXL Turbo:**
   - Pollinations AI altyapısı üzerinden **FLUX.1 Realism**, **FLUX.1 Schnell** ve **SDXL Turbo** modellerini sınırsız ve ücretsiz kullanabilme olanağı.
@@ -22,10 +22,10 @@ Platform, farklı ihtiyaç ve bütçe senaryolarına uygun çoklu yapay zeka mot
 ### 2. 🔄 Çift Yönlü Klasör & Veritabanı Senkronizasyonu (`SyncDatabaseWithFilesystem`)
 Uygulama, fiziksel dosya sistemi ile veritabanını (`GeneratedImages` tablosu) gerçek zamanlı olarak senkronize eder:
 - **Otomatik Temizleme (`Orphan Cleanup`):** Bilgisayarınızdan veya sunucudan fiziksel bir görsel dosyasını sildiğinizde, arayüzdeki veritabanı kaydı da otomatik olarak silinir; arayüzde resimsiz, kırık kalıntılar kalmaz.
-- **Otomatik Tanıma (`File Discovery`):** Dışarıdan `wwwroot/generated-stability/`, `wwwroot/generated-gemini/`, `wwwroot/generated-chatgpt/`, `wwwroot/generated-copilot/`, `wwwroot/generated-free/` veya `wwwroot/generated/` klasörlerine yeni bir `.png`, `.jpg` veya `.webp` dosyası eklediğinizde, sistem bunu anında algılar, veritabanına kaydeder ve arayüzde listeler.
+- **Otomatik Tanıma (`File Discovery`):** Dışarıdan `wwwroot/generated-stability/`, `wwwroot/generated-gemini/`, `wwwroot/generated-chatgpt/`, `wwwroot/generated-copilot/`, `wwwroot/generated-grok/`, `wwwroot/generated-free/` veya `wwwroot/generated/` klasörlerine yeni bir `.png`, `.jpg` veya `.webp` dosyası eklediğinizde, sistem bunu anında algılar, veritabanına kaydeder ve arayüzde listeler.
 
 ### 3. 🖼️ Görsel Arşivi Sekmeleri & Dikey Akış (`Studio Feed`)
-- **Görsel Arşivi Paneli:** `Tümü`, `Stability AI`, `Gemini`, `ChatGPT`, `Copilot` ve `Ücretsiz` sekmelerine ayrılmıştır. Panel üstündeki **"Klasörleri Tara & Senkronize Et"** butonuyla manuel tarama tetiklenebilir.
+- **Görsel Arşivi Paneli:** `Tümü`, `Stability AI`, `Gemini`, `ChatGPT`, `Copilot`, `Grok` ve `Ücretsiz` sekmelerine ayrılmıştır. Panel üstündeki **"Klasörleri Tara & Senkronize Et"** butonuyla manuel tarama tetiklenebilir.
 - **Dikey Akış (`Feed`) ve Kendi Boyutunda Kartlar:** Stüdyo ekranında üretilen veya arşivden seçilen görseller, kendi boyutlarında (`inline-flex`) alt alta scroll edilebilir dikey akışa eklenir. Oturum boyunca üretilen tüm görsellere kaydırarak erişilebilir ve anında indirilebilir.
 
 ### 4. 💎 Yarı Şeffaf Tasarım & Filigran Görünürlüğü
@@ -114,6 +114,7 @@ yz/
 │   ├── AiCredentialsService.cs  # Şifreli/yerel API anahtar okuma ve yazma servisi
 │   ├── ImageSyncService.cs      # Çift yönlü dosya-veritabanı senkronizasyon servisi
 │   ├── GeminiSeleniumService.cs # Chrome/Selenium tabanlı Google Gemini otomasyonu
+│   ├── MultiAiSeleniumService.cs # Çoklu yapay zeka (ChatGPT, Copilot, Grok vb.) web otomasyonu
 │   └── DatabaseInitializationService.cs # Veritabanı ve ilk admin oluşturma servisi
 ├── Models/                      # Entity Framework modelleri (User, GeneratedImage, ApiKey vb.)
 ├── Views/                       # Glassmorphism arayüz ve kullanıcı giriş ekranları
@@ -124,6 +125,7 @@ yz/
 │   ├── generated-gemini/        # Google Gemini ile üretilen resimler (.gitkeep)
 │   ├── generated-chatgpt/       # ChatGPT ile üretilen resimler (.gitkeep)
 │   ├── generated-copilot/       # Copilot ile üretilen resimler (.gitkeep)
+│   ├── generated-grok/          # Grok ile üretilen resimler (.gitkeep)
 │   ├── generated-free/          # Ücretsiz FLUX.1 modelleri ile üretilen resimler (.gitkeep)
 ├── ai_credentials.template.json # İlk kurulum için şablon anahtar yapısı
 └── Temiz-Paketle.ps1            # Projeyi temizleyerek paylaşım paketi (ZIP) oluşturan betik

@@ -371,6 +371,7 @@ function renderGallery() {
   groupedImages.forEach(groupOrItem => {
     const div = document.createElement('div');
     div.className = 'gallery-item';
+    div.style.aspectRatio = '1 / 1';
 
     if (groupOrItem.isGroup) {
        div.innerHTML = `
@@ -381,7 +382,9 @@ function renderGallery() {
            }).join('')}
          </div>
          <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
-         <div class="gallery-overlay" style="z-index: 10;">${(groupOrItem.prompt || '').substring(0,40)}...</div>
+         <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
+             <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
+         </div>
          <button class="btn-del-img" title="Sil" onclick="deleteGroup(event, '${groupOrItem.groupId}')" style="z-index: 10;">
            <i class="fa-solid fa-trash-can"></i>
          </button>
@@ -405,9 +408,7 @@ function renderGallery() {
        `;
        div.addEventListener('click', (e) => {
          if (e.target.closest('.btn-del-img')) return;
-         closeGallery();
-         switchPage('studio');
-         addStudioImageToFeed(item.image, item.model, item.key, true);
+         openSingleImageModal(item);
        });
     }
     galleryGrid.appendChild(div);
@@ -430,8 +431,8 @@ async function deleteGroup(e, groupId) {
   }
 }
 
-function openTripleGroupModal(groupId) {
-  const group = persistentImages.filter(i => i.groupId === groupId);
+function openTripleGroupModal(groupId, sourceImages = persistentImages) {
+  const group = sourceImages.filter(i => i.groupId === groupId);
   if (!group || group.length === 0) return;
   
   const promptEl = document.getElementById('triple-group-prompt');
@@ -457,6 +458,46 @@ function openTripleGroupModal(groupId) {
   
   const modal = document.getElementById('triple-group-modal');
   if (modal) modal.style.display = 'flex';
+
+  const btnDownloadAll = document.getElementById('btn-triple-group-download-all');
+  if (btnDownloadAll) {
+    btnDownloadAll.onclick = async () => {
+      try {
+        const zip = new JSZip();
+        btnDownloadAll.disabled = true;
+        btnDownloadAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Hazırlanıyor...';
+        
+        for (let i = 0; i < group.length; i++) {
+          const res = group[i];
+          let filename = res.image.split('/').pop() || `image_${i + 1}.png`;
+          if (!filename.includes('.')) filename += '.png';
+          
+          const response = await fetch(res.image);
+          const blob = await response.blob();
+          zip.file(filename, blob);
+        }
+        
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const downloadUrl = URL.createObjectURL(zipBlob);
+        
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `uclu_uretim_${groupId}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        
+        showToast("Toplu indirme başarılı!");
+      } catch (err) {
+        console.error(err);
+        showToast("Toplu indirme sırasında bir hata oluştu.", "error");
+      } finally {
+        btnDownloadAll.disabled = false;
+        btnDownloadAll.innerHTML = '<i class="fa-solid fa-download"></i> Toplu İndir';
+      }
+    };
+  }
 }
 
 const btnTripleGroupClose = document.getElementById('btn-triple-group-close');
@@ -469,6 +510,47 @@ const btnTripleGroupOk = document.getElementById('btn-triple-group-ok');
 if (btnTripleGroupOk) {
   btnTripleGroupOk.addEventListener('click', () => {
     document.getElementById('triple-group-modal').style.display = 'none';
+  });
+}
+
+function openSingleImageModal(item) {
+  const modal = document.getElementById('single-image-modal');
+  if (!modal) return;
+  
+  const promptEl = document.getElementById('single-image-prompt');
+  if (promptEl) promptEl.textContent = "Prompt: " + (item.prompt || item.model || '');
+  
+  const container = document.getElementById('single-image-container');
+  if (container) {
+    container.innerHTML = `
+      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%;">
+        <img src="${item.image}" alt="Generated" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;">
+        <h6 style="color: #fff; margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
+      </div>
+    `;
+  }
+  
+  const btnDownload = document.getElementById('btn-single-image-download');
+  if (btnDownload) {
+    btnDownload.href = item.image;
+    let filename = item.image.split('/').pop() || 'image.png';
+    if (!filename.includes('.')) filename += '.png';
+    btnDownload.download = filename;
+  }
+  
+  modal.style.display = 'flex';
+}
+
+const btnSingleImageClose = document.getElementById('btn-single-image-close');
+if (btnSingleImageClose) {
+  btnSingleImageClose.addEventListener('click', () => {
+    document.getElementById('single-image-modal').style.display = 'none';
+  });
+}
+const btnSingleImageOk = document.getElementById('btn-single-image-ok');
+if (btnSingleImageOk) {
+  btnSingleImageOk.addEventListener('click', () => {
+    document.getElementById('single-image-modal').style.display = 'none';
   });
 }
 
@@ -1298,22 +1380,92 @@ window.openUserImagesModal = function(userId, displayName) {
     userImagesContainer.innerHTML = `<div class="gallery-empty-panel" style="grid-column: 1/-1;"><p>Bu kullanıcının henüz üretmiş olduğu bir görsel bulunmuyor.</p></div>`;
   } else {
     userImagesContainer.innerHTML = '';
+    const groupedImages = [];
+    const groupMap = new Map();
     imgs.forEach(item => {
+      if (item.groupId) {
+        if (!groupMap.has(item.groupId)) {
+          groupMap.set(item.groupId, { isGroup: true, groupId: item.groupId, prompt: item.prompt, items: [], createdAt: item.createdAt });
+          groupedImages.push(groupMap.get(item.groupId));
+        }
+        groupMap.get(item.groupId).items.push(item);
+      } else {
+        groupedImages.push(item);
+      }
+    });
+
+    groupedImages.forEach(groupOrItem => {
       const div = document.createElement('div');
       div.className = 'gallery-item';
-      div.style.background = '#1a1c20';
-      div.style.position = 'relative';
-      div.innerHTML = `
-        <img src="${item.image}" alt="Görsel" style="width:100%; height:200px; object-fit:cover;">
-        <div class="gallery-overlay" style="opacity:1; background:rgba(0,0,0,0.7); font-size:0.75rem;">${item.prompt || item.model}</div>
-        <button class="btn-del-img" style="opacity:1;" title="Görseli Sil" onclick="deleteImageFromUserModal(event, ${item.id}, ${userId})">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      `;
+      
+      div.style.aspectRatio = '1 / 1';
+      
+      if (groupOrItem.isGroup) {
+         div.innerHTML = `
+           <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
+             ${groupOrItem.items.map((it, idx) => {
+                if (idx > 2) return '';
+                return '<img src="' + it.image + '" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">';
+             }).join('')}
+           </div>
+           <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+           <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
+               <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
+           </div>
+           <button class="btn-del-img" title="Sil" onclick="deleteGroupFromUserModal(event, '${groupOrItem.groupId}', ${userId})" style="z-index: 10;">
+             <i class="fa-solid fa-trash-can"></i>
+           </button>
+         `;
+         div.addEventListener('click', (e) => {
+           if (e.target.closest('.btn-del-img')) return;
+           openTripleGroupModal(groupOrItem.groupId, imgs); // We will update openTripleGroupModal to accept imgs
+         });
+      } else {
+         const item = groupOrItem;
+         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+         const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
+
+         div.innerHTML = `
+           <img src="${item.image}" alt="Üretilen görsel">
+           <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
+           <div class="gallery-overlay">${item.model}</div>
+           <button class="btn-del-img" title="Sil" onclick="deleteImageFromUserModal(event, ${item.id}, ${userId})">
+             <i class="fa-solid fa-trash-can"></i>
+           </button>
+         `;
+         div.addEventListener('click', (e) => {
+           if (e.target.closest('.btn-del-img')) return;
+           openSingleImageModal(item);
+         });
+      }
       userImagesContainer.appendChild(div);
     });
   }
   userImagesModal.style.display = 'flex';
+};
+
+window.deleteGroupFromUserModal = async function(e, groupId, userId) {
+  e.stopPropagation();
+  if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
+  
+  const userObj = usersData.find(u => u.id === userId);
+  const imgs = userObj ? userObj.images : [];
+  const groupItems = imgs.filter(i => i.groupId === groupId);
+  
+  try {
+    for (const item of groupItems) {
+      await fetch(`/api/images/${item.id}`, { method: 'DELETE' });
+    }
+    showToast('Çoklu üretim silindi!');
+    await fetchUsers();
+    await fetchImages();
+    const updatedUserObj = usersData.find(u => u.id === userId);
+    if (updatedUserObj && userImagesModal.style.display === 'flex') {
+      openUserImagesModal(userId, updatedUserObj.displayName);
+    }
+  } catch (err) {
+    showToast('Silinirken hata oluştu');
+  }
 };
 
 window.deleteImageFromUserModal = async function(e, imageId, userId) {
