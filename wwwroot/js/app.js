@@ -1,10 +1,7 @@
-/* === MELİKGAZİ BELEDİYESİ — YZ GÖRSEL PLATFORMU — app.js === */
-
 const navStudio = document.getElementById('nav-studio');
 const navDashboard = document.getElementById('nav-dashboard');
 const sectionStudio = document.getElementById('section-studio');
 const sectionDashboard = document.getElementById('section-dashboard');
-
 const generatorForm = document.getElementById('generator-form');
 const modelSelect = document.getElementById('model-select');
 const styleSelect = document.getElementById('style-select');
@@ -15,7 +12,6 @@ const btnClear = document.getElementById('btn-clear');
 const btnGenerate = document.getElementById('btn-generate');
 const btnLabel = btnGenerate ? btnGenerate.querySelector('.btn-label') : null;
 const btnLoader = btnGenerate ? btnGenerate.querySelector('.btn-loader') : null;
-
 const canvasPlaceholder = document.getElementById('canvas-placeholder');
 const canvasLoading = document.getElementById('canvas-loading');
 const canvasSuccess = document.getElementById('canvas-success');
@@ -24,10 +20,8 @@ const loadingStatus = document.getElementById('loading-status');
 const generatedImage = document.getElementById('generated-image');
 const errorMessage = document.getElementById('error-message');
 const btnRetry = document.getElementById('btn-retry');
-
 const galleryGrid = document.getElementById('gallery-grid');
 const galleryCount = document.getElementById('gallery-count');
-
 const statsActive = document.getElementById('stats-active');
 const statsToday = document.getElementById('stats-today');
 const statsTotal = document.getElementById('stats-total');
@@ -35,7 +29,6 @@ const statsIndex = document.getElementById('stats-index');
 const btnResetLimits = document.getElementById('btn-reset-limits');
 const keysGrid = document.getElementById('keys-grid');
 const usersGrid = document.getElementById('users-grid');
-
 const editModal = document.getElementById('edit-modal');
 const editForm = document.getElementById('edit-form');
 const editId = document.getElementById('edit-id');
@@ -44,22 +37,17 @@ const editKey = document.getElementById('edit-key');
 const btnToggleKey = document.getElementById('btn-toggle-key');
 const btnModalClose = document.getElementById('btn-modal-close');
 const btnModalCancel = document.getElementById('btn-modal-cancel');
-
-// Gallery Panel
 const galleryPanel = document.getElementById('gallery-panel');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const btnGalleryToggle = document.getElementById('btn-gallery-toggle');
 const btnGalleryClose = document.getElementById('btn-gallery-close');
-
 const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
-
 let keysData = [];
 let currentKeyIndex = 0;
 let persistentImages = [];
 let usersData = [];
 let geminiAccountsData = [];
 let currentGeminiProfileIndex = 0;
-
 const samplePrompts = [
   "Kayseri Erciyes Dağı'nın zirvesinde kar yağışı altında kuzey ışıkları, sinematik ultra detaylı manzara",
   "Melikgazi tarihi sokaklarında gün batımı, taş konaklar ve sıcak sarı sokak lambalarının dramatik ışığı",
@@ -81,7 +69,6 @@ const samplePrompts = [
   "Sarı ve siyah renklerde tasarlanmış ultra lüks elektrikli spor otomobil, dramatik stüdyo aydınlatması",
   "Geleneksel motiflerle süslenmiş zırh giyen görkemli Selçuklu savaşçısı komutanı, sinematik stüdyo portresi"
 ];
-
 function showToast(msg, type = 'success') {
   let container = document.querySelector('.toast-container');
   if (!container) {
@@ -95,15 +82,12 @@ function showToast(msg, type = 'success') {
   container.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }
-
-/* === Sayfa Navigasyonu === */
 if (navStudio) {
   navStudio.addEventListener('click', () => switchPage('studio'));
 }
 if (navDashboard) {
   navDashboard.addEventListener('click', () => switchPage('dashboard'));
 }
-
 function switchPage(page) {
   if (page === 'studio') {
     if (navStudio) navStudio.classList.add('active');
@@ -122,23 +106,18 @@ function switchPage(page) {
     fetchImages();
   }
 }
-
-/* === Galeri Panel === */
 function openGallery() {
   if (galleryPanel) galleryPanel.classList.add('open');
   if (galleryOverlay) galleryOverlay.style.display = 'block';
   fetchImages();
 }
-
 function closeGallery() {
   if (galleryPanel) galleryPanel.classList.remove('open');
   if (galleryOverlay) galleryOverlay.style.display = 'none';
 }
-
 if (btnGalleryToggle) btnGalleryToggle.addEventListener('click', openGallery);
 if (btnGalleryClose) btnGalleryClose.addEventListener('click', closeGallery);
 if (galleryOverlay) galleryOverlay.addEventListener('click', closeGallery);
-
 const btnSyncImages = document.getElementById('btn-sync-images');
 if (btnSyncImages) {
   btnSyncImages.addEventListener('click', async () => {
@@ -148,7 +127,6 @@ if (btnSyncImages) {
     setTimeout(() => btnSyncImages.classList.remove('spinning'), 600);
   });
 }
-
 const galleryFolderTabs = document.getElementById('gallery-folder-tabs');
 if (galleryFolderTabs) {
   galleryFolderTabs.addEventListener('click', (e) => {
@@ -160,14 +138,11 @@ if (galleryFolderTabs) {
     renderGallery();
   });
 }
-
-/* === Prompt Yardımcıları === */
 if (btnClear) btnClear.addEventListener('click', () => { promptInput.value = ''; });
 if (btnRandom) btnRandom.addEventListener('click', () => {
   promptInput.value = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
   showToast('Rastgele fikir yüklendi!');
 });
-
 if (modelSelect) {
   modelSelect.addEventListener('change', () => {
     const val = modelSelect.value;
@@ -181,12 +156,10 @@ if (modelSelect) {
     if (tripleInfo) tripleInfo.style.display = val === 'triple-ai' ? 'flex' : 'none';
   });
 }
-
 if (btnTranslate) {
   btnTranslate.addEventListener('click', async () => {
     const text = promptInput.value.trim();
     if (!text) { showToast('Önce bir metin girin.', 'error'); return; }
-
     btnTranslate.disabled = true;
     try {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=tr|en`;
@@ -205,8 +178,6 @@ if (btnTranslate) {
     }
   });
 }
-
-/* === Görsel Üretimi === */
 if (generatorForm) generatorForm.addEventListener('submit', handleGenerate);
 if (btnRetry) {
   btnRetry.addEventListener('click', () => {
@@ -214,14 +185,11 @@ if (btnRetry) {
     if (canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
   });
 }
-
 async function handleGenerate(e) {
   e.preventDefault();
   const prompt = promptInput.value.trim();
   const ratio = document.querySelector('input[name="ratio"]:checked').value;
-
   if (!prompt) { showToast('Lütfen bir görsel tarifi girin.', 'error'); return; }
-
   btnGenerate.disabled = true;
   if (btnLabel) btnLabel.style.display = 'none';
   if (btnLoader) btnLoader.style.display = 'flex';
@@ -229,7 +197,6 @@ async function handleGenerate(e) {
   if (canvasSuccess) canvasSuccess.style.display = 'none';
   if (canvasError) canvasError.style.display = 'none';
   if (canvasLoading) canvasLoading.style.display = 'flex';
-
   const selectedModel = modelSelect.value;
   if (selectedModel === 'triple-ai') {
     loadingStatus.textContent = '🚀 Üçlü üretim: Gemini + ChatGPT + Copilot aynı anda çalışıyor…';
@@ -238,7 +205,6 @@ async function handleGenerate(e) {
   } else {
     loadingStatus.textContent = 'API sunucularına bağlanılıyor…';
   }
-
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
@@ -250,19 +216,16 @@ async function handleGenerate(e) {
         style: styleSelect.value
       })
     });
-
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.error || 'Görsel üretimi başarısız.');
     }
-
     const data = await res.json();
     if (data.success) {
       if (data.multiMode && data.results) {
         if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
         if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
         if (typeof canvasSuccess !== 'undefined' && canvasSuccess) canvasSuccess.style.display = 'none';
-        
         await fetchImages();
         openTripleGroupModal(data.groupId);
         if (data.failures && data.failures.length > 0) {
@@ -292,14 +255,10 @@ async function handleGenerate(e) {
     if (btnLoader) btnLoader.style.display = 'none';
   }
 }
-
-/* === Görsel Akışı Helper === */
 function addStudioImageToFeed(imageUrl, modelUsed, keyLabel, prepend = true) {
   const feedList = document.getElementById('studio-feed-list');
   if (!feedList) return;
-
   feedList.innerHTML = '';
-
   const card = document.createElement('div');
   card.className = 'studio-feed-item';
   card.innerHTML = `
@@ -314,18 +273,13 @@ function addStudioImageToFeed(imageUrl, modelUsed, keyLabel, prepend = true) {
       </a>
     </div>
   `;
-
   feedList.appendChild(card);
-
   if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'none';
   if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
   if (typeof canvasError !== 'undefined' && canvasError) canvasError.style.display = 'none';
   if (typeof canvasSuccess !== 'undefined' && canvasSuccess) canvasSuccess.style.display = 'flex';
 }
-
-/* === Görseller === */
 let currentGalleryFolder = 'all';
-
 async function fetchImages() {
   try {
     const res = await fetch('/api/images');
@@ -335,27 +289,21 @@ async function fetchImages() {
     if (galleryCount) galleryCount.textContent = persistentImages.length;
   } catch { }
 }
-
 function renderGallery() {
   if (!galleryGrid) return;
-
   const filteredImages = currentGalleryFolder === 'all'
     ? persistentImages
     : (currentGalleryFolder === 'triple'
         ? persistentImages.filter(item => item.groupId)
         : persistentImages.filter(item => item.folder === currentGalleryFolder && !item.groupId));
-
   if (filteredImages.length === 0) {
     const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasörü)`;
     galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bölümde${folderLabel} henüz görsel bulunmuyor.</p></div>`;
     return;
   }
-  
   galleryGrid.innerHTML = '';
-  
   const groupedImages = [];
   const groupMap = new Map();
-  
   filteredImages.forEach(item => {
     if (item.groupId) {
       if (!groupMap.has(item.groupId)) {
@@ -367,12 +315,10 @@ function renderGallery() {
       groupedImages.push(item);
     }
   });
-
   groupedImages.forEach(groupOrItem => {
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.style.aspectRatio = '1 / 1';
-
     if (groupOrItem.isGroup) {
        div.innerHTML = `
          <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
@@ -397,7 +343,6 @@ function renderGallery() {
        const item = groupOrItem;
        const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
        const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
-
        div.innerHTML = `
          <img src="${item.image}" alt="Üretilen görsel">
          <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
@@ -414,11 +359,9 @@ function renderGallery() {
     galleryGrid.appendChild(div);
   });
 }
-
 async function deleteGroup(e, groupId) {
   e.stopPropagation();
   if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
-  
   const groupItems = persistentImages.filter(i => i.groupId === groupId);
   try {
     for (const item of groupItems) {
@@ -430,14 +373,11 @@ async function deleteGroup(e, groupId) {
     showToast('Silinirken hata oluştu');
   }
 }
-
 function openTripleGroupModal(groupId, sourceImages = persistentImages) {
   const group = sourceImages.filter(i => i.groupId === groupId);
   if (!group || group.length === 0) return;
-  
   const promptEl = document.getElementById('triple-group-prompt');
   if (promptEl) promptEl.textContent = "Prompt: " + group[0].prompt;
-  
   const container = document.getElementById('triple-group-container');
   if (container) {
     container.innerHTML = '';
@@ -455,10 +395,8 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
       container.appendChild(col);
     });
   }
-  
   const modal = document.getElementById('triple-group-modal');
   if (modal) modal.style.display = 'flex';
-
   const btnDownloadAll = document.getElementById('btn-triple-group-download-all');
   if (btnDownloadAll) {
     btnDownloadAll.onclick = async () => {
@@ -466,20 +404,16 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
         const zip = new JSZip();
         btnDownloadAll.disabled = true;
         btnDownloadAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Hazırlanıyor...';
-        
         for (let i = 0; i < group.length; i++) {
           const res = group[i];
           let filename = res.image.split('/').pop() || `image_${i + 1}.png`;
           if (!filename.includes('.')) filename += '.png';
-          
           const response = await fetch(res.image);
           const blob = await response.blob();
           zip.file(filename, blob);
         }
-        
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const downloadUrl = URL.createObjectURL(zipBlob);
-        
         const a = document.createElement("a");
         a.href = downloadUrl;
         a.download = `uclu_uretim_${groupId}.zip`;
@@ -487,7 +421,6 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(downloadUrl);
-        
         showToast("Toplu indirme başarılı!");
       } catch (err) {
         console.error(err);
@@ -499,7 +432,6 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
     };
   }
 }
-
 const btnTripleGroupClose = document.getElementById('btn-triple-group-close');
 if (btnTripleGroupClose) {
   btnTripleGroupClose.addEventListener('click', () => {
@@ -512,14 +444,11 @@ if (btnTripleGroupOk) {
     document.getElementById('triple-group-modal').style.display = 'none';
   });
 }
-
 function openSingleImageModal(item) {
   const modal = document.getElementById('single-image-modal');
   if (!modal) return;
-  
   const promptEl = document.getElementById('single-image-prompt');
   if (promptEl) promptEl.textContent = "Prompt: " + (item.prompt || item.model || '');
-  
   const container = document.getElementById('single-image-container');
   if (container) {
     container.innerHTML = `
@@ -529,7 +458,6 @@ function openSingleImageModal(item) {
       </div>
     `;
   }
-  
   const btnDownload = document.getElementById('btn-single-image-download');
   if (btnDownload) {
     btnDownload.href = item.image;
@@ -537,10 +465,8 @@ function openSingleImageModal(item) {
     if (!filename.includes('.')) filename += '.png';
     btnDownload.download = filename;
   }
-  
   modal.style.display = 'flex';
 }
-
 const btnSingleImageClose = document.getElementById('btn-single-image-close');
 if (btnSingleImageClose) {
   btnSingleImageClose.addEventListener('click', () => {
@@ -553,9 +479,6 @@ if (btnSingleImageOk) {
     document.getElementById('single-image-modal').style.display = 'none';
   });
 }
-
-
-
 async function deleteImage(e, id) {
   e.stopPropagation();
   if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
@@ -569,8 +492,6 @@ async function deleteImage(e, id) {
     showToast('Hata: ' + err.message, 'error');
   }
 }
-
-/* === API Anahtarları === */
 async function fetchKeys() {
   if (!isAdmin) return;
   try {
@@ -583,7 +504,6 @@ async function fetchKeys() {
     updateStats();
   } catch { }
 }
-
 function renderKeys() {
   if (!keysGrid || !isAdmin) return;
   keysGrid.innerHTML = '';
@@ -592,7 +512,6 @@ function renderKeys() {
     if (!k.hasKey) { badgeClass = 'badge-empty'; badgeText = 'Boş'; }
     else if (k.status === 'Active') { badgeClass = 'badge-active'; badgeText = 'Aktif'; }
     else { badgeClass = 'badge-exhausted'; badgeText = 'Pasif'; }
-
     const card = document.createElement('div');
     card.className = 'key-card';
     card.innerHTML = `
@@ -617,19 +536,16 @@ function renderKeys() {
     keysGrid.appendChild(card);
   });
 }
-
 function updateStats() {
   if (!statsActive || !isAdmin) return;
   const active = keysData.filter(k => k.hasKey && k.status === 'Active').length;
   const today = keysData.reduce((s, k) => s + k.usageToday, 0);
   const total = keysData.reduce((s, k) => s + k.totalUsage, 0);
-
   statsActive.textContent = active;
   statsToday.textContent = today;
   statsTotal.textContent = total;
   statsIndex.textContent = keysData.some(k => k.hasKey) ? `#${currentKeyIndex + 1}` : '—';
 }
-
 if (btnResetLimits) {
   btnResetLimits.addEventListener('click', async () => {
     if (!confirm('Tüm kullanım sayaçlarını sıfırlamak istediğinize emin misiniz?')) return;
@@ -643,25 +559,21 @@ if (btnResetLimits) {
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
   });
 }
-
-/* === Stability Düzenleme Modalı === */
 window.openEditModal = function(id, label, hasKey, status) {
   if (!editModal) return;
   editId.value = id;
   editLabel.value = label;
-  editKey.value = ''; // Düzenlerken key bölümü boş metin kutusu olarak gelir
+  editKey.value = ''; 
   editKey.type = 'password';
   if (btnToggleKey) btnToggleKey.innerHTML = '<i class="fa-solid fa-eye"></i>';
   const statusEl = document.getElementById('edit-status');
   if (statusEl) statusEl.value = status || 'Active';
   editModal.style.display = 'flex';
 };
-
 function closeModal() { if (editModal) editModal.style.display = 'none'; }
 if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
 if (btnModalCancel) btnModalCancel.addEventListener('click', closeModal);
 if (editModal) editModal.addEventListener('click', (e) => { if (e.target === editModal) closeModal(); });
-
 if (btnToggleKey) {
   btnToggleKey.addEventListener('click', () => {
     const isPass = editKey.type === 'password';
@@ -669,7 +581,6 @@ if (btnToggleKey) {
     btnToggleKey.innerHTML = `<i class="fa-solid fa-eye${isPass ? '-slash' : ''}"></i>`;
   });
 }
-
 if (editForm) {
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -680,7 +591,6 @@ if (editForm) {
     const status = statusEl ? statusEl.value : 'Active';
     const payload = { id, label, status };
     if (apiKey && !apiKey.includes('•')) payload.apiKey = apiKey;
-
     try {
       const res = await fetch('/api/keys', {
         method: 'POST',
@@ -697,8 +607,6 @@ if (editForm) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
-/* === Gemini Hesapları === */
 async function fetchGeminiAccounts() {
   if (!isAdmin) return;
   try {
@@ -710,16 +618,13 @@ async function fetchGeminiAccounts() {
     renderGeminiAccounts();
   } catch { }
 }
-
 function renderGeminiAccounts() {
   const grid = document.getElementById('gemini-accounts-grid');
   if (!grid || !isAdmin) return;
   grid.innerHTML = '';
-
   geminiAccountsData.forEach(a => {
     let badgeClass = a.status === 'Active' ? 'badge-active' : 'badge-exhausted';
     let badgeText = a.status === 'Active' ? 'Aktif' : 'Pasif';
-
     const card = document.createElement('div');
     card.className = 'key-card';
     card.innerHTML = `
@@ -746,7 +651,6 @@ function renderGeminiAccounts() {
     grid.appendChild(card);
   });
 }
-
 window.openGeminiLogin = async function(id, label) {
   showToast(`'${label}' için Chrome açılıyor…`, 'info');
   try {
@@ -765,7 +669,6 @@ window.openGeminiLogin = async function(id, label) {
     showToast('Hata: ' + err.message, 'error');
   }
 };
-
 const geminiEditModal = document.getElementById('gemini-edit-modal');
 const geminiEditForm = document.getElementById('gemini-edit-form');
 const geminiEditId = document.getElementById('gemini-edit-id');
@@ -773,7 +676,6 @@ const geminiEditLabel = document.getElementById('gemini-edit-label');
 const geminiEditStatus = document.getElementById('gemini-edit-status');
 const btnGeminiModalClose = document.getElementById('btn-gemini-modal-close');
 const btnGeminiModalCancel = document.getElementById('btn-gemini-modal-cancel');
-
 window.openGeminiEditModal = function(id, label, status) {
   if (!geminiEditModal) return;
   geminiEditId.value = id;
@@ -781,12 +683,10 @@ window.openGeminiEditModal = function(id, label, status) {
   geminiEditStatus.value = status;
   geminiEditModal.style.display = 'flex';
 };
-
 function closeGeminiModal() { if (geminiEditModal) geminiEditModal.style.display = 'none'; }
 if (btnGeminiModalClose) btnGeminiModalClose.addEventListener('click', closeGeminiModal);
 if (btnGeminiModalCancel) btnGeminiModalCancel.addEventListener('click', closeGeminiModal);
 if (geminiEditModal) geminiEditModal.addEventListener('click', (e) => { if (e.target === geminiEditModal) closeGeminiModal(); });
-
 if (geminiEditForm) {
   geminiEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -810,7 +710,6 @@ if (geminiEditForm) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 const btnAddGeminiAcc = document.getElementById('btn-add-gemini-acc');
 if (btnAddGeminiAcc) {
   btnAddGeminiAcc.addEventListener('click', async () => {
@@ -832,7 +731,6 @@ if (btnAddGeminiAcc) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 window.deleteGeminiAccount = async function(id) {
   if (!confirm(`#${id} Gemini profil yuvasını silmek istediğinize emin misiniz?`)) return;
   try {
@@ -846,11 +744,7 @@ window.deleteGeminiAccount = async function(id) {
     }
   } catch (err) { showToast(err.message, 'error'); }
 };
-
-
-/* === ChatGPT Hesap Yönetimi === */
 let chatgptAccountsData = [];
-
 async function loadChatGptAccounts() {
   if (!isAdmin) return;
   try {
@@ -861,7 +755,6 @@ async function loadChatGptAccounts() {
     renderChatGptAccounts();
   } catch { }
 }
-
 function renderChatGptAccounts() {
   const grid = document.getElementById('chatgpt-accounts-grid');
   if (!grid || !isAdmin) return;
@@ -892,7 +785,6 @@ function renderChatGptAccounts() {
     grid.appendChild(card);
   });
 }
-
 async function openChatGptLogin(id, label) {
   showToast(label + ' için Chrome açılıyor…', 'info');
   try {
@@ -901,7 +793,6 @@ async function openChatGptLogin(id, label) {
     if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
   } catch (err) { showToast('Hata: ' + err.message, 'error'); }
 }
-
 const chatgptEditModal = document.getElementById('chatgpt-edit-modal');
 const chatgptEditForm = document.getElementById('chatgpt-edit-form');
 const chatgptEditId = document.getElementById('chatgpt-edit-id');
@@ -909,7 +800,6 @@ const chatgptEditLabel = document.getElementById('chatgpt-edit-label');
 const chatgptEditStatus = document.getElementById('chatgpt-edit-status');
 const btnChatgptModalClose = document.getElementById('btn-chatgpt-modal-close');
 const btnChatgptModalCancel = document.getElementById('btn-chatgpt-modal-cancel');
-
 function openChatGptEditModal(id, label, status) {
   if (!chatgptEditModal) return;
   chatgptEditId.value = id;
@@ -917,12 +807,10 @@ function openChatGptEditModal(id, label, status) {
   chatgptEditStatus.value = status;
   chatgptEditModal.style.display = 'flex';
 }
-
 function closeChatGptModal() { if (chatgptEditModal) chatgptEditModal.style.display = 'none'; }
 if (btnChatgptModalClose) btnChatgptModalClose.addEventListener('click', closeChatGptModal);
 if (btnChatgptModalCancel) btnChatgptModalCancel.addEventListener('click', closeChatGptModal);
 if (chatgptEditModal) chatgptEditModal.addEventListener('click', (e) => { if (e.target === chatgptEditModal) closeChatGptModal(); });
-
 if (chatgptEditForm) {
   chatgptEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -937,7 +825,6 @@ if (chatgptEditForm) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 const btnAddChatgptAcc = document.getElementById('btn-add-chatgpt-acc');
 if (btnAddChatgptAcc) {
   btnAddChatgptAcc.addEventListener('click', async () => {
@@ -951,7 +838,6 @@ if (btnAddChatgptAcc) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 async function deleteChatGptAccount(id) {
   if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
   try {
@@ -961,10 +847,8 @@ async function deleteChatGptAccount(id) {
     else { throw new Error(data.error || 'Silinemedi.'); }
   } catch (err) { showToast(err.message, 'error'); }
 }
-
 /* === Copilot Hesap Yönetimi === */
 let copilotAccountsData = [];
-
 async function loadCopilotAccounts() {
   if (!isAdmin) return;
   try {
@@ -975,7 +859,6 @@ async function loadCopilotAccounts() {
     renderCopilotAccounts();
   } catch { }
 }
-
 function renderCopilotAccounts() {
   const grid = document.getElementById('copilot-accounts-grid');
   if (!grid || !isAdmin) return;
@@ -1005,7 +888,6 @@ function renderCopilotAccounts() {
     grid.appendChild(card);
   });
 }
-
 async function openCopilotLogin(id, label) {
   showToast(label + ' için Chrome açılıyor…', 'info');
   try {
@@ -1014,7 +896,6 @@ async function openCopilotLogin(id, label) {
     if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
   } catch (err) { showToast('Hata: ' + err.message, 'error'); }
 }
-
 const copilotEditModal = document.getElementById('copilot-edit-modal');
 const copilotEditForm = document.getElementById('copilot-edit-form');
 const copilotEditId = document.getElementById('copilot-edit-id');
@@ -1022,7 +903,6 @@ const copilotEditLabel = document.getElementById('copilot-edit-label');
 const copilotEditStatus = document.getElementById('copilot-edit-status');
 const btnCopilotModalClose = document.getElementById('btn-copilot-modal-close');
 const btnCopilotModalCancel = document.getElementById('btn-copilot-modal-cancel');
-
 function openCopilotEditModal(id, label, status) {
   if (!copilotEditModal) return;
   copilotEditId.value = id;
@@ -1030,12 +910,10 @@ function openCopilotEditModal(id, label, status) {
   copilotEditStatus.value = status;
   copilotEditModal.style.display = 'flex';
 }
-
 function closeCopilotModal() { if (copilotEditModal) copilotEditModal.style.display = 'none'; }
 if (btnCopilotModalClose) btnCopilotModalClose.addEventListener('click', closeCopilotModal);
 if (btnCopilotModalCancel) btnCopilotModalCancel.addEventListener('click', closeCopilotModal);
 if (copilotEditModal) copilotEditModal.addEventListener('click', (e) => { if (e.target === copilotEditModal) closeCopilotModal(); });
-
 if (copilotEditForm) {
   copilotEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1050,7 +928,6 @@ if (copilotEditForm) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 const btnAddCopilotAcc = document.getElementById('btn-add-copilot-acc');
 if (btnAddCopilotAcc) {
   btnAddCopilotAcc.addEventListener('click', async () => {
@@ -1064,7 +941,6 @@ if (btnAddCopilotAcc) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 async function deleteCopilotAccount(id) {
   if (!confirm('#' + id + ' Copilot profilini silmek istiyor musunuz?')) return;
   try {
@@ -1074,7 +950,6 @@ async function deleteCopilotAccount(id) {
     else { throw new Error(data.error || 'Silinemedi.'); }
   } catch (err) { showToast(err.message, 'error'); }
 }
-
 const btnAddKey = document.getElementById('btn-add-key');
 if (btnAddKey) {
   btnAddKey.addEventListener('click', async () => {
@@ -1098,7 +973,6 @@ if (btnAddKey) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-
 window.deleteKeySlot = async function(id) {
   if (!confirm(`#${id} Stability anahtar yuvasını silmek istediğinize emin misiniz?`)) return;
   try {
@@ -1112,7 +986,6 @@ window.deleteKeySlot = async function(id) {
     }
   } catch (err) { showToast(err.message, 'error'); }
 };
-
 /* === KULLANICI PROFİLİM YÖNETİMİ === */
 const profileModal = document.getElementById('profile-modal');
 const btnProfile = document.getElementById('btn-profile');
@@ -1123,7 +996,6 @@ const profileUsername = document.getElementById('profile-username');
 const profileRole = document.getElementById('profile-role');
 const profileDisplayName = document.getElementById('profile-displayName');
 const profilePassword = document.getElementById('profile-password');
-
 if (btnProfile) {
   btnProfile.addEventListener('click', async () => {
     try {
@@ -1140,18 +1012,15 @@ if (btnProfile) {
     }
   });
 }
-
 function closeProfileModal() { if (profileModal) profileModal.style.display = 'none'; }
 if (btnProfileClose) btnProfileClose.addEventListener('click', closeProfileModal);
 if (btnProfileCancel) btnProfileCancel.addEventListener('click', closeProfileModal);
 if (profileModal) profileModal.addEventListener('click', (e) => { if (e.target === profileModal) closeProfileModal(); });
-
 if (profileForm) {
   profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const displayName = profileDisplayName ? profileDisplayName.value.trim() : '';
     const password = profilePassword ? profilePassword.value.trim() : '';
-
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
@@ -1181,7 +1050,6 @@ if (profileForm) {
     }
   });
 }
-
 /* === KULLANICI & ROL YÖNETİMİ (SADECE YÖNETİCİLER İÇİN) === */
 async function fetchUsers() {
   if (!isAdmin) return;
@@ -1192,15 +1060,12 @@ async function fetchUsers() {
     renderUsers();
   } catch { }
 }
-
 function renderUsers() {
   if (!usersGrid || !isAdmin) return;
   usersGrid.innerHTML = '';
-
   usersData.forEach(u => {
     let badgeClass = u.role === 'Yönetici' ? 'badge-active' : 'badge-empty';
     let badgeText = u.role === 'Yönetici' ? 'Yönetici (Admin)' : 'Standart Kullanıcı';
-
     const card = document.createElement('div');
     card.className = 'key-card';
     card.innerHTML = `
@@ -1228,8 +1093,6 @@ function renderUsers() {
     usersGrid.appendChild(card);
   });
 }
-
-/* Kullanıcı Düzenleme Modalı */
 const userEditModal = document.getElementById('user-edit-modal');
 const userEditForm = document.getElementById('user-edit-form');
 const userEditId = document.getElementById('user-edit-id');
@@ -1238,21 +1101,18 @@ const userEditPassword = document.getElementById('user-edit-password');
 const userEditRole = document.getElementById('user-edit-role');
 const btnUserModalClose = document.getElementById('btn-user-modal-close');
 const btnUserModalCancel = document.getElementById('btn-user-modal-cancel');
-
 window.openUserEditModal = function(id, displayName, role) {
   if (!userEditModal) return;
   if (userEditId) userEditId.value = id;
   if (userEditDisplayName) userEditDisplayName.value = displayName;
-  if (userEditPassword) userEditPassword.value = ''; // Şifre boş kutu olarak gelmeli
+  if (userEditPassword) userEditPassword.value = ''; 
   if (userEditRole) userEditRole.value = role;
   userEditModal.style.display = 'flex';
 };
-
 function closeUserEditModal() { if (userEditModal) userEditModal.style.display = 'none'; }
 if (btnUserModalClose) btnUserModalClose.addEventListener('click', closeUserEditModal);
 if (btnUserModalCancel) btnUserModalCancel.addEventListener('click', closeUserEditModal);
 if (userEditModal) userEditModal.addEventListener('click', (e) => { if (e.target === userEditModal) closeUserEditModal(); });
-
 if (userEditForm) {
   userEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1260,7 +1120,6 @@ if (userEditForm) {
     const displayName = userEditDisplayName ? userEditDisplayName.value.trim() : '';
     const password = userEditPassword ? userEditPassword.value.trim() : '';
     const role = userEditRole ? userEditRole.value : 'Kullanıcı';
-
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: 'POST',
@@ -1286,8 +1145,6 @@ if (userEditForm) {
     }
   });
 }
-
-/* Yeni Kullanıcı Ekleme Modalı */
 const userAddModal = document.getElementById('user-add-modal');
 const btnAddUser = document.getElementById('btn-add-user');
 const userAddForm = document.getElementById('user-add-form');
@@ -1297,7 +1154,6 @@ const userAddPassword = document.getElementById('user-add-password');
 const userAddRole = document.getElementById('user-add-role');
 const btnUserAddClose = document.getElementById('btn-user-add-close');
 const btnUserAddCancel = document.getElementById('btn-user-add-cancel');
-
 if (btnAddUser) {
   btnAddUser.addEventListener('click', () => {
     if (!userAddModal) return;
@@ -1308,12 +1164,10 @@ if (btnAddUser) {
     userAddModal.style.display = 'flex';
   });
 }
-
 function closeUserAddModal() { if (userAddModal) userAddModal.style.display = 'none'; }
 if (btnUserAddClose) btnUserAddClose.addEventListener('click', closeUserAddModal);
 if (btnUserAddCancel) btnUserAddCancel.addEventListener('click', closeUserAddModal);
 if (userAddModal) userAddModal.addEventListener('click', (e) => { if (e.target === userAddModal) closeUserAddModal(); });
-
 if (userAddForm) {
   userAddForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1321,7 +1175,6 @@ if (userAddForm) {
     const displayName = userAddDisplayName ? userAddDisplayName.value.trim() : '';
     const password = userAddPassword ? userAddPassword.value.trim() : '';
     const role = userAddRole ? userAddRole.value : 'Kullanıcı';
-
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -1343,7 +1196,6 @@ if (userAddForm) {
     }
   });
 }
-
 window.deleteUserSlot = async function(id, username) {
   if (!confirm(`@${username} kullanıcısını ve ürettiği tüm görselleri kalıcı olarak silmek istediğinize emin misiniz?`)) return;
   try {
@@ -1362,20 +1214,15 @@ window.deleteUserSlot = async function(id, username) {
     showToast(err.message, 'error');
   }
 };
-
-/* Kullanıcı Görsellerini İnceleme Modalı */
 const userImagesModal = document.getElementById('user-images-modal');
 const userImagesModalTitle = document.getElementById('user-images-modal-title');
 const userImagesContainer = document.getElementById('user-images-container');
 const btnUserImagesClose = document.getElementById('btn-user-images-close');
-
 window.openUserImagesModal = function(userId, displayName) {
   if (!userImagesModal || !userImagesContainer) return;
   if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} — Ürettiği Görseller`;
-
   const userObj = usersData.find(u => u.id === userId);
   const imgs = userObj ? userObj.images : [];
-
   if (!imgs || imgs.length === 0) {
     userImagesContainer.innerHTML = `<div class="gallery-empty-panel" style="grid-column: 1/-1;"><p>Bu kullanıcının henüz üretmiş olduğu bir görsel bulunmuyor.</p></div>`;
   } else {
@@ -1393,13 +1240,10 @@ window.openUserImagesModal = function(userId, displayName) {
         groupedImages.push(item);
       }
     });
-
     groupedImages.forEach(groupOrItem => {
       const div = document.createElement('div');
       div.className = 'gallery-item';
-      
       div.style.aspectRatio = '1 / 1';
-      
       if (groupOrItem.isGroup) {
          div.innerHTML = `
            <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
@@ -1418,13 +1262,12 @@ window.openUserImagesModal = function(userId, displayName) {
          `;
          div.addEventListener('click', (e) => {
            if (e.target.closest('.btn-del-img')) return;
-           openTripleGroupModal(groupOrItem.groupId, imgs); // We will update openTripleGroupModal to accept imgs
+           openTripleGroupModal(groupOrItem.groupId, imgs); 
          });
       } else {
          const item = groupOrItem;
          const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
          const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
-
          div.innerHTML = `
            <img src="${item.image}" alt="Üretilen görsel">
            <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
@@ -1443,15 +1286,12 @@ window.openUserImagesModal = function(userId, displayName) {
   }
   userImagesModal.style.display = 'flex';
 };
-
 window.deleteGroupFromUserModal = async function(e, groupId, userId) {
   e.stopPropagation();
   if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
-  
   const userObj = usersData.find(u => u.id === userId);
   const imgs = userObj ? userObj.images : [];
   const groupItems = imgs.filter(i => i.groupId === groupId);
-  
   try {
     for (const item of groupItems) {
       await fetch(`/api/images/${item.id}`, { method: 'DELETE' });
@@ -1467,7 +1307,6 @@ window.deleteGroupFromUserModal = async function(e, groupId, userId) {
     showToast('Silinirken hata oluştu');
   }
 };
-
 window.deleteImageFromUserModal = async function(e, imageId, userId) {
   e.stopPropagation();
   if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
@@ -1477,7 +1316,6 @@ window.deleteImageFromUserModal = async function(e, imageId, userId) {
     showToast('Görsel silindi!');
     await fetchUsers();
     await fetchImages();
-    // Modal içeriğini yenile
     const userObj = usersData.find(u => u.id === userId);
     if (userObj && userImagesModal.style.display === 'flex') {
       openUserImagesModal(userId, userObj.displayName);
@@ -1486,12 +1324,9 @@ window.deleteImageFromUserModal = async function(e, imageId, userId) {
     showToast('Hata: ' + err.message, 'error');
   }
 };
-
 function closeUserImagesModal() { if (userImagesModal) userImagesModal.style.display = 'none'; }
 if (btnUserImagesClose) btnUserImagesClose.addEventListener('click', closeUserImagesModal);
 if (userImagesModal) userImagesModal.addEventListener('click', (e) => { if (e.target === userImagesModal) closeUserImagesModal(); });
-
-/* === İlk Yükleme === */
 fetchImages();
 if (isAdmin) {
   fetchKeys();

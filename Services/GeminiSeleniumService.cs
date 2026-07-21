@@ -6,7 +6,6 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using yz.Data;
 using yz.Models;
-
 namespace yz.Services
 {
     public class GeminiSeleniumService
@@ -14,37 +13,29 @@ namespace yz.Services
         private readonly ApplicationDbContext _context;
         private readonly ImageSyncService _imageSyncService;
         private readonly AiCredentialsService _credentialsService;
-
         public GeminiSeleniumService(ApplicationDbContext context, ImageSyncService imageSyncService, AiCredentialsService credentialsService)
         {
             _context = context;
             _imageSyncService = imageSyncService;
             _credentialsService = credentialsService;
         }
-
         public async Task<(int StatusCode, object Response)> GenerateImageAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false, bool useIncognito = false, string site = "gemini")
         {
             var creds = await _credentialsService.GetCredentialsAsync();
             var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
-            int currentIdx = 0; // Her zaman 1. profilden baÅŸlasÄ±n
-
+            int currentIdx = 0; 
             if (!profiles.Any())
             {
                 return (400, new { error = "Panel'den en az bir Gemini hesap profili ekleyin." });
             }
-
             int totalProfiles = profiles.Count;
-
             for (int attempt = 0; attempt < totalProfiles; attempt++)
             {
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
-
                 if (accountObj.Status == "Exhausted")
                     continue;
-
                 Console.WriteLine($"[Gemini Selenium] Denenen Profil: #{accountObj.Id} - {accountObj.AccountLabel} ({accountObj.ProfileName}), UserId: {userId}, IsAdmin: {isAdmin}");
-
                 IWebDriver? driver = null;
                 try
                 {
@@ -57,8 +48,6 @@ namespace yz.Services
                     options.AddArgument("--no-sandbox");
                     options.AddArgument("--disable-dev-shm-usage");
                     options.AddArgument("--disable-gpu");
-
-                    // KullanÄ±cÄ± geminiden resim alÄ±rken arkadaki sekmeyi/tarayÄ±cÄ±yÄ± gÃ¶rememeli
                     if (!isAdmin)
                     {
                         options.AddArgument("--window-position=-4000,-4000");
@@ -68,16 +57,13 @@ namespace yz.Services
                     {
                         options.AddArgument("--window-size=1400,900");
                     }
-
                     driver = await Task.Run(() => new ChromeDriver(options));
                     if (!isAdmin)
                     {
                         try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
                     }
-
                     Console.WriteLine($"[Gemini Selenium] Profil tarayÄ±cÄ±sÄ± aÃ§Ä±ldÄ±: {accountObj.ProfileName}");
                     driver.Navigate().GoToUrl("https://gemini.google.com/app");
-
                     IWebElement? promptBox = null;
                     int maxLoginWaitSeconds = 12;
                     for (int i = 0; i < maxLoginWaitSeconds; i++)
@@ -98,7 +84,6 @@ namespace yz.Services
                         }
                         catch { }
                     }
-
                     if (promptBox == null)
                     {
                         string currentUrl = driver.Url;
@@ -117,7 +102,6 @@ namespace yz.Services
                         if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
                         continue;
                     }
-
                     string ratioInstruction = "";
                     if (!string.IsNullOrEmpty(aspectRatio))
                     {
@@ -126,12 +110,10 @@ namespace yz.Services
                         else if (aspectRatio == "9:16") ratioInstruction = " The image MUST be strictly 9:16 portrait vertical aspect ratio.";
                         else ratioInstruction = $" The image MUST be in {aspectRatio} aspect ratio.";
                     }
-
                     string imagePrompt = $"Generate a high quality photo/image of: {prompt}.{ratioInstruction} Do not write any text explanation, just output the generated image.";
                     promptBox.Click();
                     promptBox.SendKeys(imagePrompt);
                     await Task.Delay(500);
-
                     try
                     {
                         var sendButtons = driver.FindElements(By.CssSelector("button[aria-label*='Send'], button[aria-label*='Gönder'], button.send-button, button[mattooltip*='Send']"));
@@ -154,9 +136,7 @@ namespace yz.Services
                     {
                         promptBox.SendKeys(Keys.Enter);
                     }
-
                     Console.WriteLine($"[Gemini Selenium] Prompt Gönderildi, gÃ¶rsel Ã¼retimi bekleniyor ({prompt})...");
-
                     IWebElement? generatedImg = null;
                     bool errorFound = false;
                     int maxWaitSeconds = 45;
@@ -177,10 +157,7 @@ namespace yz.Services
                                     break;
                                 }
                             }
-
                             var imgs = driver.FindElements(By.CssSelector("model-response img, message-content img, .chat-window img, img[src*='googleusercontent.com'], img[src*='ggpht.com']"));
-                            
-                            // En son Ã¼retilen gÃ¶rseli bulmak iÃ§in sondan baÅŸa doÄŸru tara
                             foreach (var img in imgs.Reverse())
                             {
                                 if (img.Displayed && img.Size.Width > 150 && img.Size.Height > 150)
@@ -193,13 +170,11 @@ namespace yz.Services
                         }
                         catch { }
                     }
-
                     if (errorFound)
                     {
                         if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
                         continue;
                     }
-
                     if (generatedImg == null)
                     {
                         Console.WriteLine($"[Gemini Selenium Limit/Timeout] Profil #{accountObj.Id} ({accountObj.AccountLabel}) 45s iÃ§inde gÃ¶rsel yakalayamadÄ± veya kota limitine takÄ±ldÄ±. Sonraki profile geÃ§iliyor...");
@@ -209,7 +184,6 @@ namespace yz.Services
                         if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
                         continue;
                     }
-
                     byte[]? imageBytes = null;
                     string fileExtension = ".png";
                     try
@@ -217,7 +191,6 @@ namespace yz.Services
                         string? src = generatedImg.GetAttribute("src");
                         if (!string.IsNullOrEmpty(src))
                         {
-                            // URL'de kalite/boyut parametresini sÄ±fÄ±rlayarak (orijinal kalite, =s0) alÄ±yoruz
                             if (src.Contains("googleusercontent.com") && src.Contains("="))
                             {
                                 int equalIndex = src.LastIndexOf('=');
@@ -230,18 +203,12 @@ namespace yz.Services
                             {
                                 src += "=s0";
                             }
-                            
                             Console.WriteLine($"[Gemini Selenium] Ä°ndirilecek orijinal gÃ¶rsel URL'si: {src}");
-
-                            // Orijinal gÃ¶rseli indirmek iÃ§in yeni sekme yerine direkt o URL'ye gidip Canvas ile base64'e Ã§evirelim
                             driver.Navigate().GoToUrl(src);
-                            
                             var js = (IJavaScriptExecutor)driver;
                             driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(30);
-                            
                             string script = @"
                                 var done = arguments[0];
-                                
                                 // Orijinal dosyayÄ± almak iÃ§in same-origin fetch kullanÄ±yoruz
                                 fetch(window.location.href)
                                     .then(response => response.blob())
@@ -256,7 +223,6 @@ namespace yz.Services
                                         // Fetch baÅŸarÄ±sÄ±z olursa, fallback olarak Canvas deneyelim
                                         var img = document.querySelector('img');
                                         if (!img) { done('ERROR: fetch failed and img not found'); return; }
-                                        
                                         function extract() {
                                             try {
                                                 var canvas = document.createElement('canvas');
@@ -269,7 +235,6 @@ namespace yz.Services
                                                 done('ERROR: ' + e.message);
                                             }
                                         }
-
                                         if (img.complete && img.naturalHeight > 0) {
                                             extract();
                                         } else {
@@ -278,16 +243,13 @@ namespace yz.Services
                                         }
                                     });
                             ";
-                            
                             var result = js.ExecuteAsyncScript(script);
                             string dataUrl = result?.ToString() ?? "";
-                            
                             if (dataUrl.StartsWith("data:image"))
                             {
                                 if (dataUrl.StartsWith("data:image/jpeg")) fileExtension = ".jpg";
                                 else if (dataUrl.StartsWith("data:image/webp")) fileExtension = ".webp";
                                 else if (dataUrl.StartsWith("data:image/gif")) fileExtension = ".gif";
-
                                 string base64Data = dataUrl.Substring(dataUrl.IndexOf(',') + 1);
                                 imageBytes = Convert.FromBase64String(base64Data);
                                 Console.WriteLine($"[Gemini Selenium] GÃ¶rsel (Orijinal Dosya) tarayÄ±cÄ± Ã¼zerinden baÅŸarÄ±yla indirildi. Format: {fileExtension}, Boyut: {imageBytes.Length} byte.");
@@ -304,26 +266,20 @@ namespace yz.Services
                     {
                         Console.WriteLine($"[Gemini Selenium] Image download failed: {ex.Message}");
                     }
-
                     if (imageBytes == null || imageBytes.Length < 1000)
                     {
                         Console.WriteLine($"[Gemini Selenium] Hata: GÃ¶rsel boyutu 1000 byte'tan kÃ¼Ã§Ã¼k veya indirilemedi.");
                         if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
                         continue;
                     }
-
                     string fileName = $"melikgazi-gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}{fileExtension}";
                     await _imageSyncService.SaveImageToAllDirectoriesAsync(imageBytes, fileName, "gemini");
-
                     string relPath = $"/generated-gemini/{fileName}";
                     string modelDisplayName = "Google Gemini Web (KalÄ±cÄ± Google Oturumu)";
-
                     accountObj.LastUsed = DateTime.Now.ToString("g");
                     creds.CurrentGeminiProfileIndex = evalIdx;
                     await _credentialsService.SaveCredentialsAsync(creds);
-
                     string keyLabelUsed = $"{accountObj.AccountLabel} ({accountObj.ProfileName})";
-
                     var savedImage = new GeneratedImage
                     {
                         Prompt = prompt,
@@ -343,9 +299,7 @@ namespace yz.Services
                     {
                         Console.WriteLine($"[DB Save Warning - Gemini Image] {dbEx.Message}");
                     }
-
                     Console.WriteLine($"[Success] Gemini Web gÃ¶rsel yakalandÄ± ve kaydedildi: {relPath} (Profil: #{accountObj.Id}, UserId: {userId})");
-
                     return (200, new
                     {
                         success = true,
@@ -377,10 +331,8 @@ namespace yz.Services
                     }
                 }
             }
-
             return (503, new { error = "TÃ¼m Google Gemini hesap profillerinin kotasÄ± dolmuÅŸ veya oturumlarÄ± aÃ§Ä±k deÄŸil. Panel Ã¼zerinden farklÄ± bir profil oturumu aÃ§Ä±n veya limitlerin sÄ±fÄ±rlanmasÄ±nÄ± bekleyin." });
         }
-
         public async Task<bool> OpenBrowserForLoginAsync(int profileId = 1)
         {
             try
@@ -388,7 +340,6 @@ namespace yz.Services
                 var creds = await _credentialsService.GetCredentialsAsync();
                 var accountObj = creds.GeminiAccounts.FirstOrDefault(a => a.Id == profileId);
                 string profName = accountObj?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
-
                 var options = new ChromeOptions();
                 string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
                 Directory.CreateDirectory(profileDir);
@@ -396,10 +347,8 @@ namespace yz.Services
                 options.AddArgument("--disable-blink-features=AutomationControlled");
                 options.AddExcludedArgument("enable-automation");
                 options.AddArgument("--window-size=1300,850");
-
                 var driver = await Task.Run(() => new ChromeDriver(options));
                 driver.Navigate().GoToUrl("https://gemini.google.com/app");
-
                 Console.WriteLine($"[Gemini Login] Chrome gÃ¶rÃ¼nÃ¼r olarak aÃ§Ä±ldÄ± ({profName}). KullanÄ±cÄ± oturum aÃ§abilir.");
                 return true;
             }

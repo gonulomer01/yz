@@ -41,7 +41,11 @@ GitHub deposunu yeni klonlayan / indiren bir kullanıcının sistemi ayağa kald
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) veya üzeri
 - Google Chrome (Gemini, ChatGPT, Copilot Selenium otomasyonu kullanılacaksa)
 
-### 2. Projeyi Klonlama ve Çalıştırma
+### 2. Yeni Dosya Yapısı & Sadeleştirme
+- **`Scripts/` Klasörü:** Projeyi temizlemek, zip halinde paketlemek ve GitHub ile eşitlemek için kullanılan tüm otomasyon `.ps1` dosyaları (powershell scriptleri) bu klasör altına toplanmıştır.
+- **Konsolide Mimari:** Daha az dosya karmaşası için küçük Modeller tek bir `AppModels.cs`, yardımcı Servisler (Database, ImageSync, vb.) ise tek bir `AppServices.cs` dosyasında birleştirilmiştir. Gereksiz yorum satırları koddaki kalite standartları uyarınca temizlenmiştir.
+
+### 3. Projeyi Klonlama ve Çalıştırma
 Terminal (`PowerShell` veya `CMD`) açarak aşağıdaki komutları sırasıyla çalıştırın:
 
 ```bash
