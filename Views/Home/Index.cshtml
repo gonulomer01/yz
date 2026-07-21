@@ -142,6 +142,33 @@
           </div>
         </div>
 
+        <!-- ChatGPT Web Bilgi Bandı -->
+        <div id="chatgpt-web-info" class="gemini-info-banner" style="display: none; --banner-accent: #10a37f;">
+          <i class="fa-solid fa-brain" style="color: #10a37f;"></i>
+          <div>
+            <strong>ChatGPT (DALL-E) Çoklu Hesap Rotasyon Modu Aktif</strong>
+            <span>Bir hesabın limiti dolduğunda sistem otomatik olarak sıradaki ChatGPT hesabına geçer.@(!isAdmin ? " Arkaplan otomasyonu gizli çalışır." : "")</span>
+          </div>
+        </div>
+
+        <!-- Copilot Web Bilgi Bandı -->
+        <div id="copilot-web-info" class="gemini-info-banner" style="display: none; --banner-accent: #00a4ef;">
+          <i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i>
+          <div>
+            <strong>Microsoft Copilot (DALL-E 3) Çoklu Hesap Rotasyon Modu Aktif</strong>
+            <span>Bir hesabın limiti dolduğunda sistem otomatik olarak sıradaki Copilot hesabına geçer.@(!isAdmin ? " Arkaplan otomasyonu gizli çalışır." : "")</span>
+          </div>
+        </div>
+
+        <!-- Üçlü Üretim Bilgi Bandı -->
+        <div id="triple-ai-info" class="gemini-info-banner" style="display: none; --banner-accent: #f59e0b;">
+          <i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i>
+          <div>
+            <strong>Üçlü AI Üretim Modu — Gemini + ChatGPT + Copilot</strong>
+            <span>Üç platformdan da aynı anda görsel üretilir. Sonuçta 3 farklı AI'dan gelen görselleri karşılaştırabilir ve hepsini indirebilirsiniz.</span>
+          </div>
+        </div>
+
         <!-- Üretim Ayarları -->
         <div class="settings-row">
           <div class="setting-chip glass-card">
@@ -150,6 +177,11 @@
               <select id="model-select">
                 <optgroup label="🤖 Web Tarayıcı AI Otomasyonu">
                   <option value="gemini-web-profile">🤖 Google Gemini Web (Çoklu Hesap Rotasyon)</option>
+                  <option value="chatgpt-web-profile">🤖 ChatGPT Web — DALL-E (Çoklu Hesap)</option>
+                  <option value="copilot-web-profile">🤖 Microsoft Copilot — DALL-E 3 (Çoklu Hesap)</option>
+                </optgroup>
+                <optgroup label="🚀 Çoklu AI Üretim">
+                  <option value="triple-ai">🚀 Üçlü Üretim (Gemini + ChatGPT + Copilot)</option>
                 </optgroup>
                 <optgroup label="🌟 Ücretsiz & Sınırsız">
                   <option value="pollinations-flux-realism">FLUX.1 Realism (En Kaliteli) — Ücretsiz</option>
@@ -271,6 +303,34 @@
             <div class="keys-grid" id="gemini-accounts-grid"></div>
           </div>
 
+          <!-- ChatGPT Hesapları -->
+          <div class="glass-card dash-section-card">
+            <div class="dash-section-header">
+              <div>
+                <h3><i class="fa-solid fa-brain" style="color: var(--color-secondary);"></i> ChatGPT (DALL-E) — Çoklu Hesap Havuzu</h3>
+                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+              </div>
+              <button id="btn-add-chatgpt-acc" class="action-btn primary-btn">
+                <i class="fa-solid fa-plus"></i> Yeni Hesap
+              </button>
+            </div>
+            <div class="keys-grid" id="chatgpt-accounts-grid"></div>
+          </div>
+
+          <!-- Copilot Hesapları -->
+          <div class="glass-card dash-section-card">
+            <div class="dash-section-header">
+              <div>
+                <h3><i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i> Microsoft Copilot — Çoklu Hesap Havuzu</h3>
+                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+              </div>
+              <button id="btn-add-copilot-acc" class="action-btn primary-btn">
+                <i class="fa-solid fa-plus"></i> Yeni Hesap
+              </button>
+            </div>
+            <div class="keys-grid" id="copilot-accounts-grid"></div>
+          </div>
+
           <!-- Stability Anahtarları -->
           <div class="glass-card dash-section-card">
             <div class="dash-section-header">
@@ -357,6 +417,73 @@
               </form>
             </div>
           </div>
+
+          <!-- ChatGPT Düzenleme Modalı -->
+          <div id="chatgpt-edit-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> ChatGPT Profil Düzenle</h3>
+                <button id="btn-chatgpt-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="chatgpt-edit-form">
+                <input type="hidden" id="chatgpt-edit-id">
+                <div class="field">
+                  <label for="chatgpt-edit-label">Hesap Adı</label>
+                  <input type="text" id="chatgpt-edit-label" placeholder="Ör: ChatGPT Hesabı (#1)">
+                </div>
+                <div class="field">
+                  <label for="chatgpt-edit-status">Durum</label>
+                  <div class="select-wrap">
+                    <select id="chatgpt-edit-status">
+                      <option value="Active">Aktif</option>
+                      <option value="Exhausted">Pasif / Limit Doldu</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-chatgpt-modal-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Copilot Düzenleme Modalı -->
+          <div id="copilot-edit-modal" class="modal-overlay" style="display:none">
+            <div class="modal-box glass-card">
+              <div class="modal-header">
+                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> Copilot Profil Düzenle</h3>
+                <button id="btn-copilot-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <form id="copilot-edit-form">
+                <input type="hidden" id="copilot-edit-id">
+                <div class="field">
+                  <label for="copilot-edit-label">Hesap Adı</label>
+                  <input type="text" id="copilot-edit-label" placeholder="Ör: Copilot Hesabı (#1)">
+                </div>
+                <div class="field">
+                  <label for="copilot-edit-status">Durum</label>
+                  <div class="select-wrap">
+                    <select id="copilot-edit-status">
+                      <option value="Active">Aktif</option>
+                      <option value="Exhausted">Pasif / Limit Doldu</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" id="btn-copilot-modal-cancel" class="action-btn">İptal</button>
+                  <button type="submit" class="action-btn primary-btn">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
 
           <!-- Kullanıcı Düzenleme Modalı -->
           <div id="user-edit-modal" class="modal-overlay" style="display:none">
@@ -482,6 +609,23 @@
       </div>
     </div>
 
+    <div id="triple-group-modal" class="modal-overlay" style="display:none">
+      <div class="modal-box glass-card" style="width: 1000px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-layer-group" style="color: var(--color-primary);"></i> Üçlü Üretim Sonuçları</h3>
+          <button id="btn-triple-group-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="padding: 15px; flex: 1; overflow-y: auto;">
+          <p style="margin-bottom: 15px; color: var(--color-text-muted);" id="triple-group-prompt"></p>
+          <div id="triple-group-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; overflow-x: auto;">
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top: 0;">
+          <button type="button" id="btn-triple-group-ok" class="action-btn primary-btn"><i class="fa-solid fa-check"></i> Tamam</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Sağdan Açılan Galeri Paneli -->
@@ -496,8 +640,11 @@
     </div>
     <div class="gallery-folder-tabs" id="gallery-folder-tabs">
       <button class="folder-tab active" data-folder="all"><i class="fa-solid fa-layer-group"></i> Tümü</button>
+      <button class="folder-tab" data-folder="triple"><i class="fa-solid fa-object-group"></i> Üçlü</button>
       <button class="folder-tab" data-folder="stability"><i class="fa-solid fa-key"></i> Stability AI</button>
       <button class="folder-tab" data-folder="gemini"><i class="fa-brands fa-google"></i> Gemini Web</button>
+      <button class="folder-tab" data-folder="chatgpt"><i class="fa-solid fa-robot"></i> ChatGPT</button>
+      <button class="folder-tab" data-folder="copilot"><i class="fa-brands fa-microsoft"></i> Copilot</button>
       <button class="folder-tab" data-folder="free"><i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz</button>
     </div>
     <div id="gallery-grid" class="gallery-grid-panel"></div>

@@ -29,6 +29,24 @@ namespace yz.Services
         public string LastUsed { get; set; } = "";
     }
 
+    public class ChatGptAccountItem
+    {
+        public int Id { get; set; }
+        public string ProfileName { get; set; } = "";
+        public string AccountLabel { get; set; } = "";
+        public string Status { get; set; } = "Active";
+        public string LastUsed { get; set; } = "";
+    }
+
+    public class CopilotAccountItem
+    {
+        public int Id { get; set; }
+        public string ProfileName { get; set; } = "";
+        public string AccountLabel { get; set; } = "";
+        public string Status { get; set; } = "Active";
+        public string LastUsed { get; set; } = "";
+    }
+
     public class AiCredentialsData
     {
         public List<StabilityKeyItem> StabilityApiKeys { get; set; } = new();
@@ -36,10 +54,15 @@ namespace yz.Services
         public string LastResetDate { get; set; } = "";
         public List<GeminiAccountItem> GeminiAccounts { get; set; } = new();
         public int CurrentGeminiProfileIndex { get; set; } = 0;
+        public List<ChatGptAccountItem> ChatGptAccounts { get; set; } = new();
+        public int CurrentChatGptProfileIndex { get; set; } = 0;
+        public List<CopilotAccountItem> CopilotAccounts { get; set; } = new();
+        public int CurrentCopilotProfileIndex { get; set; } = 0;
     }
 
     public class AiCredentialsService
     {
+        private static readonly System.Threading.SemaphoreSlim _fileLock = new System.Threading.SemaphoreSlim(1, 1);
         private readonly ApplicationDbContext _context;
 
         public AiCredentialsService(ApplicationDbContext context)
@@ -49,12 +72,15 @@ namespace yz.Services
 
         public async Task<AiCredentialsData> GetCredentialsAsync()
         {
-            string projectFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ai_credentials.json");
-            string baseFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ai_credentials.json");
+            await _fileLock.WaitAsync();
+            try
+            {
+                string projectFilePath = Path.Combine(Directory.GetCurrentDirectory(), "ai_credentials.json");
+                string baseFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ai_credentials.json");
 
-            string activePath = File.Exists(projectFilePath) ? projectFilePath : (File.Exists(baseFilePath) ? baseFilePath : projectFilePath);
+                string activePath = File.Exists(projectFilePath) ? projectFilePath : (File.Exists(baseFilePath) ? baseFilePath : projectFilePath);
 
-            if (!File.Exists(activePath))
+                if (!File.Exists(activePath))
             {
                 var data = new AiCredentialsData
                 {
@@ -131,6 +157,40 @@ namespace yz.Services
                         await SaveCredentialsAsync(data);
                     }
 
+                    if (data.ChatGptAccounts == null) data.ChatGptAccounts = new List<ChatGptAccountItem>();
+                    if (data.ChatGptAccounts.Count == 0)
+                    {
+                        for (int i = 1; i <= 2; i++)
+                        {
+                            data.ChatGptAccounts.Add(new ChatGptAccountItem
+                            {
+                                Id = i,
+                                ProfileName = $"ChatGptChromeProfile_{i}",
+                                AccountLabel = $"ChatGPT Hesap #{i}" + (i == 1 ? " (Ana Profil)" : ""),
+                                Status = "Active",
+                                LastUsed = ""
+                            });
+                        }
+                        await SaveCredentialsAsync(data);
+                    }
+
+                    if (data.CopilotAccounts == null) data.CopilotAccounts = new List<CopilotAccountItem>();
+                    if (data.CopilotAccounts.Count == 0)
+                    {
+                        for (int i = 1; i <= 2; i++)
+                        {
+                            data.CopilotAccounts.Add(new CopilotAccountItem
+                            {
+                                Id = i,
+                                ProfileName = $"CopilotChromeProfile_{i}",
+                                AccountLabel = $"Copilot Hesap #{i}" + (i == 1 ? " (Ana Profil)" : ""),
+                                Status = "Active",
+                                LastUsed = ""
+                            });
+                        }
+                        await SaveCredentialsAsync(data);
+                    }
+
                     try { await SyncWithDatabaseAsync(data); } catch { }
                     return data;
                 }
@@ -141,9 +201,15 @@ namespace yz.Services
                 }
             }
         }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
 
         public async Task SaveCredentialsAsync(AiCredentialsData data)
         {
+            await _fileLock.WaitAsync();
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
@@ -168,6 +234,10 @@ namespace yz.Services
             {
                 Console.WriteLine($"[AiCredentialsService Save Error] {ex.Message}");
             }
+            finally
+            {
+                _fileLock.Release();
+            }
         }
 
         public async Task CheckDailyResetAsync()
@@ -188,6 +258,16 @@ namespace yz.Services
                     g.Status = "Active";
                 }
                 data.CurrentGeminiProfileIndex = 0;
+                if (data.ChatGptAccounts != null)
+                {
+                    foreach (var c in data.ChatGptAccounts) c.Status = "Active";
+                }
+                data.CurrentChatGptProfileIndex = 0;
+                if (data.CopilotAccounts != null)
+                {
+                    foreach (var cp in data.CopilotAccounts) cp.Status = "Active";
+                }
+                data.CurrentCopilotProfileIndex = 0;
                 await SaveCredentialsAsync(data);
             }
         }

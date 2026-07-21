@@ -26,7 +26,7 @@ namespace yz.Services
         {
             var creds = await _credentialsService.GetCredentialsAsync();
             var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
-            int currentIdx = creds.CurrentGeminiProfileIndex;
+            int currentIdx = 0; // Her zaman 1. profilden baÅŸlasÄ±n
 
             if (!profiles.Any())
             {
@@ -58,7 +58,7 @@ namespace yz.Services
                     options.AddArgument("--disable-dev-shm-usage");
                     options.AddArgument("--disable-gpu");
 
-                    // Kullanıcı geminiden resim alırken arkadaki sekmeyi/tarayıcıyı görememeli
+                    // KullanÄ±cÄ± geminiden resim alÄ±rken arkadaki sekmeyi/tarayÄ±cÄ±yÄ± gÃ¶rememeli
                     if (!isAdmin)
                     {
                         options.AddArgument("--window-position=-4000,-4000");
@@ -75,7 +75,7 @@ namespace yz.Services
                         try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
                     }
 
-                    Console.WriteLine($"[Gemini Selenium] Profil tarayıcısı açıldı: {accountObj.ProfileName}");
+                    Console.WriteLine($"[Gemini Selenium] Profil tarayÄ±cÄ±sÄ± aÃ§Ä±ldÄ±: {accountObj.ProfileName}");
                     driver.Navigate().GoToUrl("https://gemini.google.com/app");
 
                     IWebElement? promptBox = null;
@@ -109,7 +109,7 @@ namespace yz.Services
                             {
                                 return (401, new
                                 {
-                                    error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için Google giriş ekranı belirdi. Çözüm: Paneldeki Gemini Hesap listesinden 'Oturum Aç (Chrome'u Aç)' butonuna tıklayarak açılan pencereden bir kez hesabınıza giriş yapın, ardından tekrar deneyin."
+                                    error = $"'{accountObj.AccountLabel}' profilinde oturum aÃ§Ä±lmadÄ±ÄŸÄ± iÃ§in Google giriÅŸ ekranÄ± belirdi. Ã‡Ã¶zÃ¼m: Paneldeki Gemini Hesap listesinden 'Oturum AÃ§ (Chrome'u AÃ§)' butonuna tÄ±klayarak aÃ§Ä±lan pencereden bir kez hesabÄ±nÄ±za giriÅŸ yapÄ±n, ardÄ±ndan tekrar deneyin."
                                 });
                             }
                             continue;
@@ -118,7 +118,16 @@ namespace yz.Services
                         continue;
                     }
 
-                    string imagePrompt = $"Generate a high quality photo/image of: {prompt}. Do not write text explanation, just create the image.";
+                    string ratioInstruction = "";
+                    if (!string.IsNullOrEmpty(aspectRatio))
+                    {
+                        if (aspectRatio == "1:1") ratioInstruction = " The image MUST be strictly 1:1 square aspect ratio.";
+                        else if (aspectRatio == "16:9") ratioInstruction = " The image MUST be strictly 16:9 landscape widescreen aspect ratio.";
+                        else if (aspectRatio == "9:16") ratioInstruction = " The image MUST be strictly 9:16 portrait vertical aspect ratio.";
+                        else ratioInstruction = $" The image MUST be in {aspectRatio} aspect ratio.";
+                    }
+
+                    string imagePrompt = $"Generate a high quality photo/image of: {prompt}.{ratioInstruction} Do not write any text explanation, just output the generated image.";
                     promptBox.Click();
                     promptBox.SendKeys(imagePrompt);
                     await Task.Delay(500);
@@ -146,17 +155,33 @@ namespace yz.Services
                         promptBox.SendKeys(Keys.Enter);
                     }
 
-                    Console.WriteLine($"[Gemini Selenium] Prompt gönderildi, görsel üretimi bekleniyor ({prompt})...");
+                    Console.WriteLine($"[Gemini Selenium] Prompt Gönderildi, gÃ¶rsel Ã¼retimi bekleniyor ({prompt})...");
 
                     IWebElement? generatedImg = null;
+                    bool errorFound = false;
                     int maxWaitSeconds = 45;
                     for (int i = 0; i < maxWaitSeconds; i++)
                     {
                         await Task.Delay(1000);
                         try
                         {
+                            var msgContents = driver.FindElements(By.CssSelector("message-content, model-response"));
+                            var lastMsg = msgContents.LastOrDefault();
+                            if (lastMsg != null)
+                            {
+                                string text = lastMsg.Text.ToLower();
+                                if (text.Contains("Ã¼retilemedi") || text.Contains("oluÅŸturamÄ±yorum") || text.Contains("can't generate") || text.Contains("cannot generate") || text.Contains("could not create"))
+                                {
+                                    errorFound = true;
+                                    Console.WriteLine($"[Gemini Selenium] Hata metni algÄ±landÄ±: GÃ¶rsel Ã¼retilemedi. Sonraki hesaba geÃ§iliyor...");
+                                    break;
+                                }
+                            }
+
                             var imgs = driver.FindElements(By.CssSelector("model-response img, message-content img, .chat-window img, img[src*='googleusercontent.com'], img[src*='ggpht.com']"));
-                            foreach (var img in imgs)
+                            
+                            // En son Ã¼retilen gÃ¶rseli bulmak iÃ§in sondan baÅŸa doÄŸru tara
+                            foreach (var img in imgs.Reverse())
                             {
                                 if (img.Displayed && img.Size.Width > 150 && img.Size.Height > 150)
                                 {
@@ -169,9 +194,15 @@ namespace yz.Services
                         catch { }
                     }
 
+                    if (errorFound)
+                    {
+                        if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
+                        continue;
+                    }
+
                     if (generatedImg == null)
                     {
-                        Console.WriteLine($"[Gemini Selenium Limit/Timeout] Profil #{accountObj.Id} ({accountObj.AccountLabel}) 45s içinde görsel yakalayamadı veya kota limitine takıldı. Sonraki profile geçiliyor...");
+                        Console.WriteLine($"[Gemini Selenium Limit/Timeout] Profil #{accountObj.Id} ({accountObj.AccountLabel}) 45s iÃ§inde gÃ¶rsel yakalayamadÄ± veya kota limitine takÄ±ldÄ±. Sonraki profile geÃ§iliyor...");
                         accountObj.Status = "Exhausted";
                         creds.CurrentGeminiProfileIndex = (evalIdx + 1) % totalProfiles;
                         await _credentialsService.SaveCredentialsAsync(creds);
@@ -179,29 +210,113 @@ namespace yz.Services
                         continue;
                     }
 
-                    byte[] imageBytes;
+                    byte[]? imageBytes = null;
+                    string fileExtension = ".png";
                     try
                     {
-                        var screenshot = ((ITakesScreenshot)generatedImg).GetScreenshot();
-                        imageBytes = screenshot.AsByteArray;
+                        string? src = generatedImg.GetAttribute("src");
+                        if (!string.IsNullOrEmpty(src))
+                        {
+                            // URL'de kalite/boyut parametresini sÄ±fÄ±rlayarak (orijinal kalite, =s0) alÄ±yoruz
+                            if (src.Contains("googleusercontent.com") && src.Contains("="))
+                            {
+                                int equalIndex = src.LastIndexOf('=');
+                                if (equalIndex > src.LastIndexOf('/')) 
+                                {
+                                    src = src.Substring(0, equalIndex) + "=s0";
+                                }
+                            }
+                            else if (src.Contains("googleusercontent.com") && !src.Contains("="))
+                            {
+                                src += "=s0";
+                            }
+                            
+                            Console.WriteLine($"[Gemini Selenium] Ä°ndirilecek orijinal gÃ¶rsel URL'si: {src}");
+
+                            // Orijinal gÃ¶rseli indirmek iÃ§in yeni sekme yerine direkt o URL'ye gidip Canvas ile base64'e Ã§evirelim
+                            driver.Navigate().GoToUrl(src);
+                            
+                            var js = (IJavaScriptExecutor)driver;
+                            driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(30);
+                            
+                            string script = @"
+                                var done = arguments[0];
+                                
+                                // Orijinal dosyayÄ± almak iÃ§in same-origin fetch kullanÄ±yoruz
+                                fetch(window.location.href)
+                                    .then(response => response.blob())
+                                    .then(blob => {
+                                        var reader = new FileReader();
+                                        reader.onloadend = function() {
+                                            done(reader.result);
+                                        };
+                                        reader.readAsDataURL(blob);
+                                    })
+                                    .catch(err => {
+                                        // Fetch baÅŸarÄ±sÄ±z olursa, fallback olarak Canvas deneyelim
+                                        var img = document.querySelector('img');
+                                        if (!img) { done('ERROR: fetch failed and img not found'); return; }
+                                        
+                                        function extract() {
+                                            try {
+                                                var canvas = document.createElement('canvas');
+                                                canvas.width = img.naturalWidth;
+                                                canvas.height = img.naturalHeight;
+                                                var ctx = canvas.getContext('2d');
+                                                ctx.drawImage(img, 0, 0);
+                                                done(canvas.toDataURL('image/png'));
+                                            } catch(e) {
+                                                done('ERROR: ' + e.message);
+                                            }
+                                        }
+
+                                        if (img.complete && img.naturalHeight > 0) {
+                                            extract();
+                                        } else {
+                                            img.onload = extract;
+                                            img.onerror = function() { done('ERROR: fallback failed'); };
+                                        }
+                                    });
+                            ";
+                            
+                            var result = js.ExecuteAsyncScript(script);
+                            string dataUrl = result?.ToString() ?? "";
+                            
+                            if (dataUrl.StartsWith("data:image"))
+                            {
+                                if (dataUrl.StartsWith("data:image/jpeg")) fileExtension = ".jpg";
+                                else if (dataUrl.StartsWith("data:image/webp")) fileExtension = ".webp";
+                                else if (dataUrl.StartsWith("data:image/gif")) fileExtension = ".gif";
+
+                                string base64Data = dataUrl.Substring(dataUrl.IndexOf(',') + 1);
+                                imageBytes = Convert.FromBase64String(base64Data);
+                                Console.WriteLine($"[Gemini Selenium] GÃ¶rsel (Orijinal Dosya) tarayÄ±cÄ± Ã¼zerinden baÅŸarÄ±yla indirildi. Format: {fileExtension}, Boyut: {imageBytes.Length} byte.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[Gemini Selenium] JS Canvas baÅŸarÄ±sÄ±z oldu ({dataUrl}), HttpClient deneniyor...");
+                                using var client = new System.Net.Http.HttpClient();
+                                imageBytes = await client.GetByteArrayAsync(src);
+                            }
+                        }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
-                        imageBytes = screenshot.AsByteArray;
+                        Console.WriteLine($"[Gemini Selenium] Image download failed: {ex.Message}");
                     }
 
                     if (imageBytes == null || imageBytes.Length < 1000)
                     {
+                        Console.WriteLine($"[Gemini Selenium] Hata: GÃ¶rsel boyutu 1000 byte'tan kÃ¼Ã§Ã¼k veya indirilemedi.");
                         if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } driver = null; }
                         continue;
                     }
 
-                    string fileName = $"melikgazi-gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                    string fileName = $"melikgazi-gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}{fileExtension}";
                     await _imageSyncService.SaveImageToAllDirectoriesAsync(imageBytes, fileName, "gemini");
 
                     string relPath = $"/generated-gemini/{fileName}";
-                    string modelDisplayName = "Google Gemini Web (Kalıcı Google Oturumu)";
+                    string modelDisplayName = "Google Gemini Web (KalÄ±cÄ± Google Oturumu)";
 
                     accountObj.LastUsed = DateTime.Now.ToString("g");
                     creds.CurrentGeminiProfileIndex = evalIdx;
@@ -229,7 +344,7 @@ namespace yz.Services
                         Console.WriteLine($"[DB Save Warning - Gemini Image] {dbEx.Message}");
                     }
 
-                    Console.WriteLine($"[Success] Gemini Web görsel yakalandı ve kaydedildi: {relPath} (Profil: #{accountObj.Id}, UserId: {userId})");
+                    Console.WriteLine($"[Success] Gemini Web gÃ¶rsel yakalandÄ± ve kaydedildi: {relPath} (Profil: #{accountObj.Id}, UserId: {userId})");
 
                     return (200, new
                     {
@@ -256,14 +371,14 @@ namespace yz.Services
                         {
                             driver.Quit();
                             driver.Dispose();
-                            Console.WriteLine($"[Gemini Selenium] Profil #{accountObj.Id} tarayıcısı kapatıldı.");
+                            Console.WriteLine($"[Gemini Selenium] Profil #{accountObj.Id} tarayÄ±cÄ±sÄ± kapatÄ±ldÄ±.");
                         }
                         catch { }
                     }
                 }
             }
 
-            return (503, new { error = "Tüm Google Gemini hesap profillerinin kotası dolmuş veya oturumları açık değil. Panel üzerinden farklı bir profil oturumu açın veya limitlerin sıfırlanmasını bekleyin." });
+            return (503, new { error = "TÃ¼m Google Gemini hesap profillerinin kotasÄ± dolmuÅŸ veya oturumlarÄ± aÃ§Ä±k deÄŸil. Panel Ã¼zerinden farklÄ± bir profil oturumu aÃ§Ä±n veya limitlerin sÄ±fÄ±rlanmasÄ±nÄ± bekleyin." });
         }
 
         public async Task<bool> OpenBrowserForLoginAsync(int profileId = 1)
@@ -285,7 +400,7 @@ namespace yz.Services
                 var driver = await Task.Run(() => new ChromeDriver(options));
                 driver.Navigate().GoToUrl("https://gemini.google.com/app");
 
-                Console.WriteLine($"[Gemini Login] Chrome görünür olarak açıldı ({profName}). Kullanıcı oturum açabilir.");
+                Console.WriteLine($"[Gemini Login] Chrome gÃ¶rÃ¼nÃ¼r olarak aÃ§Ä±ldÄ± ({profName}). KullanÄ±cÄ± oturum aÃ§abilir.");
                 return true;
             }
             catch (Exception ex)

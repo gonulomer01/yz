@@ -23,7 +23,7 @@ namespace yz.Services
             var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             string subFolder = category.ToLowerInvariant() switch
             {
-                "gemini" => "generated-gemini",
+                "gemini" => "generated-gemini", "chatgpt" => "generated-chatgpt", "copilot" => "generated-copilot",
                 "free" => "generated-free",
                 _ => "generated-stability"
             };
@@ -36,7 +36,7 @@ namespace yz.Services
         {
             try
             {
-                GetTargetDirectories("gemini");
+                GetTargetDirectories("gemini"); GetTargetDirectories("chatgpt"); GetTargetDirectories("copilot");
                 GetTargetDirectories("free");
                 GetTargetDirectories("stability");
             }
@@ -101,7 +101,7 @@ namespace yz.Services
                     }
 
                     var fileName = Path.GetFileName(imagePath);
-                    var allFolders = new[] { "generated-stability", "generated-gemini", "generated-free", "generated" };
+                    var allFolders = new[] { "generated-stability", "generated-gemini", "generated-chatgpt", "generated-copilot", "generated-free", "generated" };
                     foreach (var f in allFolders)
                     {
                         var filePath = Path.Combine(webRoot, f, fileName);
@@ -140,7 +140,7 @@ namespace yz.Services
                         else
                         {
                             var fileName = Path.GetFileName(img.ImagePath);
-                            var folders = new[] { "generated-stability", "generated-gemini", "generated-free", "generated" };
+                            var folders = new[] { "generated-stability", "generated-gemini", "generated-chatgpt", "generated-copilot", "generated-free", "generated" };
                             foreach (var f in folders)
                             {
                                 var checkPath = Path.Combine(webRoot, f, fileName);
@@ -162,7 +162,7 @@ namespace yz.Services
                     }
                 }
 
-                var targetFolders = new[] { "generated-stability", "generated-gemini", "generated-free", "generated" };
+                var targetFolders = new[] { "generated-stability", "generated-gemini", "generated-chatgpt", "generated-copilot", "generated-free", "generated" };
                 var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
                 int adminId = adminUser != null ? adminUser.Id : 1;
 
@@ -194,7 +194,7 @@ namespace yz.Services
                                 };
                                 string keyLabelName = folder switch
                                 {
-                                    "generated-gemini" => "Google Gemini",
+                                    "generated-gemini" => "Google Gemini", "generated-chatgpt" => "ChatGPT (DALL-E 3)", "generated-copilot" => "Microsoft Copilot (Bing)",
                                     "generated-free" => "Pollinations AI",
                                     "generated-stability" => "Stability AI",
                                     _ => "Genel"

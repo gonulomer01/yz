@@ -170,10 +170,15 @@ if (btnRandom) btnRandom.addEventListener('click', () => {
 
 if (modelSelect) {
   modelSelect.addEventListener('change', () => {
+    const val = modelSelect.value;
     const geminiInfo = document.getElementById('gemini-web-info');
-    if (geminiInfo) {
-      geminiInfo.style.display = modelSelect.value === 'gemini-web-profile' ? 'flex' : 'none';
-    }
+    const chatgptInfo = document.getElementById('chatgpt-web-info');
+    const copilotInfo = document.getElementById('copilot-web-info');
+    const tripleInfo = document.getElementById('triple-ai-info');
+    if (geminiInfo) geminiInfo.style.display = val === 'gemini-web-profile' ? 'flex' : 'none';
+    if (chatgptInfo) chatgptInfo.style.display = val === 'chatgpt-web-profile' ? 'flex' : 'none';
+    if (copilotInfo) copilotInfo.style.display = val === 'copilot-web-profile' ? 'flex' : 'none';
+    if (tripleInfo) tripleInfo.style.display = val === 'triple-ai' ? 'flex' : 'none';
   });
 }
 
@@ -225,7 +230,10 @@ async function handleGenerate(e) {
   if (canvasError) canvasError.style.display = 'none';
   if (canvasLoading) canvasLoading.style.display = 'flex';
 
-  if (modelSelect.value.startsWith('gemini-')) {
+  const selectedModel = modelSelect.value;
+  if (selectedModel === 'triple-ai') {
+    loadingStatus.textContent = '🚀 Üçlü üretim: Gemini + ChatGPT + Copilot aynı anda çalışıyor…';
+  } else if (selectedModel.startsWith('gemini-') || selectedModel.startsWith('chatgpt-') || selectedModel.startsWith('copilot-')) {
     loadingStatus.textContent = '🤖 Selenium tarayıcı otomasyonu çalışıyor…';
   } else {
     loadingStatus.textContent = 'API sunucularına bağlanılıyor…';
@@ -250,11 +258,28 @@ async function handleGenerate(e) {
 
     const data = await res.json();
     if (data.success) {
-      addStudioImageToFeed(data.image, data.modelUsed, data.keyUsedLabel, true);
-      showToast('Görsel başarıyla üretildi!');
-
-      await fetchImages();
-      if (isAdmin) await fetchKeys();
+      if (data.multiMode && data.results) {
+        if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
+        if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
+        if (typeof canvasSuccess !== 'undefined' && canvasSuccess) canvasSuccess.style.display = 'none';
+        
+        await fetchImages();
+        openTripleGroupModal(data.groupId);
+        if (data.failures && data.failures.length > 0) {
+          let failMsg = "Üretim tamamlandı ancak bazıları başarısız oldu:\n";
+          data.failures.forEach(f => {
+            failMsg += "- " + f.sourceSite + ": " + (f.error === 'login_required' ? 'Oturum açılmamış' : f.error) + "\n";
+          });
+          showToast(failMsg);
+        } else {
+          showToast("Çoklu üretim başarılı! Görseller kaydedildi.");
+        }
+      } else {
+        addStudioImageToFeed(data.image, data.modelUsed, data.keyUsedLabel, true);
+        showToast('Görsel başarıyla üretildi!');
+        await fetchImages();
+        if (isAdmin) await fetchKeys();
+      }
     }
   } catch (err) {
     if (canvasLoading) canvasLoading.style.display = 'none';
@@ -316,38 +341,138 @@ function renderGallery() {
 
   const filteredImages = currentGalleryFolder === 'all'
     ? persistentImages
-    : persistentImages.filter(item => item.folder === currentGalleryFolder);
+    : (currentGalleryFolder === 'triple'
+        ? persistentImages.filter(item => item.groupId)
+        : persistentImages.filter(item => item.folder === currentGalleryFolder && !item.groupId));
 
   if (filteredImages.length === 0) {
     const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasörü)`;
     galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bölümde${folderLabel} henüz görsel bulunmuyor.</p></div>`;
     return;
   }
+  
   galleryGrid.innerHTML = '';
+  
+  const groupedImages = [];
+  const groupMap = new Map();
+  
   filteredImages.forEach(item => {
+    if (item.groupId) {
+      if (!groupMap.has(item.groupId)) {
+        groupMap.set(item.groupId, { isGroup: true, groupId: item.groupId, prompt: item.prompt, items: [], createdAt: item.createdAt });
+        groupedImages.push(groupMap.get(item.groupId));
+      }
+      groupMap.get(item.groupId).items.push(item);
+    } else {
+      groupedImages.push(item);
+    }
+  });
+
+  groupedImages.forEach(groupOrItem => {
     const div = document.createElement('div');
     div.className = 'gallery-item';
 
-    const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : 'Genel'));
-    const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : 'badge-stability');
+    if (groupOrItem.isGroup) {
+       div.innerHTML = `
+         <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
+           ${groupOrItem.items.map((it, idx) => {
+              if (idx > 2) return '';
+              return `<img src="${it.image}" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">`;
+           }).join('')}
+         </div>
+         <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+         <div class="gallery-overlay" style="z-index: 10;">${(groupOrItem.prompt || '').substring(0,40)}...</div>
+         <button class="btn-del-img" title="Sil" onclick="deleteGroup(event, '${groupOrItem.groupId}')" style="z-index: 10;">
+           <i class="fa-solid fa-trash-can"></i>
+         </button>
+       `;
+       div.addEventListener('click', (e) => {
+         if (e.target.closest('.btn-del-img')) return;
+         openTripleGroupModal(groupOrItem.groupId);
+       });
+    } else {
+       const item = groupOrItem;
+       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+       const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
 
-    div.innerHTML = `
-      <img src="${item.image}" alt="Üretilen görsel">
-      <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
-      <div class="gallery-overlay">${item.model}</div>
-      <button class="btn-del-img" title="Sil" onclick="deleteImage(event, ${item.id})">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
-    `;
-    div.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-del-img')) return;
-      closeGallery();
-      switchPage('studio');
-      addStudioImageToFeed(item.image, item.model, item.key, true);
-    });
+       div.innerHTML = `
+         <img src="${item.image}" alt="Üretilen görsel">
+         <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
+         <div class="gallery-overlay">${item.model}</div>
+         <button class="btn-del-img" title="Sil" onclick="deleteImage(event, ${item.id})">
+           <i class="fa-solid fa-trash-can"></i>
+         </button>
+       `;
+       div.addEventListener('click', (e) => {
+         if (e.target.closest('.btn-del-img')) return;
+         closeGallery();
+         switchPage('studio');
+         addStudioImageToFeed(item.image, item.model, item.key, true);
+       });
+    }
     galleryGrid.appendChild(div);
   });
 }
+
+async function deleteGroup(e, groupId) {
+  e.stopPropagation();
+  if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
+  
+  const groupItems = persistentImages.filter(i => i.groupId === groupId);
+  try {
+    for (const item of groupItems) {
+      await fetch(`/api/images/${item.id}`, { method: 'DELETE' });
+    }
+    showToast('Çoklu üretim silindi!');
+    await fetchImages();
+  } catch (err) {
+    showToast('Silinirken hata oluştu');
+  }
+}
+
+function openTripleGroupModal(groupId) {
+  const group = persistentImages.filter(i => i.groupId === groupId);
+  if (!group || group.length === 0) return;
+  
+  const promptEl = document.getElementById('triple-group-prompt');
+  if (promptEl) promptEl.textContent = "Prompt: " + group[0].prompt;
+  
+  const container = document.getElementById('triple-group-container');
+  if (container) {
+    container.innerHTML = '';
+    group.forEach(res => {
+      const col = document.createElement('div');
+      col.style.cssText = "background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column;";
+      col.innerHTML = `
+        <img src="${res.image}" alt="Generated" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+        <h6 style="color: #fff; margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
+        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
+        <a href="${res.image}" download class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
+          <i class="fa-solid fa-download"></i> İndir
+        </a>
+      `;
+      container.appendChild(col);
+    });
+  }
+  
+  const modal = document.getElementById('triple-group-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+const btnTripleGroupClose = document.getElementById('btn-triple-group-close');
+if (btnTripleGroupClose) {
+  btnTripleGroupClose.addEventListener('click', () => {
+    document.getElementById('triple-group-modal').style.display = 'none';
+  });
+}
+const btnTripleGroupOk = document.getElementById('btn-triple-group-ok');
+if (btnTripleGroupOk) {
+  btnTripleGroupOk.addEventListener('click', () => {
+    document.getElementById('triple-group-modal').style.display = 'none';
+  });
+}
+
+
 
 async function deleteImage(e, id) {
   e.stopPropagation();
@@ -639,6 +764,234 @@ window.deleteGeminiAccount = async function(id) {
     }
   } catch (err) { showToast(err.message, 'error'); }
 };
+
+
+/* === ChatGPT Hesap Yönetimi === */
+let chatgptAccountsData = [];
+
+async function loadChatGptAccounts() {
+  if (!isAdmin) return;
+  try {
+    const res = await fetch('/api/chatgpt-accounts');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    chatgptAccountsData = data.accounts || [];
+    renderChatGptAccounts();
+  } catch { }
+}
+
+function renderChatGptAccounts() {
+  const grid = document.getElementById('chatgpt-accounts-grid');
+  if (!grid || !isAdmin) return;
+  grid.innerHTML = '';
+  chatgptAccountsData.forEach(a => {
+    let badgeClass = a.status === 'Active' ? 'badge-active' : 'badge-exhausted';
+    let badgeText = a.status === 'Active' ? 'Aktif' : 'Pasif';
+    const card = document.createElement('div');
+    card.className = 'key-card';
+    const safeLabel = (a.accountLabel || '').replace(/'/g, "\\'");
+    card.innerHTML = `
+      <div class="key-card-top">
+        <div><span class="key-slot">#${a.id}</span> <span class="key-label">${a.accountLabel}</span></div>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="key-masked">${a.profileName}</div>
+      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
+      <div style="display:flex; gap: 6px;">
+        <button data-login-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
+        <button data-edit-chatgpt="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+        <button data-del-chatgpt="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `;
+    // Event listeners
+    card.querySelector('[data-login-chatgpt]').addEventListener('click', () => openChatGptLogin(a.id, a.accountLabel));
+    card.querySelector('[data-edit-chatgpt]').addEventListener('click', () => openChatGptEditModal(a.id, a.accountLabel, a.status));
+    card.querySelector('[data-del-chatgpt]').addEventListener('click', () => deleteChatGptAccount(a.id));
+    grid.appendChild(card);
+  });
+}
+
+async function openChatGptLogin(id, label) {
+  showToast(label + ' için Chrome açılıyor…', 'info');
+  try {
+    const res = await fetch('/api/chatgpt-web/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: id }) });
+    const data = await res.json();
+    if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
+  } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+}
+
+const chatgptEditModal = document.getElementById('chatgpt-edit-modal');
+const chatgptEditForm = document.getElementById('chatgpt-edit-form');
+const chatgptEditId = document.getElementById('chatgpt-edit-id');
+const chatgptEditLabel = document.getElementById('chatgpt-edit-label');
+const chatgptEditStatus = document.getElementById('chatgpt-edit-status');
+const btnChatgptModalClose = document.getElementById('btn-chatgpt-modal-close');
+const btnChatgptModalCancel = document.getElementById('btn-chatgpt-modal-cancel');
+
+function openChatGptEditModal(id, label, status) {
+  if (!chatgptEditModal) return;
+  chatgptEditId.value = id;
+  chatgptEditLabel.value = label;
+  chatgptEditStatus.value = status;
+  chatgptEditModal.style.display = 'flex';
+}
+
+function closeChatGptModal() { if (chatgptEditModal) chatgptEditModal.style.display = 'none'; }
+if (btnChatgptModalClose) btnChatgptModalClose.addEventListener('click', closeChatGptModal);
+if (btnChatgptModalCancel) btnChatgptModalCancel.addEventListener('click', closeChatGptModal);
+if (chatgptEditModal) chatgptEditModal.addEventListener('click', (e) => { if (e.target === chatgptEditModal) closeChatGptModal(); });
+
+if (chatgptEditForm) {
+  chatgptEditForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = parseInt(chatgptEditId.value);
+    const accountLabel = chatgptEditLabel.value.trim();
+    const status = chatgptEditStatus.value;
+    try {
+      const res = await fetch('/api/chatgpt-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, accountLabel, status }) });
+      if (!res.ok) throw new Error('Kayıt başarısız.');
+      const data = await res.json();
+      if (data.success || res.ok) { showToast('Hesap güncellendi.'); closeChatGptModal(); loadChatGptAccounts(); }
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
+const btnAddChatgptAcc = document.getElementById('btn-add-chatgpt-acc');
+if (btnAddChatgptAcc) {
+  btnAddChatgptAcc.addEventListener('click', async () => {
+    const label = prompt('Yeni ChatGPT hesabı adı:', 'ChatGPT Hesap #' + (chatgptAccountsData.length + 1));
+    if (label === null) return;
+    try {
+      const res = await fetch('/api/chatgpt-accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: label.trim() || undefined }) });
+      const data = await res.json();
+      if (data.success) { showToast('Yeni ChatGPT profil yuvası eklendi!'); loadChatGptAccounts(); }
+      else { throw new Error(data.error || 'Eklenemedi'); }
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
+async function deleteChatGptAccount(id) {
+  if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
+  try {
+    const res = await fetch('/api/chatgpt-accounts/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) { showToast('Profil #' + id + ' silindi.'); loadChatGptAccounts(); }
+    else { throw new Error(data.error || 'Silinemedi.'); }
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+/* === Copilot Hesap Yönetimi === */
+let copilotAccountsData = [];
+
+async function loadCopilotAccounts() {
+  if (!isAdmin) return;
+  try {
+    const res = await fetch('/api/copilot-accounts');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    copilotAccountsData = data.accounts || [];
+    renderCopilotAccounts();
+  } catch { }
+}
+
+function renderCopilotAccounts() {
+  const grid = document.getElementById('copilot-accounts-grid');
+  if (!grid || !isAdmin) return;
+  grid.innerHTML = '';
+  copilotAccountsData.forEach(a => {
+    let badgeClass = a.status === 'Active' ? 'badge-active' : 'badge-exhausted';
+    let badgeText = a.status === 'Active' ? 'Aktif' : 'Pasif';
+    const card = document.createElement('div');
+    card.className = 'key-card';
+    const safeLabel = (a.accountLabel || '').replace(/'/g, "\\'");
+    card.innerHTML = `
+      <div class="key-card-top">
+        <div><span class="key-slot">#${a.id}</span> <span class="key-label">${a.accountLabel}</span></div>
+        <span class="badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="key-masked">${a.profileName}</div>
+      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
+      <div style="display:flex; gap: 6px;">
+        <button data-login-copilot="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
+        <button data-edit-copilot="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+        <button data-del-copilot="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `;
+    card.querySelector('[data-login-copilot]').addEventListener('click', () => openCopilotLogin(a.id, a.accountLabel));
+    card.querySelector('[data-edit-copilot]').addEventListener('click', () => openCopilotEditModal(a.id, a.accountLabel, a.status));
+    card.querySelector('[data-del-copilot]').addEventListener('click', () => deleteCopilotAccount(a.id));
+    grid.appendChild(card);
+  });
+}
+
+async function openCopilotLogin(id, label) {
+  showToast(label + ' için Chrome açılıyor…', 'info');
+  try {
+    const res = await fetch('/api/copilot-web/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: id }) });
+    const data = await res.json();
+    if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
+  } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+}
+
+const copilotEditModal = document.getElementById('copilot-edit-modal');
+const copilotEditForm = document.getElementById('copilot-edit-form');
+const copilotEditId = document.getElementById('copilot-edit-id');
+const copilotEditLabel = document.getElementById('copilot-edit-label');
+const copilotEditStatus = document.getElementById('copilot-edit-status');
+const btnCopilotModalClose = document.getElementById('btn-copilot-modal-close');
+const btnCopilotModalCancel = document.getElementById('btn-copilot-modal-cancel');
+
+function openCopilotEditModal(id, label, status) {
+  if (!copilotEditModal) return;
+  copilotEditId.value = id;
+  copilotEditLabel.value = label;
+  copilotEditStatus.value = status;
+  copilotEditModal.style.display = 'flex';
+}
+
+function closeCopilotModal() { if (copilotEditModal) copilotEditModal.style.display = 'none'; }
+if (btnCopilotModalClose) btnCopilotModalClose.addEventListener('click', closeCopilotModal);
+if (btnCopilotModalCancel) btnCopilotModalCancel.addEventListener('click', closeCopilotModal);
+if (copilotEditModal) copilotEditModal.addEventListener('click', (e) => { if (e.target === copilotEditModal) closeCopilotModal(); });
+
+if (copilotEditForm) {
+  copilotEditForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = parseInt(copilotEditId.value);
+    const accountLabel = copilotEditLabel.value.trim();
+    const status = copilotEditStatus.value;
+    try {
+      const res = await fetch('/api/copilot-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, accountLabel, status }) });
+      if (!res.ok) throw new Error('Kayıt başarısız.');
+      const data = await res.json();
+      if (data.success || res.ok) { showToast('Hesap güncellendi.'); closeCopilotModal(); loadCopilotAccounts(); }
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
+const btnAddCopilotAcc = document.getElementById('btn-add-copilot-acc');
+if (btnAddCopilotAcc) {
+  btnAddCopilotAcc.addEventListener('click', async () => {
+    const label = prompt('Yeni Copilot hesabı adı:', 'Copilot Hesap #' + (copilotAccountsData.length + 1));
+    if (label === null) return;
+    try {
+      const res = await fetch('/api/copilot-accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: label.trim() || undefined }) });
+      const data = await res.json();
+      if (data.success) { showToast('Yeni Copilot profil yuvası eklendi!'); loadCopilotAccounts(); }
+      else { throw new Error(data.error || 'Eklenemedi'); }
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
+async function deleteCopilotAccount(id) {
+  if (!confirm('#' + id + ' Copilot profilini silmek istiyor musunuz?')) return;
+  try {
+    const res = await fetch('/api/copilot-accounts/' + id, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) { showToast('Profil #' + id + ' silindi.'); loadCopilotAccounts(); }
+    else { throw new Error(data.error || 'Silinemedi.'); }
+  } catch (err) { showToast(err.message, 'error'); }
+}
 
 const btnAddKey = document.getElementById('btn-add-key');
 if (btnAddKey) {
@@ -991,5 +1344,7 @@ fetchImages();
 if (isAdmin) {
   fetchKeys();
   fetchGeminiAccounts();
+  loadChatGptAccounts();
+  loadCopilotAccounts();
   fetchUsers();
 }

@@ -21,14 +21,16 @@ namespace yz.Controllers
         private readonly AiGenerationService _aiGenerationService;
         private readonly ImageSyncService _imageSyncService;
         private readonly GeminiSeleniumService _geminiSeleniumService;
+        private readonly MultiAiSeleniumService _multiAiSeleniumService;
         private readonly AiCredentialsService _credentialsService;
 
-        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, GeminiSeleniumService geminiSeleniumService, AiCredentialsService credentialsService)
+        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, GeminiSeleniumService geminiSeleniumService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService)
         {
             _context = context;
             _aiGenerationService = aiGenerationService;
             _imageSyncService = imageSyncService;
             _geminiSeleniumService = geminiSeleniumService;
+            _multiAiSeleniumService = multiAiSeleniumService;
             _credentialsService = credentialsService;
         }
 
@@ -227,6 +229,156 @@ namespace yz.Controllers
             return Ok(new { success = true });
         }
 
+        
+        [HttpGet("chatgpt-accounts")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> GetChatGptAccounts()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            return Ok(new
+            {
+                currentProfileIndex = creds.CurrentChatGptProfileIndex,
+                accounts = creds.ChatGptAccounts.OrderBy(a => a.Id).Select(a => new
+                {
+                    id = a.Id,
+                    profileName = a.ProfileName,
+                    accountLabel = a.AccountLabel,
+                    status = a.Status,
+                    lastUsed = string.IsNullOrEmpty(a.LastUsed) ? "Henüz kullanılmadı" : a.LastUsed
+                })
+            });
+        }
+
+        [HttpPost("chatgpt-accounts")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> UpdateChatGptAccount([FromBody] GeminiAccountUpdateRequest req)
+        {
+            if (req == null || req.Id < 1)
+                return BadRequest(new { error = "Geçersiz hesap ID." });
+
+            var creds = await _credentialsService.GetCredentialsAsync();
+            var acc = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == req.Id);
+            if (acc == null) return NotFound(new { error = "Hesap bulunamadı." });
+
+            if (req.AccountLabel != null) acc.AccountLabel = req.AccountLabel.Trim();
+            if (req.Status != null) acc.Status = req.Status.Trim();
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("chatgpt-accounts/add")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AddChatGptAccount([FromBody] GeminiAccountAddRequest? req)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            int nextId = (creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1);
+            string label = !string.IsNullOrWhiteSpace(req?.AccountLabel) ? req.AccountLabel.Trim() : $"ChatGPT Hesap #{nextId}";
+
+            creds.ChatGptAccounts.Add(new ChatGptAccountItem
+            {
+                Id = nextId,
+                ProfileName = $"ChatGptChromeProfile_{nextId}",
+                AccountLabel = label,
+                Status = "Active",
+                LastUsed = ""
+            });
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true, id = nextId });
+        }
+
+        [HttpDelete("chatgpt-accounts/{id}")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> DeleteChatGptAccount(int id)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            var acc = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == id);
+            if (acc == null) return NotFound(new { error = "Hesap bulunamadı." });
+
+            if (creds.ChatGptAccounts.Count <= 1)
+                return BadRequest(new { error = "En az bir ChatGPT profili kalmalıdır." });
+
+            creds.ChatGptAccounts.Remove(acc);
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpGet("copilot-accounts")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> GetCopilotAccounts()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            return Ok(new
+            {
+                currentProfileIndex = creds.CurrentCopilotProfileIndex,
+                accounts = creds.CopilotAccounts.OrderBy(a => a.Id).Select(a => new
+                {
+                    id = a.Id,
+                    profileName = a.ProfileName,
+                    accountLabel = a.AccountLabel,
+                    status = a.Status,
+                    lastUsed = string.IsNullOrEmpty(a.LastUsed) ? "Henüz kullanılmadı" : a.LastUsed
+                })
+            });
+        }
+
+        [HttpPost("copilot-accounts")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> UpdateCopilotAccount([FromBody] GeminiAccountUpdateRequest req)
+        {
+            if (req == null || req.Id < 1)
+                return BadRequest(new { error = "Geçersiz hesap ID." });
+
+            var creds = await _credentialsService.GetCredentialsAsync();
+            var acc = creds.CopilotAccounts.FirstOrDefault(a => a.Id == req.Id);
+            if (acc == null) return NotFound(new { error = "Hesap bulunamadı." });
+
+            if (req.AccountLabel != null) acc.AccountLabel = req.AccountLabel.Trim();
+            if (req.Status != null) acc.Status = req.Status.Trim();
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("copilot-accounts/add")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AddCopilotAccount([FromBody] GeminiAccountAddRequest? req)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            int nextId = (creds.CopilotAccounts.Count == 0 ? 1 : creds.CopilotAccounts.Max(a => a.Id) + 1);
+            string label = !string.IsNullOrWhiteSpace(req?.AccountLabel) ? req.AccountLabel.Trim() : $"Copilot Hesap #{nextId}";
+
+            creds.CopilotAccounts.Add(new CopilotAccountItem
+            {
+                Id = nextId,
+                ProfileName = $"CopilotChromeProfile_{nextId}",
+                AccountLabel = label,
+                Status = "Active",
+                LastUsed = ""
+            });
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true, id = nextId });
+        }
+
+        [HttpDelete("copilot-accounts/{id}")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> DeleteCopilotAccount(int id)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            var acc = creds.CopilotAccounts.FirstOrDefault(a => a.Id == id);
+            if (acc == null) return NotFound(new { error = "Hesap bulunamadı." });
+
+            if (creds.CopilotAccounts.Count <= 1)
+                return BadRequest(new { error = "En az bir Copilot profili kalmalıdır." });
+
+            creds.CopilotAccounts.Remove(acc);
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+
         [HttpGet("images")]
         public async Task<IActionResult> GetImages()
         {
@@ -258,7 +410,11 @@ namespace yz.Controllers
                 createdAt = img.CreatedAt,
                 folder = img.ImagePath != null && img.ImagePath.Contains("/generated-gemini/") ? "gemini" :
                          img.ImagePath != null && img.ImagePath.Contains("/generated-free/") ? "free" :
-                         img.ImagePath != null && img.ImagePath.Contains("/generated-stability/") ? "stability" : "general"
+                         img.ImagePath != null && img.ImagePath.Contains("/generated-chatgpt/") ? "chatgpt" :
+                         img.ImagePath != null && img.ImagePath.Contains("/generated-copilot/") ? "copilot" :
+                         img.ImagePath != null && img.ImagePath.Contains("/generated-stability/") ? "stability" : "general",
+                groupId = img.GroupId,
+                sourceSite = img.SourceSite
             }).ToList();
 
             return Ok(images);
@@ -323,7 +479,25 @@ namespace yz.Controllers
         public async Task<IActionResult> OpenGeminiLogin([FromBody] GeminiLoginRequest? req)
         {
             int profileId = req?.ProfileId ?? 1;
-            bool success = await _geminiSeleniumService.OpenBrowserForLoginAsync(profileId);
+            bool success = await _multiAiSeleniumService.OpenBrowserForLoginAsync("gemini", profileId);
+            return Ok(new { success });
+        }
+
+        [HttpPost("chatgpt-web/login")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> OpenChatGptLogin([FromBody] GeminiLoginRequest? req)
+        {
+            int profileId = req?.ProfileId ?? 1;
+            bool success = await _multiAiSeleniumService.OpenBrowserForLoginAsync("chatgpt", profileId);
+            return Ok(new { success });
+        }
+
+        [HttpPost("copilot-web/login")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> OpenCopilotLogin([FromBody] GeminiLoginRequest? req)
+        {
+            int profileId = req?.ProfileId ?? 1;
+            bool success = await _multiAiSeleniumService.OpenBrowserForLoginAsync("copilot", profileId);
             return Ok(new { success });
         }
 

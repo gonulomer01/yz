@@ -19,15 +19,15 @@ namespace yz.Services
         private readonly ApplicationDbContext _context;
         private readonly HttpClient _httpClient;
         private readonly ImageSyncService _imageSyncService;
-        private readonly GeminiSeleniumService _geminiSeleniumService;
+        private readonly MultiAiSeleniumService _multiAiSeleniumService;
         private readonly AiCredentialsService _credentialsService;
 
-        public AiGenerationService(ApplicationDbContext context, HttpClient httpClient, ImageSyncService imageSyncService, GeminiSeleniumService geminiSeleniumService, AiCredentialsService credentialsService)
+        public AiGenerationService(ApplicationDbContext context, HttpClient httpClient, ImageSyncService imageSyncService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService)
         {
             _context = context;
             _httpClient = httpClient;
             _imageSyncService = imageSyncService;
-            _geminiSeleniumService = geminiSeleniumService;
+            _multiAiSeleniumService = multiAiSeleniumService;
             _credentialsService = credentialsService;
         }
 
@@ -86,17 +86,40 @@ namespace yz.Services
             string model = string.IsNullOrEmpty(req.Model) ? "sdxl" : req.Model;
             string finalPrompt = EnrichTurkishPromptForAi(ApplyStyle(req.Prompt, req.Style ?? "none"));
 
-            if (model.StartsWith("pollinations-"))
+            try
             {
-                return await GeneratePollinationsAsync(req, model, finalPrompt, userId);
-            }
+                if (model.StartsWith("pollinations-"))
+                {
+                    return await GeneratePollinationsAsync(req, model, finalPrompt, userId);
+                }
 
-            if (model == "gemini-web-profile")
+                if (model == "gemini-web-profile")
+                {
+                    return await _multiAiSeleniumService.GenerateFromGeminiAsync(finalPrompt, req.AspectRatio, userId, isAdmin);
+                }
+
+                if (model == "chatgpt-web-profile")
+                {
+                    return await _multiAiSeleniumService.GenerateFromChatGptAsync(finalPrompt, req.AspectRatio, userId, isAdmin);
+                }
+
+                if (model == "copilot-web-profile")
+                {
+                    return await _multiAiSeleniumService.GenerateFromCopilotAsync(finalPrompt, req.AspectRatio, userId, isAdmin);
+                }
+
+                if (model == "triple-ai")
+                {
+                    return await _multiAiSeleniumService.GenerateTripleAsync(finalPrompt, req.AspectRatio, userId, isAdmin);
+                }
+
+                return await GenerateStabilityAsync(req, model, finalPrompt, userId);
+            }
+            catch (Exception ex)
             {
-                return await _geminiSeleniumService.GenerateImageAsync(finalPrompt, req.AspectRatio, userId, isAdmin, useIncognito: false, site: "gemini");
+                Console.WriteLine($"[Generate Error] {ex.Message}");
+                return (500, new { error = $"Model çalıştırılırken bir hata oluştu: {ex.Message}" });
             }
-
-            return await GenerateStabilityAsync(req, model, finalPrompt, userId);
         }
 
         private async Task<(int StatusCode, object Response)> GeneratePollinationsAsync(GenerateRequest req, string model, string finalPrompt, int userId)

@@ -12,5 +12,9 @@ namespace yz.Models
         public int ApiKeyId { get; set; }
         public int UserId { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string? GroupId { get; set; }
+        public bool IsSelected { get; set; } = true;
+        public string SourceSite { get; set; } = "gemini";
     }
 }
+

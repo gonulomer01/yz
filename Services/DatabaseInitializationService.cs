@@ -78,6 +78,21 @@ namespace yz.Services
             IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Users_Username')
                 CREATE UNIQUE INDEX IX_Users_Username ON Users(Username);");
 
+                // GeneratedImages tablosuna GroupId sütunu ekle (yoksa)
+                db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'GroupId')
+                ALTER TABLE GeneratedImages ADD GroupId NVARCHAR(100) NULL;");
+
+                // GeneratedImages tablosuna IsSelected sütunu ekle (yoksa)
+                db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'IsSelected')
+                ALTER TABLE GeneratedImages ADD IsSelected BIT NOT NULL DEFAULT 1;");
+
+                // GeneratedImages tablosuna SourceSite sütunu ekle (yoksa)
+                db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'SourceSite')
+                ALTER TABLE GeneratedImages ADD SourceSite NVARCHAR(100) NOT NULL DEFAULT 'gemini';");
+
                 // GeneratedImages tablosuna UserId sütunu ekle (yoksa)
                 db.Database.ExecuteSqlRaw(@"
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'UserId')
