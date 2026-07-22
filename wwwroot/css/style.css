@@ -1577,110 +1577,505 @@ main {
   z-index: 1;
 }
 
+/* SOL INTRO LOGO VE ANİMASYONU */
 .auth-body .melikgazi-bg-watermark {
-  position: relative;
-  top: auto;
-  left: auto;
-  transform: none;
-  width: 580px;
-  height: 580px;
-  max-width: 95%;
-  opacity: 0.95;
-  z-index: 1;
+  position: fixed;
+  top: 50vh;
+  left: 28vw;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 380px;
+  max-width: 90vw;
+  max-height: 80vh;
+  opacity: 1;
+  z-index: 100;
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: logoToRedBox 1.4s cubic-bezier(0.4, 0, 0.2, 1) 3s forwards;
 }
 
 .auth-body .melikgazi-bg-watermark img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.22));
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.28));
+  transition: var(--transition);
+}
+
+.auth-body .melikgazi-slogan {
+  position: fixed;
+  top: 60px;
+  left: 145px;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-12px);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #c58af9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.65));
+  animation: sloganFadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) 4.2s forwards;
+}
+
+/* LOGONUN İLK AÇILIŞTA ORTADA DURUP SONRA SOL ÜSTE (90px) ŞIK BİR ŞEKİLDE GİTME ANİMASYONU */
+@keyframes logoToRedBox {
+  0% {
+    top: 50vh;
+    left: 28vw;
+    transform: translate(-50%, -50%);
+    width: 380px;
+    height: 380px;
+  }
+
+  100% {
+    top: 30px;
+    left: 40px;
+    transform: translate(0, 0);
+    width: 90px;
+    height: 90px;
+  }
+}
+
+@keyframes sloganFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* YOL HARİTASI (ROADMAP ZIGZAG) AKIŞ PANELİ STİLLERİ */
+.auth-body .roadmap-container {
+  position: fixed;
+  top: 180px;
+  left: 20px;
+  z-index: 100;
+  width: 620px;
+  height: 480px;
+  pointer-events: none;
+}
+
+.roadmap-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgba(20, 22, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 4px solid var(--color-primary);
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(14px) scale(0.95);
+  width: 440px;
+  z-index: 5;
+}
+
+.step-node-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+/* Adım 1: Orta-Sağ Hizalama (80px) */
+.roadmap-card.step-1 {
+  position: absolute;
+  top: 0;
+  left: 80px;
+  border-left-color: #38bdf8;
+  animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 6.2s forwards;
+}
+
+/* Adım 2: Sol Hizalama (5px) */
+.roadmap-card.step-2 {
+  position: absolute;
+  top: 155px;
+  left: 5px;
+  border-left-color: #c58af9;
+  animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 7.6s forwards;
+}
+
+/* Adım 3: En Sağ Hizalama (140px - 1. Adımdan Daha Sağda) */
+.roadmap-card.step-3 {
+  position: absolute;
+  top: 310px;
+  left: 140px;
+  border-left-color: #fdd663;
+  animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 9.0s forwards;
+}
+
+/* Bağlantı Çizgisi 1: Step 1 Çerçevesinin Tam Dışından/Altından Başlar */
+.roadmap-connector.line-1 {
+  position: absolute;
+  top: 58px;
+  left: 80px;
+  opacity: 0;
+  animation: connectorFadeIn 0.7s ease 6.9s forwards;
+}
+
+/* Bağlantı Çizgisi 2: Step 2 Çerçevesinin Tam Dışından/Altından Başlar */
+.roadmap-connector.line-2 {
+  position: absolute;
+  top: 213px;
+  left: 65px;
+  opacity: 0;
+  animation: connectorFadeIn 0.7s ease 8.3s forwards;
+}
+
+/* KAVİSLİ PATİKA ROTA ÇİZGİSİ VE AKAN NOKTA ANİMASYONU */
+.curved-trail-path {
+  animation: trailFlow 2.4s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(197, 138, 249, 0.35));
+}
+
+@keyframes trailFlow {
+  from {
+    stroke-dashoffset: 30;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* DÜZ YAZI BİLGİ VE BAĞLANTI METİNLERİ (TÜM SAYFANIN TAM ORTA ALT KISMI) */
+.auth-body .hero-footer-info {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.65);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.hero-footer-info .info-link-btn {
+  background: transparent;
+  border: none;
+  color: rgba(226, 232, 240, 0.8);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.22s ease;
+}
+
+.hero-footer-info .info-link-btn:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  text-decoration: underline;
+}
+
+.hero-footer-info .info-dot {
+  opacity: 0.4;
+  font-size: 0.7rem;
+}
+
+/* INTERACTIVE INFO MODAL POPUP OVERLAY */
+.info-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 12, 16, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.info-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.info-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  padding: 32px 36px;
+  background: rgba(22, 25, 32, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+  transform: translateY(20px) scale(0.95);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-modal-overlay.active .info-modal-card {
+  transform: translateY(0) scale(1);
+}
+
+.info-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.info-modal-close:hover {
+  color: #38bdf8;
+}
+
+.modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 20px;
+  color: #38bdf8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-badge.usage-badge {
+  background: rgba(197, 138, 249, 0.15);
+  border-color: rgba(197, 138, 249, 0.3);
+  color: #c58af9;
+}
+
+.modal-heading {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.modal-body-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.94rem;
+  color: rgba(226, 232, 240, 0.88);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.usage-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.usage-step-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.u-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(197, 138, 249, 0.2);
+  border: 1px solid rgba(197, 138, 249, 0.4);
+  color: #c58af9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.u-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.u-step-text strong {
+  font-size: 0.92rem;
+  color: #ffffff;
+}
+
+.u-step-text span {
+  font-size: 0.84rem;
+  color: rgba(226, 232, 240, 0.75);
+  line-height: 1.4;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.step-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+.step-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  color: rgba(226, 232, 240, 0.88);
+  margin: 0;
+  line-height: 1.35;
+}
+
+@keyframes stepFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes connectorFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-body .melikgazi-intro-box {
+    animation: moveTopMobile 1.4s cubic-bezier(0.4, 0, 0.2, 1) 3s forwards;
+  }
+
+  @keyframes moveTopMobile {
+    0% {
+      top: 50vh;
+      left: 50vw;
+      transform: translate(-50%, -50%);
+    }
+
+    100% {
+      top: 20px;
+      left: 50vw;
+      transform: translate(-50%, 0);
+    }
+  }
 }
 
 .auth-container {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 540px;
+  max-width: 660px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-@media (max-width: 900px) {
-  .auth-body {
-    grid-template-columns: 1fr;
-    justify-content: center;
-    gap: 30px;
-    padding: 30px 20px;
-  }
-  .auth-body .ambient-bg {
-    flex: none;
-  }
-  .auth-body .melikgazi-bg-watermark {
-    width: 240px;
-    height: 240px;
-  }
-}
-
 .auth-card {
   width: 100%;
-  padding: 42px 38px;
-  background: rgba(24, 26, 30, 0.68);
+  padding: 42px 48px;
+  background: rgba(24, 26, 30, 0.65);
   box-shadow: var(--shadow-lg);
-  border-radius: var(--radius-lg);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 26px;
+  margin-bottom: 28px;
 }
 
-.auth-logo {
-  width: 90px;
-  height: 90px;
-  border-radius: var(--radius-md);
-  object-fit: contain;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  margin-bottom: 16px;
+.card-title-white {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 14px rgba(255, 255, 255, 0.2);
 }
 
 .auth-header h2 {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: #fff;
+  line-height: 1.35;
   margin-bottom: 6px;
 }
 
 .auth-header p {
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.auth-card .field input[type="text"],
-.auth-card .field input[type="password"] {
-  padding: 12px 16px;
-  font-size: 0.92rem;
+  gap: 4px;
 }
 
 .auth-btn {
   width: 100%;
   justify-content: center;
-  height: 46px;
-  font-size: 0.98rem;
-  margin-top: 12px;
+  height: 44px;
+  font-size: 0.95rem;
+  margin-top: 10px;
 }
 
 .auth-footer {
@@ -1731,21 +2126,24 @@ main {
 }
 
 .role-badge {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  padding: 0;
+  padding: 2px 7px;
+  border-radius: 6px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
-  background: transparent !important;
-  border: none !important;
 }
 
 .role-admin {
+  background: rgba(197, 138, 249, 0.2);
   color: var(--color-secondary);
+  border: 1px solid rgba(197, 138, 249, 0.4);
 }
 
 .role-user {
+  background: rgba(138, 180, 248, 0.15);
   color: var(--color-primary);
+  border: 1px solid rgba(138, 180, 248, 0.3);
 }
 
 .profile-pill {

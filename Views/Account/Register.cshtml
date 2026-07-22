@@ -9,7 +9,7 @@
     <title>Kayıt Ol — Melikgazi Belediyesi YZ Platformu</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="icon" href="https://www.melikgazi.bel.tr/images/favicon.webp" type="image/webp">
@@ -18,15 +18,158 @@
 
     <div class="ambient-bg">
         <div class="melikgazi-bg-watermark">
-            <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logosu">
+            <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Belediyesi Logosu" onerror="this.src='https://www.melikgazi.bel.tr/images/favicon.webp'">
+        </div>
+        <div class="melikgazi-slogan">
+            <span>Melikgazi Belediyesi YZ Platformu</span>
+        </div>
+
+        <!-- Yol Haritası (Roadmap) Akış Paneli -->
+        <div class="roadmap-container">
+            <!-- Adım 1: Sağda Başlar -->
+            <div class="roadmap-card step-1">
+                <div class="step-node-badge">1</div>
+                <div class="step-content">
+                    <h4 class="step-title">💭 Hayal Et</h4>
+                    <p class="step-desc">Zihnindeki dünyayı serbest bırak.</p>
+                </div>
+            </div>
+
+            <!-- Bağlantı Çizgisi 1 -->
+            <div class="roadmap-connector line-1">
+                <svg width="220" height="90" viewBox="0 0 220 90" fill="none">
+                    <defs>
+                        <linearGradient id="pathGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
+                            <stop offset="100%" stop-color="#c58af9" stop-opacity="0.9" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 120 4 C 135 48, 20 20, 25 86" stroke="url(#pathGrad1)" stroke-width="3" stroke-dasharray="8 7" stroke-linecap="round" class="curved-trail-path" />
+                </svg>
+            </div>
+
+            <!-- Adım 2: Solda Durur -->
+            <div class="roadmap-card step-2">
+                <div class="step-node-badge">2</div>
+                <div class="step-content">
+                    <h4 class="step-title">⌨️ Prompt Yaz</h4>
+                    <p class="step-desc">Kelimelerle detayları tarif et.</p>
+                </div>
+            </div>
+
+            <!-- Bağlantı Çizgisi 2 -->
+            <div class="roadmap-connector line-2">
+                <svg width="240" height="90" viewBox="0 0 240 90" fill="none">
+                    <defs>
+                        <linearGradient id="pathGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#c58af9" stop-opacity="0.9" />
+                            <stop offset="100%" stop-color="#fdd663" stop-opacity="0.9" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 100 4 C 85 48, 180 20, 165 86" stroke="url(#pathGrad2)" stroke-width="3" stroke-dasharray="8 7" stroke-linecap="round" class="curved-trail-path" />
+                </svg>
+            </div>
+
+            <!-- Adım 3: Orta-Alt Tarafta Durur -->
+            <div class="roadmap-card step-3">
+                <div class="step-node-badge">3</div>
+                <div class="step-content">
+                    <h4 class="step-title">✨ Görselini Oluştur</h4>
+                    <p class="step-desc">Saniyeler içinde sanat eserini gör.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Düz Yazı Bilgi Bağlantıları (2 Adet Ortalanmış) -->
+        <div class="hero-footer-info">
+            <button type="button" class="info-link-btn" onclick="openInfoModal('about')">
+                <i class="fa-solid fa-circle-info"></i> Melikgazi YZ Platformu Hakkında
+            </button>
+            <span class="info-dot">•</span>
+            <button type="button" class="info-link-btn" onclick="openInfoModal('usage')">
+                <i class="fa-solid fa-book-open"></i> Nasıl Kullanılır?
+            </button>
         </div>
     </div>
+
+    <!-- İnteraktif Bilgi Penceresi (Modal Popup) -->
+    <div id="infoModalOverlay" class="info-modal-overlay" onclick="closeInfoModal(event)">
+        <div class="info-modal-card">
+            <button type="button" class="info-modal-close" onclick="closeInfoModalDirect()">&times;</button>
+            
+            <div id="modalContentAbout" class="modal-tab-content">
+                <div class="modal-badge"><i class="fa-solid fa-circle-info"></i> Platform Hakkında</div>
+                <h3 class="modal-heading">Melikgazi Belediyesi YZ Platformu Nedir?</h3>
+                <p class="modal-body-text">
+                    <strong>Melikgazi Belediyesi YZ Platformu</strong>, <strong>T.C. Melikgazi Belediyesi</strong> bünyesinde geliştirilen akıllı şehir ve yapay zeka destekli yenilikçi görsel üretim platformudur.
+                </p>
+                <p class="modal-body-text">
+                    Kullanıcılarımızın hayal güçlerini gelişmiş yapay zeka modelleri ile buluşturarak saniyeler içinde yüksek çözünürlüklü dijital görsellere, sanat eserlerine ve tasarım fikirlerine dönüştürmesini sağlar.
+                </p>
+            </div>
+
+            <div id="modalContentUsage" class="modal-tab-content" style="display: none;">
+                <div class="modal-badge usage-badge"><i class="fa-solid fa-rocket"></i> Kullanım Rehberi</div>
+                <h3 class="modal-heading">Nasıl Kullanılır?</h3>
+                
+                <div class="usage-steps-list">
+                    <div class="usage-step-box">
+                        <div class="u-step-num">1</div>
+                        <div class="u-step-text">
+                            <strong>Kayıt Olun & Giriş Yapın</strong>
+                            <span>Hesabınız yoksa kayıt ekranından kaydolup sisteme güvenle giriş yapın.</span>
+                        </div>
+                    </div>
+                    <div class="usage-step-box">
+                        <div class="u-step-num">2</div>
+                        <div class="u-step-text">
+                            <strong>Prompt (Metin Tarifi) Yazın</strong>
+                            <span>Hayal ettiğiniz sahneyi, renkleri ve ortam detaylarını prompt kutusuna yazın.</span>
+                        </div>
+                    </div>
+                    <div class="usage-step-box">
+                        <div class="u-step-num">3</div>
+                        <div class="u-step-text">
+                            <strong>Yapay Zeka Görselinizi Üretin</strong>
+                            <span>İstediğiniz yapay zeka görsel modelini seçip 'Görsel Oluştur' butonuna tıklayarak sanat eserinizi indirin!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openInfoModal(type) {
+            var overlay = document.getElementById('infoModalOverlay');
+            var aboutTab = document.getElementById('modalContentAbout');
+            var usageTab = document.getElementById('modalContentUsage');
+            
+            if (type === 'about') {
+                aboutTab.style.display = 'block';
+                usageTab.style.display = 'none';
+            } else {
+                aboutTab.style.display = 'none';
+                usageTab.style.display = 'block';
+            }
+            overlay.classList.add('active');
+        }
+
+        function closeInfoModal(e) {
+            if (e.target.id === 'infoModalOverlay') {
+                document.getElementById('infoModalOverlay').classList.remove('active');
+            }
+        }
+
+        function closeInfoModalDirect() {
+            document.getElementById('infoModalOverlay').classList.remove('active');
+        }
+    </script>
 
     <div class="auth-container">
         <div class="auth-card glass-card">
             <div class="auth-header">
-                <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="auth-logo">
-                <h2>Melikgazi Belediyesi</h2>
+                <h2 class="card-title-white">Melikgazi Belediyesi</h2>
                 <p>Standart Kullanıcı Kayıt Ekranı</p>
             </div>
 
@@ -74,3 +217,4 @@
 
 </body>
 </html>
+
