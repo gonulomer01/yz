@@ -13,7 +13,6 @@ builder.Services.AddSingleton<ImageSyncService>();
 builder.Services.AddScoped<AiCredentialsService>();
 builder.Services.AddScoped<AiGenerationService>();
 builder.Services.AddScoped<MultiAiSeleniumService>();
-builder.Services.AddScoped<GeminiSeleniumService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

@@ -82,42 +82,67 @@ function showToast(msg, type = 'success') {
   container.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }
+// Sidebar Genişletme / Daraltma Mantığı
+const appSidebar = document.getElementById('app-sidebar');
+const mainContent = document.getElementById('main-content');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const pageTitleHeading = document.getElementById('page-title-heading');
+
+if (sidebarToggle && appSidebar && mainContent) {
+  // Kayıtlı daraltma tercihini yükle
+  if (localStorage.getItem('sidebar_collapsed') === 'true') {
+    appSidebar.classList.add('collapsed');
+    mainContent.classList.add('sidebar-collapsed-main');
+  }
+
+  sidebarToggle.addEventListener('click', () => {
+    appSidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('sidebar-collapsed-main');
+    const isCollapsed = appSidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+  });
+}
+
 if (navStudio) {
   navStudio.addEventListener('click', () => switchPage('studio'));
 }
 if (navDashboard) {
   navDashboard.addEventListener('click', () => switchPage('dashboard'));
 }
+if (btnGalleryToggle) {
+  btnGalleryToggle.addEventListener('click', () => switchPage('gallery'));
+}
+
+const sectionGallery = document.getElementById('section-gallery');
+
 function switchPage(page) {
+  if (navStudio) navStudio.classList.remove('active');
+  if (navDashboard) navDashboard.classList.remove('active');
+  if (btnGalleryToggle) btnGalleryToggle.classList.remove('active');
+  if (sectionStudio) sectionStudio.classList.remove('active');
+  if (sectionDashboard) sectionDashboard.classList.remove('active');
+  if (sectionGallery) sectionGallery.classList.remove('active');
+
   if (page === 'studio') {
     if (navStudio) navStudio.classList.add('active');
-    if (navDashboard) navDashboard.classList.remove('active');
     if (sectionStudio) sectionStudio.classList.add('active');
-    if (sectionDashboard) sectionDashboard.classList.remove('active');
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Melikgazi YZ Stüdyosu</h2>';
     fetchImages();
-  } else if (isAdmin) {
+  } else if (page === 'gallery') {
+    if (btnGalleryToggle) btnGalleryToggle.classList.add('active');
+    if (sectionGallery) sectionGallery.classList.add('active');
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-images"></i> <h2>Görsel Arşivi</h2>';
+    fetchImages();
+  } else if (page === 'dashboard' && isAdmin) {
     if (navDashboard) navDashboard.classList.add('active');
-    if (navStudio) navStudio.classList.remove('active');
     if (sectionDashboard) sectionDashboard.classList.add('active');
-    if (sectionStudio) sectionStudio.classList.remove('active');
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>Yönetim Paneli</h2>';
     fetchKeys();
     fetchGeminiAccounts();
     fetchUsers();
     fetchImages();
   }
 }
-function openGallery() {
-  if (galleryPanel) galleryPanel.classList.add('open');
-  if (galleryOverlay) galleryOverlay.style.display = 'block';
-  fetchImages();
-}
-function closeGallery() {
-  if (galleryPanel) galleryPanel.classList.remove('open');
-  if (galleryOverlay) galleryOverlay.style.display = 'none';
-}
-if (btnGalleryToggle) btnGalleryToggle.addEventListener('click', openGallery);
-if (btnGalleryClose) btnGalleryClose.addEventListener('click', closeGallery);
-if (galleryOverlay) galleryOverlay.addEventListener('click', closeGallery);
 const btnSyncImages = document.getElementById('btn-sync-images');
 if (btnSyncImages) {
   btnSyncImages.addEventListener('click', async () => {
@@ -155,6 +180,7 @@ if (modelSelect) {
     if (copilotInfo) copilotInfo.style.display = val === 'copilot-web-profile' ? 'flex' : 'none';
     if (tripleInfo) tripleInfo.style.display = val === 'triple-ai' ? 'flex' : 'none';
   });
+  modelSelect.dispatchEvent(new Event('change'));
 }
 if (btnTranslate) {
   btnTranslate.addEventListener('click', async () => {
@@ -291,31 +317,53 @@ async function fetchImages() {
 }
 function renderGallery() {
   if (!galleryGrid) return;
-  const filteredImages = currentGalleryFolder === 'all'
-    ? persistentImages
-    : (currentGalleryFolder === 'triple'
-        ? persistentImages.filter(item => item.groupId)
-        : persistentImages.filter(item => item.folder === currentGalleryFolder && !item.groupId));
-  if (filteredImages.length === 0) {
-    const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasörü)`;
-    galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bölümde${folderLabel} henüz görsel bulunmuyor.</p></div>`;
-    return;
-  }
-  galleryGrid.innerHTML = '';
+
   const groupedImages = [];
   const groupMap = new Map();
-  filteredImages.forEach(item => {
+
+  persistentImages.forEach(item => {
     if (item.groupId) {
       if (!groupMap.has(item.groupId)) {
-        groupMap.set(item.groupId, { isGroup: true, groupId: item.groupId, prompt: item.prompt, items: [], createdAt: item.createdAt });
-        groupedImages.push(groupMap.get(item.groupId));
+        const groupObj = {
+          isGroup: true,
+          groupId: item.groupId,
+          prompt: item.prompt,
+          createdAt: item.createdAt,
+          items: []
+        };
+        groupMap.set(item.groupId, groupObj);
+        groupedImages.push(groupObj);
       }
       groupMap.get(item.groupId).items.push(item);
     } else {
       groupedImages.push(item);
     }
   });
-  groupedImages.forEach(groupOrItem => {
+
+  let filteredList = [];
+  if (currentGalleryFolder === 'all') {
+    filteredList = groupedImages;
+  } else if (currentGalleryFolder === 'triple') {
+    filteredList = groupedImages.filter(g => g.isGroup);
+  } else {
+    filteredList = groupedImages.filter(g => {
+      if (g.isGroup) {
+        return g.items.some(it => it.folder === currentGalleryFolder);
+      } else {
+        return g.folder === currentGalleryFolder;
+      }
+    });
+  }
+
+  if (filteredList.length === 0) {
+    const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasörü)`;
+    galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bölümde${folderLabel} henüz görsel bulunmuyor.</p></div>`;
+    return;
+  }
+
+  galleryGrid.innerHTML = '';
+
+  filteredList.forEach(groupOrItem => {
     const div = document.createElement('div');
     div.className = 'gallery-item';
     div.style.aspectRatio = '1 / 1';
@@ -324,10 +372,10 @@ function renderGallery() {
          <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
            ${groupOrItem.items.map((it, idx) => {
               if (idx > 2) return '';
-              return `<img src="${it.image}" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">`;
+              return `<img src="${it.image}" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.85;">`;
            }).join('')}
          </div>
-         <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+         <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Üçlü Üretim</div>
          <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
              <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
          </div>
@@ -411,6 +459,11 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
           const response = await fetch(res.image);
           const blob = await response.blob();
           zip.file(filename, blob);
+
+          // Prompt metnini .txt dosyası olarak zip içine ekle
+          const baseName = filename.substring(0, filename.lastIndexOf('.')) || `image_${i + 1}`;
+          const promptText = res.prompt || groupPrompt || "Prompt bilgisi mevcut değil.";
+          zip.file(`${baseName}_prompt.txt`, promptText);
         }
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const downloadUrl = URL.createObjectURL(zipBlob);
@@ -996,6 +1049,21 @@ const profileUsername = document.getElementById('profile-username');
 const profileRole = document.getElementById('profile-role');
 const profileDisplayName = document.getElementById('profile-displayName');
 const profilePassword = document.getElementById('profile-password');
+const profileSubmitBtn = profileForm ? profileForm.querySelector('button[type="submit"]') : null;
+let initialProfileDisplayName = '';
+let initialProfilePassword = '';
+
+function updateProfileSubmitState() {
+  if (!profileSubmitBtn) return;
+  const currentName = profileDisplayName ? profileDisplayName.value.trim() : '';
+  const currentPass = profilePassword ? profilePassword.value.trim() : '';
+  const isChanged = (currentName !== initialProfileDisplayName) || (currentPass !== '');
+  profileSubmitBtn.disabled = !isChanged;
+}
+
+if (profileDisplayName) profileDisplayName.addEventListener('input', updateProfileSubmitState);
+if (profilePassword) profilePassword.addEventListener('input', updateProfileSubmitState);
+
 if (btnProfile) {
   btnProfile.addEventListener('click', async () => {
     try {
@@ -1006,6 +1074,11 @@ if (btnProfile) {
       if (profileRole) profileRole.value = data.role;
       if (profileDisplayName) profileDisplayName.value = data.displayName;
       if (profilePassword) profilePassword.value = ''; // Şifre boş kutu olarak gelmeli
+      
+      initialProfileDisplayName = data.displayName || '';
+      initialProfilePassword = '';
+      updateProfileSubmitState();
+
       if (profileModal) profileModal.style.display = 'flex';
     } catch (err) {
       showToast(err.message, 'error');
@@ -1038,12 +1111,11 @@ if (profileForm) {
       if (data.success) {
         showToast('Profil bilgileriniz güncellendi!');
         closeProfileModal();
-        // Butondaki ismi güncelle
         if (btnProfile) {
-          const badgeEl = btnProfile.querySelector('.role-badge');
-          const badgeHtml = badgeEl ? badgeEl.outerHTML : '';
-          btnProfile.innerHTML = `<i class="fa-solid fa-user-gear"></i> ${displayName} ${badgeHtml}`;
+          btnProfile.innerHTML = `<i class="fa-solid fa-user-gear"></i> <span class="nav-text">Bilgileri Güncelle</span>`;
         }
+        const topBarUserName = document.querySelector('.top-bar-right .user-name');
+        if (topBarUserName) topBarUserName.textContent = displayName;
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -1101,12 +1173,36 @@ const userEditPassword = document.getElementById('user-edit-password');
 const userEditRole = document.getElementById('user-edit-role');
 const btnUserModalClose = document.getElementById('btn-user-modal-close');
 const btnUserModalCancel = document.getElementById('btn-user-modal-cancel');
+const userEditSubmitBtn = userEditForm ? userEditForm.querySelector('button[type="submit"]') : null;
+let initialUserEditDisplayName = '';
+let initialUserEditPassword = '';
+let initialUserEditRole = '';
+
+function updateUserEditSubmitState() {
+  if (!userEditSubmitBtn) return;
+  const currentName = userEditDisplayName ? userEditDisplayName.value.trim() : '';
+  const currentPass = userEditPassword ? userEditPassword.value.trim() : '';
+  const currentRole = userEditRole ? userEditRole.value : '';
+  const isChanged = (currentName !== initialUserEditDisplayName) || (currentPass !== '') || (currentRole !== initialUserEditRole);
+  userEditSubmitBtn.disabled = !isChanged;
+}
+
+if (userEditDisplayName) userEditDisplayName.addEventListener('input', updateUserEditSubmitState);
+if (userEditPassword) userEditPassword.addEventListener('input', updateUserEditSubmitState);
+if (userEditRole) userEditRole.addEventListener('change', updateUserEditSubmitState);
+
 window.openUserEditModal = function(id, displayName, role) {
   if (!userEditModal) return;
   if (userEditId) userEditId.value = id;
   if (userEditDisplayName) userEditDisplayName.value = displayName;
   if (userEditPassword) userEditPassword.value = ''; 
   if (userEditRole) userEditRole.value = role;
+
+  initialUserEditDisplayName = displayName || '';
+  initialUserEditPassword = '';
+  initialUserEditRole = role || '';
+  updateUserEditSubmitState();
+
   userEditModal.style.display = 'flex';
 };
 function closeUserEditModal() { if (userEditModal) userEditModal.style.display = 'none'; }

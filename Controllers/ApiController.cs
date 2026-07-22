@@ -19,15 +19,13 @@ namespace yz.Controllers
         private readonly ApplicationDbContext _context;
         private readonly AiGenerationService _aiGenerationService;
         private readonly ImageSyncService _imageSyncService;
-        private readonly GeminiSeleniumService _geminiSeleniumService;
         private readonly MultiAiSeleniumService _multiAiSeleniumService;
         private readonly AiCredentialsService _credentialsService;
-        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, GeminiSeleniumService geminiSeleniumService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService)
+        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService)
         {
             _context = context;
             _aiGenerationService = aiGenerationService;
             _imageSyncService = imageSyncService;
-            _geminiSeleniumService = geminiSeleniumService;
             _multiAiSeleniumService = multiAiSeleniumService;
             _credentialsService = credentialsService;
         }

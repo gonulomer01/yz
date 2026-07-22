@@ -117,22 +117,20 @@ yz/
 │   ├── AiGenerationService.cs   # 3 Katmanlı yapay zeka üretim servis motoru
 │   ├── AiCredentialsService.cs  # Şifreli/yerel API anahtar okuma ve yazma servisi
 │   ├── ImageSyncService.cs      # Çift yönlü dosya-veritabanı senkronizasyon servisi
-│   ├── GeminiSeleniumService.cs # Chrome/Selenium tabanlı Google Gemini otomasyonu
-│   ├── MultiAiSeleniumService.cs # Çoklu yapay zeka (ChatGPT, Copilot, Grok vb.) web otomasyonu
+│   ├── MultiAiSeleniumService.cs # Çoklu yapay zeka (Gemini, ChatGPT, Copilot vb.) web otomasyonu
 │   └── DatabaseInitializationService.cs # Veritabanı ve ilk admin oluşturma servisi
 ├── Models/                      # Entity Framework modelleri (User, GeneratedImage, ApiKey vb.)
 ├── Views/                       # Glassmorphism arayüz ve kullanıcı giriş ekranları
 ├── wwwroot/
-│   ├── css/style.css            # Yarı şeffaf tasarım, rozetler ve filigran ayarları
+│   ├── css/style.css            # Yarı şeffaf tasarım, 3 sütunlu grid ve filigran ayarları
 │   ├── js/app.js                # Dinamik sekme filtreleme, akış ve API haberleşmesi
 │   ├── generated-stability/     # Stability AI ile üretilen resimler (.gitkeep)
 │   ├── generated-gemini/        # Google Gemini ile üretilen resimler (.gitkeep)
 │   ├── generated-chatgpt/       # ChatGPT ile üretilen resimler (.gitkeep)
 │   ├── generated-copilot/       # Copilot ile üretilen resimler (.gitkeep)
-│   ├── generated-grok/          # Grok ile üretilen resimler (.gitkeep)
 │   ├── generated-free/          # Ücretsiz FLUX.1 modelleri ile üretilen resimler (.gitkeep)
 ├── ai_credentials.template.json # İlk kurulum için şablon anahtar yapısı
-└── Temiz-Paketle.ps1            # Projeyi temizleyerek paylaşım paketi (ZIP) oluşturan betik
+└── Scripts/                     # Proje paketleme, temizleme ve GitHub senkronizasyon betikleri
 ```
 
 ---

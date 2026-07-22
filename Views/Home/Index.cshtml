@@ -28,49 +28,84 @@
     </div>
   </div>
 
-  <!-- Minimal Üst Header -->
-  <header class="glass-header">
-    <div class="header-inner">
-      <a class="brand" href="/">
-        <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="brand-logo">
-        <div class="brand-text">
-          <span class="brand-primary">MELİKGAZİ BELEDİYESİ</span>
-          <span class="brand-secondary"><i class="fa-solid fa-microchip"></i> AKILLI ŞEHİRCİLİK & YZ GÖRSEL PLATFORMU</span>
+  <div class="app-layout" id="app-layout">
+    <!-- Sol Yan Menü (Collapsible Sidebar) -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <a class="brand" href="/">
+          <img src="https://www.melikgazi.bel.tr/images/favicon.webp" alt="Melikgazi Logo" class="brand-logo">
+          <div class="brand-text">
+            <span class="brand-primary">MELİKGAZİ <span class="brand-highlight">YZ</span></span>
+            <span class="brand-secondary"><i class="fa-solid fa-sparkles"></i> Görsel Platformu</span>
+          </div>
+        </a>
+        <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Genişlet / Daralt">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-group">
+          <button id="nav-studio" class="sidebar-nav-item nav-pill active" title="Stüdyo">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span class="nav-text">Stüdyo</span>
+          </button>
+
+          @if (isAdmin)
+          {
+              <button id="nav-dashboard" class="sidebar-nav-item nav-pill" title="Yönetim Paneli">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="nav-text">Yönetim Paneli</span>
+              </button>
+          }
+
+          <button id="btn-gallery-toggle" class="sidebar-nav-item nav-pill gallery-pill" title="Görsel Arşivi">
+            <i class="fa-solid fa-images"></i>
+            <span class="nav-text">Görsel Arşivi</span>
+            <span class="gallery-count" id="gallery-count">0</span>
+          </button>
+
+          @if (!isAdmin)
+          {
+              <button id="btn-profile" class="sidebar-nav-item nav-pill profile-pill" title="Profil Bilgilerimi Düzenle">
+                <i class="fa-solid fa-user-gear"></i>
+                <span class="nav-text">Bilgileri Güncelle</span>
+              </button>
+          }
         </div>
-      </a>
-      <div class="header-actions">
-        <button id="nav-studio" class="nav-pill active">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Stüdyo
-        </button>
+      </nav>
 
-        @if (isAdmin)
-        {
-            <button id="nav-dashboard" class="nav-pill">
-              <i class="fa-solid fa-sliders"></i> Yönetim Paneli
-            </button>
-        }
-
-        <button id="btn-profile" class="nav-pill profile-pill" title="Profil Bilgilerimi Düzenle">
-          <i class="fa-solid fa-user-gear"></i> @displayName
-          <span class="role-badge @(isAdmin ? "role-admin" : "role-user")">@(isAdmin ? "Yönetici" : "Kullanıcı")</span>
-        </button>
-
-        <button id="btn-gallery-toggle" class="nav-pill gallery-pill" title="Görsel Arşivi">
-          <i class="fa-solid fa-images"></i>
-          <span class="gallery-count" id="gallery-count">0</span>
-        </button>
-
-        <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+      <div class="sidebar-footer">
+        <form asp-controller="Account" asp-action="Logout" method="post" style="width: 100%;">
             @Html.AntiForgeryToken()
-            <button type="submit" class="nav-pill logout-pill" title="Çıkış Yap">
+            <button type="submit" class="sidebar-nav-item logout-pill" title="Çıkış Yap">
                 <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="nav-text">Çıkış Yap</span>
             </button>
         </form>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <main>
+    <!-- Sağ Ana İçerik Alanı -->
+    <main class="main-content" id="main-content">
+      <!-- Üst Bilgi Çubuğu (Top Bar) -->
+      <header class="top-bar glass-card">
+        <div class="top-bar-title" id="page-title-heading">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Melikgazi YZ Stüdyosu</h2>
+        </div>
+        <div class="top-bar-right">
+          <div class="user-badge-info">
+            <i class="fa-solid fa-user-shield"></i>
+            <div class="user-info-text">
+              <span class="user-name">@displayName</span>
+              <span class="role-badge @(isAdmin ? "role-admin" : "role-user")">@(isAdmin ? "Yönetici" : "Kullanıcı")</span>
+            </div>
+          </div>
+          <button id="btn-batch-download" class="chip-btn primary-chip" style="display:none;" title="Tüm Üretimleri Zip Olarak İndir (Resim + Prompt TXT)">
+            <i class="fa-solid fa-file-zipper"></i> Toplu Ziple & İndir
+          </button>
+        </div>
+      </header>
 
     <!-- === STÜDYO EKRANI === -->
     <section id="section-studio" class="page active">
@@ -181,13 +216,13 @@
                   <option value="copilot-web-profile">🤖 Microsoft Copilot — DALL-E 3 (Çoklu Hesap)</option>
                 </optgroup>
                 <optgroup label="🚀 Çoklu AI Üretim">
-                  <option value="triple-ai">🚀 Üçlü Üretim (Gemini + ChatGPT + Copilot)</option>
+                  <option value="triple-ai" selected>🚀 Üçlü Üretim (Gemini + ChatGPT + Copilot)</option>
                 </optgroup>
                 <optgroup label="🌟 Ücretsiz & Sınırsız">
                   <option value="pollinations-flux-realism">FLUX.1 Realism (En Kaliteli) — Ücretsiz</option>
                 </optgroup>
                 <optgroup label="💳 Stability AI (Kredili)">
-                  <option value="sdxl" selected>SDXL 1.0 (~1 Kredi - En Stabil)</option>
+                  <option value="sdxl">SDXL 1.0 (~1 Kredi - En Stabil)</option>
                   <option value="core">Stable Image Core (3 Kredi)</option>
                   <option value="sd3.5-medium">SD 3.5 Medium (3.5 Kredi)</option>
                   <option value="sd3.5-large-turbo">SD 3.5 Turbo (4 Kredi)</option>
@@ -221,9 +256,9 @@
           <div class="setting-chip glass-card">
             <label><i class="fa-solid fa-expand"></i> Oran</label>
             <div class="ratio-group">
-              <input type="radio" name="ratio" id="r1" value="1:1" checked>
+              <input type="radio" name="ratio" id="r1" value="1:1">
               <label for="r1" class="ratio-chip"><i class="fa-regular fa-square"></i> 1:1</label>
-              <input type="radio" name="ratio" id="r2" value="16:9">
+              <input type="radio" name="ratio" id="r2" value="16:9" checked>
               <label for="r2" class="ratio-chip"><i class="fa-solid fa-display"></i> 16:9</label>
               <input type="radio" name="ratio" id="r3" value="9:16">
               <label for="r3" class="ratio-chip"><i class="fa-solid fa-mobile-screen"></i> 9:16</label>
@@ -569,7 +604,7 @@
                 <h3 id="user-images-modal-title"><i class="fa-solid fa-images" style="color: var(--color-primary);"></i> Kullanıcı Görselleri</h3>
                 <button id="btn-user-images-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
               </div>
-              <div id="user-images-container" style="overflow-y: auto; flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;"></div>
+              <div id="user-images-container" style="overflow-y: auto; flex: 1; padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;"></div>
             </div>
           </div>
         </section>
@@ -645,29 +680,39 @@
       </div>
     </div>
 
-  </main>
+    <!-- === GÖRSEL ARŞİVİ EKRANI === -->
+    <section id="section-gallery" class="page">
+      <div class="glass-card dash-section-card">
+        <div class="dash-section-header">
+          <div>
+            <h3><i class="fa-solid fa-images" style="color: var(--color-primary);"></i> Görsel Arşivi (@displayName)</h3>
+            <p>Üretilen tüm görselleri inceleyebilir, filtreleyebilir veya indirebilirsiniz.</p>
+          </div>
+          <div class="gallery-header-actions">
+            <button id="btn-sync-images" class="action-btn primary-btn" title="Klasörleri Tara & Senkronize Et">
+              <i class="fa-solid fa-arrows-rotate"></i> Senkronize Et
+            </button>
+          </div>
+        </div>
+        
+        <div class="gallery-folder-tabs" id="gallery-folder-tabs" style="margin-bottom: 20px;">
+          <button class="folder-tab active" data-folder="all"><i class="fa-solid fa-layer-group"></i> Tümü</button>
+          <button class="folder-tab" data-folder="triple"><i class="fa-solid fa-object-group"></i> Üçlü Üretimler</button>
+          <button class="folder-tab" data-folder="stability"><i class="fa-solid fa-key"></i> Stability AI</button>
+          <button class="folder-tab" data-folder="gemini"><i class="fa-brands fa-google"></i> Gemini Web</button>
+          <button class="folder-tab" data-folder="chatgpt"><i class="fa-solid fa-robot"></i> ChatGPT</button>
+          <button class="folder-tab" data-folder="copilot"><i class="fa-brands fa-microsoft"></i> Copilot</button>
+          <button class="folder-tab" data-folder="free"><i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz</button>
+        </div>
 
-  <!-- Sağdan Açılan Galeri Paneli -->
-  <div id="gallery-overlay" class="gallery-overlay-bg" style="display:none"></div>
-  <aside id="gallery-panel" class="gallery-panel">
-    <div class="gallery-panel-header">
-      <h3><i class="fa-solid fa-images"></i> Görsel Arşivim (@displayName)</h3>
-      <div class="gallery-header-actions">
-        <button id="btn-sync-images" class="chip-btn sync-btn" title="Klasörleri Tara & Senkronize Et"><i class="fa-solid fa-arrows-rotate"></i></button>
-        <button id="btn-gallery-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+        <div id="gallery-grid" class="gallery-grid-main"></div>
       </div>
-    </div>
-    <div class="gallery-folder-tabs" id="gallery-folder-tabs">
-      <button class="folder-tab active" data-folder="all"><i class="fa-solid fa-layer-group"></i> Tümü</button>
-      <button class="folder-tab" data-folder="triple"><i class="fa-solid fa-object-group"></i> Üçlü</button>
-      <button class="folder-tab" data-folder="stability"><i class="fa-solid fa-key"></i> Stability AI</button>
-      <button class="folder-tab" data-folder="gemini"><i class="fa-brands fa-google"></i> Gemini Web</button>
-      <button class="folder-tab" data-folder="chatgpt"><i class="fa-solid fa-robot"></i> ChatGPT</button>
-      <button class="folder-tab" data-folder="copilot"><i class="fa-brands fa-microsoft"></i> Copilot</button>
-      <button class="folder-tab" data-folder="free"><i class="fa-solid fa-wand-magic-sparkles"></i> Ücretsiz</button>
-    </div>
-    <div id="gallery-grid" class="gallery-grid-panel"></div>
-  </aside>
+    </section>
+
+  </main>
+</div>
+
+
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="~/js/app.js" asp-append-version="true"></script>
