@@ -1,54 +1,36 @@
-# Mega Image Studio — Yapay Zeka Görsel Üretim ve Yönetim Platformu
+# Mega Image Studio — Melikgazi Belediyesi Çoklu Yapay Zeka Görsel Üretim ve Yönetim Platformu
 
-**Mega Image Studio**, modern **.NET 10 ASP.NET Core MVC** altyapısıyla geliştirilmiş, çoklu yapay zeka motorunu tek bir merkezi arayüz üzerinden yöneten, yarı şeffaf (*Glassmorphism*) şık bir tasarıma, canlı akışlı (SSE) üçlü üretime, tam ekran görsel inceleyicisine (Lightbox) ve çift yönlü dosya-veritabanı senkronizasyonuna sahip gelişmiş bir kurumsal görsel otomasyon sistemidir.
+**Mega Image Studio**, modern **.NET 10 ASP.NET Core MVC** ve **MS SQL Server** altyapısıyla geliştirilmiş, çoklu yapay zeka motorunu (Google Gemini Web, ChatGPT DALL-E, Microsoft Copilot ve Stability AI / Pollinations AI) tek bir merkezi arayüz üzerinden yöneten, canlı akışlı (SSE) üçlü üretime, tam ekran görsel inceleme (Lightbox) ve çift yönlü dosya-veritabanı senkronizasyonuna sahip kurumsal bir görsel üretim platformudur.
 
 ---
 
-## 🌟 Öne Çıkan Özellikler ve Mimari
+## 🌟 Öne Çıkan Özellikler
 
-### 1. 🚀 Çoklu AI Üretimi, Web Otomasyonu ve Canlı Akış (Gemini + ChatGPT + Copilot)
-Platform, farklı ihtiyaç ve bütçe senaryolarına uygun çoklu yapay zeka motorunu destekler:
+### 1. 🚀 Çoklu AI Üretimi ve Canlı Akış (Gemini + ChatGPT + Copilot)
+- **⚡ Canlı Akışlı Üçlü AI Üretim Modu:** Tek bir prompt ile aynı anda 3 farklı AI platformundan (**Google Gemini Web**, **ChatGPT DALL-E**, **Microsoft Copilot DALL-E 3**) eşzamanlı görsel üretilir.
+- **📡 Server-Sent Events (SSE) Akışı:** Görseller üretildikçe canlı olarak stüdyo panelinde belirir.
+- **📦 Toplu ZIP & Prompt TXT İndirme:** Üçlü üretim tamamlandığında görseller ve orijinal prompt metnini içeren `prompt.txt` dosyası tek tıkla zip formatında indirilebilir.
+- **🤖 Akıllı Selenium Rotasyonu & Otomatik Kapatma:** Arka planda gizli Chrome profillerini (`GeminiChromeProfile_*`, `ChatGptChromeProfile_*`, `CopilotChromeProfile_*`) yöneterek görsel üretir. Kota dolduğunda sıradaki aktif hesaba otomatik geçiş yapılır.
+- **💳 Stability AI & Ücretsiz Modeller:** SDXL 1.0, Stable Image Core, SD 3.5 ve Pollinations AI (FLUX.1 / SDXL Turbo) desteği.
 
-- **⚡ Canlı Akışlı Üçlü AI Üretim Modu (Gemini + ChatGPT + Copilot):**
-  - Tek bir prompt ile aynı anda 3 farklı AI platformundan (**Google Gemini Web**, **ChatGPT DALL-E**, **Microsoft Copilot DALL-E 3**) eşzamanlı görsel üretilir.
-  - **Server-Sent Events (SSE) Canlı Akışı:** Görseller üretildikçe canlı olarak stüdyo panelinde belirir; tüm platformların bitmesi beklenmez.
-  - **Toplu ZIP & Prompt TXT İndirme:** Üçlü üretim tamamlandığında görseller model isimleriyle (`1_Google_Gemini.png`, `2_ChatGPT_DALLE.png`, `3_Microsoft_Copilot.png`) ve orijinal prompt metnini içeren `prompt.txt` dosyasıyla tek tıkla zip formatında indirilebilir.
-- **🤖 Selenium Çoklu Hesap Rotasyon Modu & Otomatik Kapatma:**
-  - Arka planda gizli Chrome profillerini (`GeminiChromeProfile_*`, `ChatGptChromeProfile_*`, `CopilotChromeProfile_*`) yöneterek yapay zeka platformlarının web arayüzleri üzerinden görsel üretir.
-  - Bir hesabın günlük kotası dolduğunda veya uyarı/limit penceresi belirdiğinde tarayıcı **anında kapatılır** ve sıradaki aktif hesaba otomatik geçiş yapılır (Akıllı Otomatik Rotasyon).
-  - *Sınırsız Anlık İptal ("Durdur"):* "İptal Et" butonuna basıldığında arka planda çalışan Chrome sürücüleri anında sonlandırılır.
-- **🖼️ Tam Ekran İnceleme & Tekli İndirme (Lightbox):**
-  - Stüdyo kartlarında, Görsel Arşivi'nde, Yönetici Kullanıcı Paneli'nde görsellere tıklandığında yüksek çözünürlüklü tam ekran görüntüleyici açılır ve tek tıkla resmi indirme imkanı sunar.
-- **💳 Stability AI (Kredili Modeller):**
-  - `SDXL 1.0 (~1 Kredi)`, `Stable Image Core (3 Kredi)`, `SD 3.5 Medium/Large` ve `Stable Image Ultra (8 Kredi)` modelleri.
-- **🌟 Ücretsiz & Sınırsız FLUX.1 / SDXL Turbo:**
-  - Pollinations AI altyapısı üzerinden **FLUX.1 Realism** ve **SDXL Turbo** modellerini sınırsız ve ücretsiz kullanabilme olanağı.
-
-### 2. 🎛️ Bütünleşik Sağ İçerik Alanı & Sekme Yönetimi
-Arayüz modal açılır pencereler yerine bütünleşik, tam ekran sağ içerik sekmeleriyle çalışır:
-1. **Stüdyo (`#section-studio`):** Prompt girişi, stil/oran seçimi, canlı akışlı üretim ve dikey görsel beslemesi.
-2. **Yönetim Paneli (`#section-dashboard` - Sadece Yöneticiler):**
+### 2. 🎛️ Yönetim ve Profil Modülleri
+1. **Stüdyo Panel:** Prompt girişi, stil/oran seçimi, canlı akışlı üretim ve görsel beslemesi.
+2. **Yönetici Paneli (Admin):**
    - **Hesap Yönetimi:** Google Gemini, ChatGPT ve Copilot Chrome hesap profilleri listeleme ve durum sıfırlama.
-   - **Key Yönetimi:** Stability AI API anahtar havuzu listeleme, ekleme ve düzenleme.
-   - **Kullanıcı Yönetimi:** Kullanıcı ekleme, yetkilendirme (Yönetici/Kullanıcı) ve kullanıcı görsellerini inceleme.
-3. **Görsel Arşivi (`#section-gallery`):** `Tümü`, `Üçlü Üretimler`, `Stability AI`, `Gemini Web`, `ChatGPT`, `Copilot` ve `Ücretsiz` sekmeleri.
-4. **Bilgileri Güncelle (`#section-profile` - Standart Kullanıcılar):** Kullanıcının ad soyad ve şifre bilgilerini güncellediği entegre profil alanı.
-
-### 3. 🔄 Çift Yönlü Klasör & Veritabanı Senkronizasyonu (`SyncDatabaseWithFilesystem`)
-Uygulama, fiziksel dosya sistemi ile veritabanını (`GeneratedImages` tablosu) gerçek zamanlı olarak senkronize eder:
-- **Otomatik Temizleme (`Orphan Cleanup`):** Bilgisayardan bir görsel silindiğinde veritabanı kaydı da otomatik silinir; arayüzde kırık görsel kalmaz.
-- **Otomatik Tanıma & Akıllı Gruplama (`AutoGroupTripleImages`):** Klasörlere eklenen yeni görseller otomatik algılanır. Aynı zaman diliminde üretilmiş 3'lü üretim görselleri otomatik tespit edilerek Görsel Arşivi'nde gruplandırılır.
+   - **API Key Yönetimi:** Stability AI API anahtar havuzu yönetimi.
+   - **Kullanıcı Yönetimi:** Kullanıcı ekleme, silme, yetkilendirme (Yönetici/Kullanıcı) ve kullanıcı görsellerini inceleme.
+3. **Görsel Arşivi:** `Tümü`, `Üçlü Üretimler`, `Stability AI`, `Gemini Web`, `ChatGPT`, `Copilot` ve `Ücretsiz` kategorili filtreleme.
 
 ---
 
-## 🚀 Sıfırdan Kurulum ve Çalıştırma Rehberi
+## 🚀 Sıfırdan Kurulum Rehberi
 
 ### 1. Sistem Gereksinimleri
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) veya üzeri
-- Google Chrome (Gemini, ChatGPT, Copilot otomasyonu için)
+- **[.NET 10 SDK](https://dotnet.microsoft.com/download)** veya üzeri
+- **MS SQL Server** (LocalDB veya MSSQLSERVER varsayılan örneği `Server=.`)
+- **Google Chrome** (Selenium Web Otomasyonu için)
 
-### 2. Projeyi Klonlama ve Çalıştırma
-Terminal (`PowerShell` veya `CMD`) açarak aşağıdaki komutları çalıştırın:
+### 2. Kurulum Adımları
 
 ```bash
 # 1. Projeyi bilgisayarınıza klonlayın
@@ -57,57 +39,48 @@ git clone https://github.com/gonulomer01/yz.git
 # 2. Proje klasörüne girin
 cd yz
 
-# 3. Uygulamayı derleyin ve başlatın
+# 3. Uygulamayı derleyin ve çalıştırın
 dotnet run
 ```
 
-Uygulama başladığında tarayıcınızdan `http://localhost:5000` (veya gösterilen yerel port) adresine gidin.
+> **Not:** Uygulama çalıştırıldığında SQL Server üzerinde `SegmindNexusDb` veritabanı ve gerekli tablolar otomatik olarak oluşturulur.
 
 ---
 
-## 🗄️ Otomatik Veritabanı ve İlk Yönetici (Admin) Hesabı
+## 🔑 İlk Yönetici (Admin) Giriş Bilgileri
 
-Projeyi ilk defa çalıştırdığınızda veritabanı ve ilk yönetici hesabı otomatik oluşturulur:
+Uygulama ilk kez çalıştırıldığında varsayılan yönetici hesabı otomatik tanımlanır:
 
-### 🔐 İlk Giriş Bilgileri (Varsayılan Yönetici)
+- **Web Arayüzü Adresi:** `http://localhost:5000`
 - **Kullanıcı Adı:** `admin`
 - **Şifre:** `admin123`
 
 ---
 
-## 🔑 API Anahtarları ve Yapılandırma
+## ⚙️ Yapılandırma (`appsettings.json`)
 
-- Uygulama ilk açılışta `ai_credentials.template.json` şablonundan `ai_credentials.json` dosyasını oluşturur.
-- `ai_credentials.json` ve Chrome oturum profilleri `.gitignore` dosyasında korumaya alınmıştır.
+Veritabanı bağlantı cümlesi `appsettings.json` ve `appsettings.Production.json` içerisinde tanımlıdır:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=.;Database=SegmindNexusDb;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true"
+}
+```
 
 ---
 
-## 📁 Dosya ve Klasör Yapısı
+## 📁 Klasör Yapısı
 
 ```text
 yz/
-│
-├── Controllers/
-│   ├── AccountController.cs     # Oturum açma, kayıt ve çıkış endpointleri
-│   ├── ApiController.cs         # Görsel, anahtar, hesap, SSE canlı akış, profil ve senkronizasyon endpointleri
-│   └── HomeController.cs        # Ana sayfa görünüm yönlendiricisi
-├── Services/
-│   ├── AiGenerationService.cs   # Yapay zeka servis orkestratörü
-│   ├── AppServices.cs           # Database, ImageSync ve Credentials servisleri
-│   └── MultiAiSeleniumService.cs # Gemini, ChatGPT, Copilot Selenium otomasyonu
-├── Models/
-│   └── AppModels.cs             # User, GeneratedImage, ApiKey, AppSetting veri modelleri
-├── Views/
-│   ├── Account/                 # Login ve Register ekranları
-│   └── Home/Index.cshtml        # Stüdyo, Yönetim Paneli, Arşiv ve Lightbox ekranları
-├── wwwroot/
-│   ├── css/style.css            # Glassmorphism stil, canlı kartlar ve duyarlı tasarım ayarları
-│   ├── js/app.js                # Dinamik sekme yönetimi, SSE canlı akış, galeri ve Lightbox işlemleri
-│   ├── generated-gemini/        # Gemini görselleri (.gitkeep)
-│   ├── generated-chatgpt/       # ChatGPT görselleri (.gitkeep)
-│   ├── generated-copilot/       # Copilot görselleri (.gitkeep)
-│   ├── generated-stability/     # Stability AI görselleri (.gitkeep)
-│   └── generated-free/          # Ücretsiz modellerin görselleri (.gitkeep)
-├── ai_credentials.template.json # Şablon kimlik yapılandırması
-└── Scripts/                     # Paketleme ve senkronizasyon betikleri
+├── Controllers/         # MVC ve API Endpointleri (Account, Api, Home)
+├── Data/                # ApplicationDbContext (EF Core MS SQL Server)
+├── Models/              # Entity ve Veri Modelleri (User, GeneratedImage, ApiKey, AppSetting)
+├── Services/            # AI Üretim Orkestratörü, Database Init, Selenium MultiAI Service
+├── Views/               # Razor View HTML Şablonları & Modern Glassmorphism Arayüz
+├── wwwroot/             # Statik dosyalar, CSS, JS (app.js) ve üretilen görseller
+├── appsettings.json     # Uygulama ve Veritabanı Konfigürasyonu
+├── ai_credentials.template.json # AI Hesap Yapılandırma Şablonu
+├── Program.cs           # Web Uygulaması Başlangıç Mantığı
+└── yz.csproj            # .NET 10 Proje Yapılandırması
 ```

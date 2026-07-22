@@ -5,8 +5,13 @@ using yz.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? "Server=.;Database=SegmindNexusDb;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true";
+
+Console.WriteLine($"[Startup] Active Connection String: '{connectionString}'");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SegmindNexusDb;Trusted_Connection=True;MultipleActiveResultSets=true"));
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ImageSyncService>();

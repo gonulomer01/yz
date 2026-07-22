@@ -29,7 +29,12 @@ namespace yz.Services
                     Console.WriteLine("[Database] Orphaned or broken LocalDB catalog detected. Dropping database from LocalDB master and recreating...");
                     try
                     {
-                        using var masterConn = new Microsoft.Data.SqlClient.SqlConnection("Server=(localdb)\\mssqllocaldb;Database=master;Trusted_Connection=True;MultipleActiveResultSets=true");
+                        string mainConnStr = db.Database.GetConnectionString() ?? "Server=.;Database=SegmindNexusDb;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true";
+                        var connBuilder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(mainConnStr)
+                        {
+                            InitialCatalog = "master"
+                        };
+                        using var masterConn = new Microsoft.Data.SqlClient.SqlConnection(connBuilder.ConnectionString);
                         masterConn.Open();
                         using var cmd = masterConn.CreateCommand();
                         cmd.CommandText = @"
@@ -286,6 +291,7 @@ namespace yz.Services
                 var targetFolders = new[] { "generated-stability", "generated-gemini", "generated-chatgpt", "generated-copilot", "generated-free", "generated" };
                 var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
                 int adminId = adminUser != null ? adminUser.Id : 1;
+                var existingUserIds = db.Users.Select(u => u.Id).ToHashSet();
                 foreach (var folder in targetFolders)
                 {
                     var dirPath = Path.Combine(webRoot, folder);
@@ -330,6 +336,18 @@ namespace yz.Services
                                         }
                                     }
                                 }
+                                int fileUserId = adminId;
+                                if (fileName.Contains("-u"))
+                                {
+                                    var match = System.Text.RegularExpressions.Regex.Match(fileName, @"-u(\d+)-");
+                                    if (match.Success && int.TryParse(match.Groups[1].Value, out int extractedUserId))
+                                    {
+                                        if (existingUserIds.Contains(extractedUserId))
+                                        {
+                                            fileUserId = extractedUserId;
+                                        }
+                                    }
+                                }
                                 db.GeneratedImages.Add(new GeneratedImage
                                 {
                                     ImagePath = relPath,
@@ -337,10 +355,26 @@ namespace yz.Services
                                     ModelUsed = modelUsedName,
                                     KeyUsedLabel = keyLabelName,
                                     ApiKeyId = 0,
-                                    UserId = adminId,
+                                    UserId = fileUserId,
                                     CreatedAt = File.GetCreationTime(file),
                                     GroupId = extractedGroupId
                                 });
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+                foreach (var img in allDbImages)
+                {
+                    if (!string.IsNullOrEmpty(img.ImagePath) && img.ImagePath.Contains("-u"))
+                    {
+                        var fn = Path.GetFileName(img.ImagePath);
+                        var match = System.Text.RegularExpressions.Regex.Match(fn, @"-u(\d+)-");
+                        if (match.Success && int.TryParse(match.Groups[1].Value, out int realUserId))
+                        {
+                            if (img.UserId != realUserId && existingUserIds.Contains(realUserId))
+                            {
+                                img.UserId = realUserId;
                                 changed = true;
                             }
                         }

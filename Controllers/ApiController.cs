@@ -724,6 +724,31 @@ namespace yz.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { success = true });
         }
+
+        [HttpGet("health")]
+        [AllowAnonymous]
+        public async Task<IActionResult> HealthCheck()
+        {
+            bool dbConnected = false;
+            string? dbError = null;
+            try
+            {
+                dbConnected = await _context.Database.CanConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                dbError = ex.Message + (ex.InnerException != null ? " | " + ex.InnerException.Message : "");
+            }
+
+            return Ok(new
+            {
+                status = dbConnected ? "Healthy" : "Degraded",
+                timestamp = DateTime.UtcNow,
+                database = dbConnected ? "Connected" : "Disconnected",
+                dbError = dbError,
+                activeSeleniumDrivers = MultiAiSeleniumService.ActiveDriversCount
+            });
+        }
     }
     public class KeyUpdateRequest
     {

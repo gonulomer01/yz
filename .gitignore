@@ -9,7 +9,7 @@ bld/
 bin/
 obj/
 
-## Visual Studio / VS Code / Rider
+## Visual Studio / VS Code / Rider / IDEs
 .vs/
 .vscode/
 .idea/
@@ -24,14 +24,17 @@ ehthumbs.db
 Desktop.ini
 .DS_Store
 
-## Project specific ignores
+## Publish & Deployment
 Yayinla/
 yayinla/
 publish/
 
-## API Credentials & Google Chrome Selenium Sessions
+## Credentials & Runtime State
 ai_credentials.json
 GeminiChromeProfile_*
+ChatGptChromeProfile_*
+CopilotChromeProfile_*
+chrome_user_data/
 
 ## Databases
 *.db
@@ -40,13 +43,13 @@ GeminiChromeProfile_*
 *.mdf
 *.ldf
 
-## Scripts, clean copies and archives
-*.ps1
-!Temiz-Paketle.ps1
-ai_automation_project_*
+## Archives & Temporary Scripts
 *.zip
+*.7z
+*.rar
+scratch/
 
-# Ignore generated images inside wwwroot but keep the folders
+## Ignore generated images inside wwwroot but keep directory structure
 wwwroot/generated/*
 !wwwroot/generated/.gitkeep
 wwwroot/generated-free/*

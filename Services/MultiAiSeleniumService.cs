@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using yz.Data;
@@ -24,12 +25,25 @@ namespace yz.Services
         private readonly ApplicationDbContext _context;
         private readonly ImageSyncService _imageSyncService;
         private readonly AiCredentialsService _credentialsService;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration? _configuration;
 
         private static readonly List<IWebDriver> _activeDrivers = new();
         private static readonly object _driverLock = new();
         private static volatile bool _isCancelRequested = false;
+        private static readonly SemaphoreSlim _concurrencySemaphore = new(3, 3);
 
         public static bool IsCancelRequested => _isCancelRequested;
+        public static int ActiveDriversCount
+        {
+            get
+            {
+                lock (_driverLock)
+                {
+                    return _activeDrivers.Count;
+                }
+            }
+        }
 
         public static void ResetCancelState()
         {
@@ -50,7 +64,10 @@ namespace yz.Services
             if (driver == null) return;
             lock (_driverLock)
             {
-                _activeDrivers.Remove(driver);
+                if (_activeDrivers.Remove(driver))
+                {
+                    try { _concurrencySemaphore.Release(); } catch { }
+                }
             }
         }
 
@@ -72,6 +89,7 @@ namespace yz.Services
                 {
                     driver.Quit();
                     driver.Dispose();
+                    try { _concurrencySemaphore.Release(); } catch { }
                 }
                 catch { }
             }
@@ -86,11 +104,13 @@ namespace yz.Services
             catch { }
         }
 
-        public MultiAiSeleniumService(ApplicationDbContext context, ImageSyncService imageSyncService, AiCredentialsService credentialsService)
+        public MultiAiSeleniumService(ApplicationDbContext context, ImageSyncService imageSyncService, AiCredentialsService credentialsService, IServiceScopeFactory scopeFactory, Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
         {
             _context = context;
             _imageSyncService = imageSyncService;
             _credentialsService = credentialsService;
+            _scopeFactory = scopeFactory;
+            _configuration = configuration;
         }
         public async Task<(int StatusCode, object Response)> GenerateFromGeminiAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
@@ -332,49 +352,68 @@ namespace yz.Services
             if (_isCancelRequested)
                 throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
 
-            var options = new ChromeOptions();
-            string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profileName);
-            Directory.CreateDirectory(profileDir);
-            options.AddArgument($"--user-data-dir={profileDir}");
-            options.AddArgument("--disable-blink-features=AutomationControlled");
-            options.AddExcludedArgument("enable-automation");
-            options.AddArgument("--no-sandbox");
-            options.AddArgument("--disable-dev-shm-usage");
-            options.AddArgument("--disable-gpu");
-            string downloadDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_downloads");
-            Directory.CreateDirectory(downloadDir);
-            options.AddUserProfilePreference("download.default_directory", downloadDir);
-            options.AddUserProfilePreference("download.prompt_for_download", false);
-            options.AddUserProfilePreference("download.directory_upgrade", true);
-            options.AddUserProfilePreference("safebrowsing.enabled", true);
-            if (!isAdmin)
-            {
-                options.AddArgument("--window-position=-4000,-4000");
-                options.AddArgument("--window-size=1400,900");
-            }
-            else
-            {
-                options.AddArgument("--window-size=1400,900");
-            }
+            bool acquired = _concurrencySemaphore.Wait(TimeSpan.FromSeconds(120));
+            if (!acquired)
+                throw new TimeoutException("Sunucu üzerindeki maksimum eşzamanlı Chrome kapasitesine ulaşıldı. Lütfen birkaç saniye sonra tekrar deneyin.");
 
-            if (_isCancelRequested)
-                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
-
-            var driver = new ChromeDriver(options);
-            driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(60);
-            if (!isAdmin)
+            try
             {
-                try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
-            }
+                var options = new ChromeOptions();
+                string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profileName);
+                Directory.CreateDirectory(profileDir);
+                options.AddArgument($"--user-data-dir={profileDir}");
+                options.AddArgument("--disable-blink-features=AutomationControlled");
+                options.AddExcludedArgument("enable-automation");
+                options.AddArgument("--no-sandbox");
+                options.AddArgument("--disable-dev-shm-usage");
+                options.AddArgument("--disable-gpu");
 
-            if (_isCancelRequested)
+                bool isHeadless = _configuration?.GetValue<bool>("SeleniumSettings:HeadlessMode") ?? false;
+                if (isHeadless)
+                {
+                    options.AddArgument("--headless=new");
+                }
+
+                string downloadDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_downloads");
+                Directory.CreateDirectory(downloadDir);
+                options.AddUserProfilePreference("download.default_directory", downloadDir);
+                options.AddUserProfilePreference("download.prompt_for_download", false);
+                options.AddUserProfilePreference("download.directory_upgrade", true);
+                options.AddUserProfilePreference("safebrowsing.enabled", true);
+                if (!isAdmin && !isHeadless)
+                {
+                    options.AddArgument("--window-position=-4000,-4000");
+                    options.AddArgument("--window-size=1400,900");
+                }
+                else
+                {
+                    options.AddArgument("--window-size=1400,900");
+                }
+
+                if (_isCancelRequested)
+                    throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
+
+                var driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(60);
+                if (!isAdmin && !isHeadless)
+                {
+                    try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
+                }
+
+                if (_isCancelRequested)
+                {
+                    try { driver.Quit(); driver.Dispose(); } catch { }
+                    throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü kapatıldı.");
+                }
+
+                RegisterDriver(driver);
+                return driver;
+            }
+            catch
             {
-                try { driver.Quit(); driver.Dispose(); } catch { }
-                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü kapatıldı.");
+                try { _concurrencySemaphore.Release(); } catch { }
+                throw;
             }
-
-            RegisterDriver(driver);
-            return driver;
         }
         private string BuildRatioInstruction(string aspectRatio)
         {
@@ -575,8 +614,10 @@ namespace yz.Services
             };
             try
             {
-                _context.GeneratedImages.Add(savedImage);
-                await _context.SaveChangesAsync();
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.GeneratedImages.Add(savedImage);
+                await db.SaveChangesAsync();
             }
             catch (Exception dbEx)
             {
@@ -712,7 +753,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "download_failed" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"mega-image-studio-{groupPrefix}gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "gemini", prompt, "Google Gemini Web", keyLabel, userId, "gemini", groupId, true);
                 Console.WriteLine($"[Gemini] Başarılı! ImageId={imageId}");
@@ -954,7 +995,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "download_failed" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"mega-image-studio-{groupPrefix}chatgpt-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}chatgpt-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "chatgpt", prompt, "ChatGPT Web (DALL-E)", keyLabel, userId, "chatgpt", groupId, true);
                 Console.WriteLine($"[ChatGPT] Başarılı! ImageId={imageId}");
@@ -1182,7 +1223,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "download_failed_or_exhausted" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"mega-image-studio-{groupPrefix}copilot-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}copilot-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "copilot", prompt, "Microsoft Copilot (DALL-E 3)", keyLabel, userId, "copilot", groupId, true);
                 Console.WriteLine($"[Copilot] BaÅŸarÄ±lÄ±! ImageId={imageId}");
