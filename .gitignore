@@ -62,5 +62,3 @@ wwwroot/generated-chatgpt/*
 !wwwroot/generated-chatgpt/.gitkeep
 wwwroot/generated-copilot/*
 !wwwroot/generated-copilot/.gitkeep
-wwwroot/generated-grok/*
-!wwwroot/generated-grok/.gitkeep
