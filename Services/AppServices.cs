@@ -111,9 +111,12 @@ namespace yz.Services
                 if (adminUser2 != null)
                 {
                     int adminId = adminUser2.Id;
-                    db.Database.ExecuteSqlRaw(
+                    int updatedRows = db.Database.ExecuteSqlRaw(
                         "UPDATE GeneratedImages SET UserId = {0} WHERE UserId = 0", adminId);
-                    Console.WriteLine($"[Auth] Mevcut görseller admin kullanıcısına (ID={adminId}) atandı.");
+                    if (updatedRows > 0)
+                    {
+                        Console.WriteLine($"[Auth] {updatedRows} adet sahipsiz görsel admin kullanıcısına (ID={adminId}) atandı.");
+                    }
                 }
                 Console.WriteLine("[Database] Database initialized and checked successfully.");
                 try
