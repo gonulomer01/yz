@@ -1731,24 +1731,21 @@ main {
 }
 
 .role-badge {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
+  padding: 0;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  background: transparent !important;
+  border: none !important;
 }
 
 .role-admin {
-  background: rgba(197, 138, 249, 0.2);
   color: var(--color-secondary);
-  border: 1px solid rgba(197, 138, 249, 0.4);
 }
 
 .role-user {
-  background: rgba(138, 180, 248, 0.15);
   color: var(--color-primary);
-  border: 1px solid rgba(138, 180, 248, 0.3);
 }
 
 .profile-pill {

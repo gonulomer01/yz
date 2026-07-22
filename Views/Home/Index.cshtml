@@ -437,9 +437,6 @@
             </div>
           </div>
 
-        </section>
-    }
-
           <!-- Stability Düzenleme Modalı -->
           <div id="edit-modal" class="modal-overlay" style="display:none">
             <div class="modal-box glass-card">
@@ -670,39 +667,40 @@
         </section>
     }
 
-    <!-- === KULLANICI PROFİLİM MODALI (HEM YÖNETİCİ HEM KULLANICI İÇİN) === -->
-    <div id="profile-modal" class="modal-overlay" style="display:none">
-      <div class="modal-box glass-card">
-        <div class="modal-header">
-          <h3><i class="fa-solid fa-user-gear" style="color: var(--color-primary);"></i> Profil Bilgilerimi Düzenle</h3>
-          <button id="btn-profile-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    <!-- === KULLANICI PROFİLİM EKRANI (SAĞ ANA İÇERİK ALANI) === -->
+    <section id="section-profile" class="page">
+      <div class="glass-card dash-section-card" style="max-width: 600px; margin: 0 auto;">
+        <div class="dash-section-header">
+          <div>
+            <h3><i class="fa-solid fa-user-gear" style="color: var(--color-primary);"></i> Profil Bilgilerimi Düzenle</h3>
+            <p>Kullanıcı hesabı bilgilerinizi ve şifrenizi aşağıdan güncelleyebilirsiniz.</p>
+          </div>
         </div>
-        <form id="profile-form">
+        <form id="profile-form" style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
           <div class="field">
-            <label>Kullanıcı Adı</label>
+            <label for="profile-username">Kullanıcı Adı</label>
             <input type="text" id="profile-username" disabled style="opacity: 0.6; cursor: not-allowed;">
           </div>
           <div class="field">
-            <label>Mevcut Rol</label>
+            <label for="profile-role">Mevcut Rol</label>
             <input type="text" id="profile-role" disabled style="opacity: 0.6; cursor: not-allowed;">
           </div>
           <div class="field">
             <label for="profile-displayName">Ad Soyad / Görünen Ad</label>
-            <input type="text" id="profile-displayName" required>
+            <input type="text" id="profile-displayName" required placeholder="Ad Soyad giriniz">
           </div>
           <div class="field">
             <label for="profile-password">Yeni Şifre (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
             <input type="password" id="profile-password" placeholder="Şifrenizi değiştirmiyorsanız boş bırakın">
           </div>
-          <div class="modal-actions">
-            <button type="button" id="btn-profile-cancel" class="action-btn">İptal</button>
-            <button type="submit" class="action-btn primary-btn">
+          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <button type="submit" class="action-btn primary-btn" style="padding: 10px 24px;">
               <i class="fa-solid fa-check"></i> Güncelle & Kaydet
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </section>
 
     <div id="triple-group-modal" class="modal-overlay" style="display:none">
       <div class="modal-box glass-card" style="width: 1000px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column;">

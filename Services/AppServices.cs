@@ -317,6 +317,19 @@ namespace yz.Services
                                     "generated-stability" => "Stability AI",
                                     _ => "Genel"
                                 };
+                                string? extractedGroupId = null;
+                                if (fileName.Contains("triple_"))
+                                {
+                                    var parts = fileName.Split('_');
+                                    for (int p = 0; p < parts.Length - 1; p++)
+                                    {
+                                        if (parts[p] == "triple" && p + 1 < parts.Length)
+                                        {
+                                            extractedGroupId = parts[p + 1];
+                                            break;
+                                        }
+                                    }
+                                }
                                 db.GeneratedImages.Add(new GeneratedImage
                                 {
                                     ImagePath = relPath,
@@ -325,13 +338,15 @@ namespace yz.Services
                                     KeyUsedLabel = keyLabelName,
                                     ApiKeyId = 0,
                                     UserId = adminId,
-                                    CreatedAt = File.GetCreationTime(file)
+                                    CreatedAt = File.GetCreationTime(file),
+                                    GroupId = extractedGroupId
                                 });
                                 changed = true;
                             }
                         }
                     }
                 }
+                AutoGroupTripleImages(db, ref changed);
                 if (changed)
                 {
                     db.SaveChanges();
@@ -341,6 +356,75 @@ namespace yz.Services
             {
                 Console.WriteLine($"[SyncDatabaseWithFilesystem Error] {ex.Message}");
             }
+        }
+
+        private void AutoGroupTripleImages(ApplicationDbContext db, ref bool changed)
+        {
+            var unGrouped = db.GeneratedImages
+                .Where(i => string.IsNullOrEmpty(i.GroupId))
+                .OrderBy(i => i.CreatedAt)
+                .ToList();
+
+            if (!unGrouped.Any()) return;
+
+            var tripleFolders = new HashSet<string> { "gemini", "chatgpt", "copilot" };
+
+            var used = new HashSet<int>();
+            for (int i = 0; i < unGrouped.Count; i++)
+            {
+                var item1 = unGrouped[i];
+                if (used.Contains(item1.Id)) continue;
+
+                string folder1 = GetFolderFromPath(item1.ImagePath);
+                if (!tripleFolders.Contains(folder1)) continue;
+
+                var cluster = new List<GeneratedImage> { item1 };
+
+                for (int j = i + 1; j < unGrouped.Count; j++)
+                {
+                    var item2 = unGrouped[j];
+                    if (used.Contains(item2.Id)) continue;
+
+                    string folder2 = GetFolderFromPath(item2.ImagePath);
+                    if (!tripleFolders.Contains(folder2)) continue;
+
+                    double secDiff = Math.Abs((item2.CreatedAt - item1.CreatedAt).TotalSeconds);
+                    if (secDiff <= 180)
+                    {
+                        if (!cluster.Any(c => GetFolderFromPath(c.ImagePath) == folder2))
+                        {
+                            cluster.Add(item2);
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (cluster.Count >= 2)
+                {
+                    string newGroupId = $"triple_auto_{item1.CreatedAt:yyyyMMddHHmmss}_{Guid.NewGuid().ToString()[..6]}";
+                    foreach (var img in cluster)
+                    {
+                        img.GroupId = newGroupId;
+                        used.Add(img.Id);
+                    }
+                    changed = true;
+                }
+            }
+        }
+
+        private static string GetFolderFromPath(string? path)
+        {
+            if (string.IsNullOrEmpty(path)) return "";
+            var lower = path.ToLowerInvariant();
+            if (lower.Contains("generated-gemini")) return "gemini";
+            if (lower.Contains("generated-chatgpt")) return "chatgpt";
+            if (lower.Contains("generated-copilot")) return "copilot";
+            if (lower.Contains("generated-stability")) return "stability";
+            if (lower.Contains("generated-free")) return "free";
+            return "";
         }
     }
     public class StabilityKeyItem

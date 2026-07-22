@@ -41,6 +41,9 @@ const galleryPanel = document.getElementById('gallery-panel');
 const galleryOverlay = document.getElementById('gallery-overlay');
 const btnGalleryToggle = document.getElementById('btn-gallery-toggle');
 const btnGalleryClose = document.getElementById('btn-gallery-close');
+const btnProfile = document.getElementById('btn-profile');
+const sectionGallery = document.getElementById('section-gallery');
+const sectionProfile = document.getElementById('section-profile');
 const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
 let keysData = [];
 let currentKeyIndex = 0;
@@ -112,16 +115,20 @@ if (navDashboard) {
 if (btnGalleryToggle) {
   btnGalleryToggle.addEventListener('click', () => switchPage('gallery'));
 }
-
-const sectionGallery = document.getElementById('section-gallery');
+if (btnProfile) {
+  btnProfile.addEventListener('click', () => switchPage('profile'));
+}
 
 function switchPage(page) {
   if (navStudio) navStudio.classList.remove('active');
   if (navDashboard) navDashboard.classList.remove('active');
   if (btnGalleryToggle) btnGalleryToggle.classList.remove('active');
+  if (btnProfile) btnProfile.classList.remove('active');
+
   if (sectionStudio) sectionStudio.classList.remove('active');
   if (sectionDashboard) sectionDashboard.classList.remove('active');
   if (sectionGallery) sectionGallery.classList.remove('active');
+  if (sectionProfile) sectionProfile.classList.remove('active');
 
   if (page === 'studio') {
     if (navStudio) navStudio.classList.add('active');
@@ -143,6 +150,11 @@ function switchPage(page) {
     loadCopilotAccounts();
     fetchUsers();
     fetchImages();
+  } else if (page === 'profile') {
+    if (btnProfile) btnProfile.classList.add('active');
+    if (sectionProfile) sectionProfile.classList.add('active');
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-user-gear"></i> <h2>Bilgileri Güncelle</h2>';
+    loadProfileData();
   }
 }
 const btnSyncImages = document.getElementById('btn-sync-images');
@@ -417,13 +429,7 @@ function renderGallery() {
   } else if (currentGalleryFolder === 'triple') {
     filteredList = groupedImages.filter(g => g.isGroup);
   } else {
-    filteredList = groupedImages.filter(g => {
-      if (g.isGroup) {
-        return g.items.some(it => it.folder === currentGalleryFolder);
-      } else {
-        return g.folder === currentGalleryFolder;
-      }
-    });
+    filteredList = persistentImages.filter(it => it.folder === currentGalleryFolder && !it.groupId);
   }
 
   if (filteredList.length === 0) {
@@ -1202,10 +1208,6 @@ window.deleteKeySlot = async function(id) {
     }
   } catch (err) { showToast(err.message, 'error'); }
 };
-const profileModal = document.getElementById('profile-modal');
-const btnProfile = document.getElementById('btn-profile');
-const btnProfileClose = document.getElementById('btn-profile-close');
-const btnProfileCancel = document.getElementById('btn-profile-cancel');
 const profileForm = document.getElementById('profile-form');
 const profileUsername = document.getElementById('profile-username');
 const profileRole = document.getElementById('profile-role');
@@ -1226,31 +1228,24 @@ function updateProfileSubmitState() {
 if (profileDisplayName) profileDisplayName.addEventListener('input', updateProfileSubmitState);
 if (profilePassword) profilePassword.addEventListener('input', updateProfileSubmitState);
 
-if (btnProfile) {
-  btnProfile.addEventListener('click', async () => {
-    try {
-      const res = await fetch('/api/profile');
-      if (!res.ok) throw new Error('Profil yüklenemedi');
-      const data = await res.json();
-      if (profileUsername) profileUsername.value = data.username;
-      if (profileRole) profileRole.value = data.role;
-      if (profileDisplayName) profileDisplayName.value = data.displayName;
-      if (profilePassword) profilePassword.value = '';
-      
-      initialProfileDisplayName = data.displayName || '';
-      initialProfilePassword = '';
-      updateProfileSubmitState();
-
-      if (profileModal) profileModal.style.display = 'flex';
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+async function loadProfileData() {
+  try {
+    const res = await fetch('/api/profile');
+    if (!res.ok) throw new Error('Profil yüklenemedi');
+    const data = await res.json();
+    if (profileUsername) profileUsername.value = data.username || '';
+    if (profileRole) profileRole.value = data.role || '';
+    if (profileDisplayName) profileDisplayName.value = data.displayName || '';
+    if (profilePassword) profilePassword.value = '';
+    
+    initialProfileDisplayName = data.displayName || '';
+    initialProfilePassword = '';
+    updateProfileSubmitState();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
-function closeProfileModal() { if (profileModal) profileModal.style.display = 'none'; }
-if (btnProfileClose) btnProfileClose.addEventListener('click', closeProfileModal);
-if (btnProfileCancel) btnProfileCancel.addEventListener('click', closeProfileModal);
-if (profileModal) profileModal.addEventListener('click', (e) => { if (e.target === profileModal) closeProfileModal(); });
+
 if (profileForm) {
   profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1272,10 +1267,9 @@ if (profileForm) {
       const data = await res.json();
       if (data.success) {
         showToast('Profil bilgileriniz güncellendi!');
-        closeProfileModal();
-        if (btnProfile) {
-          btnProfile.innerHTML = `<i class="fa-solid fa-user-gear"></i> <span class="nav-text">Bilgileri Güncelle</span>`;
-        }
+        initialProfileDisplayName = displayName;
+        initialProfilePassword = '';
+        updateProfileSubmitState();
         const topBarUserName = document.querySelector('.top-bar-right .user-name');
         if (topBarUserName) topBarUserName.textContent = displayName;
       }
