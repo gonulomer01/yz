@@ -712,7 +712,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "download_failed" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"melikgazi-{groupPrefix}gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-{groupPrefix}gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "gemini", prompt, "Google Gemini Web", keyLabel, userId, "gemini", groupId, true);
                 Console.WriteLine($"[Gemini] Başarılı! ImageId={imageId}");
@@ -954,7 +954,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "download_failed" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"melikgazi-{groupPrefix}chatgpt-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-{groupPrefix}chatgpt-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "chatgpt", prompt, "ChatGPT Web (DALL-E)", keyLabel, userId, "chatgpt", groupId, true);
                 Console.WriteLine($"[ChatGPT] Başarılı! ImageId={imageId}");
@@ -1182,7 +1182,7 @@ namespace yz.Services
                 if (imageBytes == null || imageBytes.Length < 1000)
                     return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "download_failed_or_exhausted" };
                 string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
-                string fileName = $"melikgazi-{groupPrefix}copilot-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-{groupPrefix}copilot-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
                 int imageId = await SaveImageToDb(imageBytes, fileName, "copilot", prompt, "Microsoft Copilot (DALL-E 3)", keyLabel, userId, "copilot", groupId, true);
                 Console.WriteLine($"[Copilot] BaÅŸarÄ±lÄ±! ImageId={imageId}");

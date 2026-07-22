@@ -133,7 +133,7 @@ namespace yz.Services
                 {
                     return (502, new { error = "Ücretsiz AI sunucusundan geçerli bir görsel alınamadı. Lütfen tekrar deneyin." });
                 }
-                string fileName = $"melikgazi-free-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string fileName = $"mega-image-studio-free-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                 await _imageSyncService.SaveImageToAllDirectoriesAsync(imageBytes, fileName, "free");
                 string relPath = $"/generated-free/{fileName}";
                 string modelDisplayName = polyModel switch
@@ -279,7 +279,7 @@ namespace yz.Services
                     }
                     if (string.IsNullOrEmpty(imageBase64))
                         throw new Exception("Yanıtta görsel verisi bulunamadı.");
-                    string fileName = $"melikgazi-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                    string fileName = $"mega-image-studio-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
                     byte[] imageBytes = Convert.FromBase64String(imageBase64);
                     await _imageSyncService.SaveImageToAllDirectoriesAsync(imageBytes, fileName, "stability");
                     string relPath = $"/generated-stability/{fileName}";

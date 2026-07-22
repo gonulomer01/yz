@@ -129,27 +129,30 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 14px;
+  padding: 14px 10px 14px 12px;
   border-bottom: 1px solid var(--border-color);
   height: 64px;
+  gap: 6px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   text-decoration: none;
   color: inherit;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
 
 .brand-logo {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   object-fit: contain;
   background: rgba(255, 255, 255, 0.06);
-  padding: 3px;
+  padding: 2px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
 }
@@ -160,6 +163,8 @@ body {
   line-height: 1.2;
   transition: opacity 0.2s ease, width 0.2s ease;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .app-sidebar.collapsed .brand {
@@ -179,8 +184,9 @@ body {
 .brand-primary {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 800;
-  font-size: 0.98rem;
+  font-size: 0.86rem;
   color: #ffffff;
+  letter-spacing: -0.2px;
 }
 
 .brand-highlight {
@@ -188,7 +194,7 @@ body {
 }
 
 .brand-secondary {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   color: var(--text-muted);
 }
 
@@ -196,8 +202,8 @@ body {
   border: none;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -368,8 +374,6 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-  text-align: center;
 }
 
 main {
@@ -1584,7 +1588,7 @@ main {
   left: 28vw;
   transform: translate(-50%, -50%);
   width: 320px;
-  height: 460px;
+  height: 320px;
   max-width: 90vw;
   max-height: 80vh;
   opacity: 1;
@@ -1593,7 +1597,7 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: logoToRedBox 1.4s cubic-bezier(0.4, 0, 0.2, 1) 3s forwards;
+  animation: logoToRedBox 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.2s forwards;
 }
 
 .auth-body .melikgazi-bg-watermark img {
@@ -1607,14 +1611,14 @@ main {
 /* LOGO ÜSTE ÇIKTIĞINDA YANINDA YAVAŞÇA BELİREN YAZI */
 .auth-body .melikgazi-slogan {
   position: fixed;
-  top: 58px;
-  left: 125px;
+  top: 42px;
+  left: 120px;
   z-index: 100;
   pointer-events: none;
   opacity: 0;
   transform: translateX(-15px);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-style: normal;
   font-weight: 800;
   letter-spacing: 0.8px;
@@ -1623,53 +1627,32 @@ main {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.65));
-  animation: sloganFadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) 4.2s forwards;
+  animation: sloganFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2.2s forwards;
 }
 
-<<<<<<< HEAD
-/* LOGONUN İLK AÇILIŞTA ORTADA DURUP SONRA SOL ÜSTE (90px) ŞIK BİR ŞEKİLDE GİTME ANİMASYONU */
-=======
 /* LOGONUN İLK AÇILIŞTA ORTADA DURUP SONRA SOL ÜSTE ŞIK BİR ŞEKİLDE GİTME ANİMASYONU */
->>>>>>> d34853e (feat: Melikgazi yeni kurumsal logosu entegre edildi, gereksiz dosyalar temizlendi ve site genelindeki tum logo alanlari guncellendi)
 @keyframes logoToRedBox {
   0% {
     top: 50vh;
     left: 28vw;
     transform: translate(-50%, -50%);
-<<<<<<< HEAD
-    width: 380px;
-    height: 380px;
-  }
-
-  100% {
-    top: 30px;
-    left: 40px;
-    transform: translate(0, 0);
-    width: 90px;
-    height: 90px;
-=======
     width: 320px;
-    height: 460px;
+    height: 320px;
   }
 
   100% {
-    top: 20px;
-    left: 40px;
+    top: 25px;
+    left: 35px;
     transform: translate(0, 0);
-    width: 65px;
-    height: 95px;
->>>>>>> d34853e (feat: Melikgazi yeni kurumsal logosu entegre edildi, gereksiz dosyalar temizlendi ve site genelindeki tum logo alanlari guncellendi)
+    width: 70px;
+    height: 70px;
   }
 }
 
 @keyframes sloganFadeIn {
   0% {
     opacity: 0;
-<<<<<<< HEAD
-    transform: translateX(-12px);
-=======
     transform: translateX(-15px);
->>>>>>> d34853e (feat: Melikgazi yeni kurumsal logosu entegre edildi, gereksiz dosyalar temizlendi ve site genelindeki tum logo alanlari guncellendi)
   }
 
   100% {
@@ -2148,24 +2131,28 @@ main {
 }
 
 .role-badge {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-  letter-spacing: 0.3px;
+  padding: 0;
+  border-radius: 0;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
+  background: transparent !important;
+  border: none !important;
+  display: inline-block;
+  margin-top: 1px;
 }
 
 .role-admin {
-  background: rgba(197, 138, 249, 0.2);
   color: var(--color-secondary);
-  border: 1px solid rgba(197, 138, 249, 0.4);
+  background: transparent !important;
+  border: none !important;
 }
 
 .role-user {
-  background: rgba(138, 180, 248, 0.15);
   color: var(--color-primary);
-  border: 1px solid rgba(138, 180, 248, 0.3);
+  background: transparent !important;
+  border: none !important;
 }
 
 .profile-pill {

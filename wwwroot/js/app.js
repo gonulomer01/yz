@@ -133,7 +133,7 @@ function switchPage(page) {
   if (page === 'studio') {
     if (navStudio) navStudio.classList.add('active');
     if (sectionStudio) sectionStudio.classList.add('active');
-    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Melikgazi YZ Stüdyosu</h2>';
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Stüdyo</h2>';
     fetchImages();
   } else if (page === 'gallery') {
     if (btnGalleryToggle) btnGalleryToggle.classList.add('active');
@@ -514,10 +514,10 @@ function getFormattedDownloadFilename(imagePath, modelName = '', site = '') {
   if (!baseName) baseName = `gorsel_${Date.now()}.png`;
   if (!baseName.includes('.')) baseName += '.png';
 
-  if (baseName.startsWith('melikgazi-')) {
-    return `Melikgazi_${modelTag}_${baseName.replace('melikgazi-', '')}`;
+  if (baseName.startsWith('mega-image-studio-') || baseName.startsWith('melikgazi-')) {
+    return `MegaImageStudio_${modelTag}_${baseName.replace(/^(mega-image-studio-|melikgazi-)/, '')}`;
   }
-  return `Melikgazi_${modelTag}_${baseName}`;
+  return `MegaImageStudio_${modelTag}_${baseName}`;
 }
 
 async function downloadTripleZip(images, promptText, groupId) {
