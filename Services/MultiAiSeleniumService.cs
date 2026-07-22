@@ -367,6 +367,8 @@ namespace yz.Services
                 options.AddArgument("--no-sandbox");
                 options.AddArgument("--disable-dev-shm-usage");
                 options.AddArgument("--disable-gpu");
+                options.AddArgument("--remote-allow-origins=*");
+                options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
 
                 bool isHeadless = _configuration?.GetValue<bool>("SeleniumSettings:HeadlessMode") ?? false;
                 if (isHeadless)
