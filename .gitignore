@@ -55,3 +55,9 @@ wwwroot/generated-gemini/*
 !wwwroot/generated-gemini/.gitkeep
 wwwroot/generated-stability/*
 !wwwroot/generated-stability/.gitkeep
+wwwroot/generated-chatgpt/*
+!wwwroot/generated-chatgpt/.gitkeep
+wwwroot/generated-copilot/*
+!wwwroot/generated-copilot/.gitkeep
+wwwroot/generated-grok/*
+!wwwroot/generated-grok/.gitkeep
