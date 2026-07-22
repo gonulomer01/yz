@@ -443,6 +443,114 @@ namespace yz.Controllers
             var (statusCode, response) = await _aiGenerationService.GenerateAsync(req, currentUserId, isAdmin);
             return StatusCode(statusCode, response);
         }
+        [HttpGet("generate-triple-stream")]
+        public async Task GenerateTripleStream([FromQuery] string prompt, [FromQuery] string aspectRatio = "1:1", [FromQuery] string style = "none", CancellationToken cancellationToken = default)
+        {
+            Response.ContentType = "text/event-stream";
+            Response.Headers["Cache-Control"] = "no-cache";
+            Response.Headers["Connection"] = "keep-alive";
+
+            if (string.IsNullOrWhiteSpace(prompt))
+            {
+                await WriteSseEventAsync(Response, "error", new { error = "Prompt gerekli." });
+                return;
+            }
+
+            int currentUserId = GetCurrentUserId();
+            bool isAdmin = User.IsInRole("Yönetici");
+            string formattedPrompt = _aiGenerationService.FormatPrompt(prompt, style);
+            string groupId = Guid.NewGuid().ToString("N")[..12];
+
+            await WriteSseEventAsync(Response, "start", new { groupId, prompt });
+
+            MultiAiSeleniumService.ResetCancelState();
+
+            var geminiTask = _multiAiSeleniumService.GenerateSiteForTripleAsync("gemini", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+            var chatgptTask = _multiAiSeleniumService.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+            var copilotTask = _multiAiSeleniumService.GenerateSiteForTripleAsync("copilot", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+
+            var pending = new List<Task<SiteGenerationResult>> { geminiTask, chatgptTask, copilotTask };
+            var successResults = new List<SiteGenerationResult>();
+            var failedResults = new List<SiteGenerationResult>();
+
+            while (pending.Count > 0)
+            {
+                var completedTask = await Task.WhenAny(pending);
+                pending.Remove(completedTask);
+
+                if (cancellationToken.IsCancellationRequested || MultiAiSeleniumService.IsCancelRequested)
+                {
+                    break;
+                }
+
+                SiteGenerationResult result;
+                try
+                {
+                    result = await completedTask;
+                }
+                catch (Exception ex)
+                {
+                    result = new SiteGenerationResult { Success = false, Error = ex.Message };
+                }
+
+                if (result.Success)
+                {
+                    successResults.Add(result);
+                    await WriteSseEventAsync(Response, "progress", new
+                    {
+                        site = result.SourceSite,
+                        status = "success",
+                        image = result.ImagePath,
+                        modelUsed = result.ModelUsed,
+                        keyUsedLabel = result.KeyUsedLabel,
+                        imageId = result.ImageId
+                    });
+                }
+                else
+                {
+                    failedResults.Add(result);
+                    await WriteSseEventAsync(Response, "progress", new
+                    {
+                        site = result.SourceSite,
+                        status = "failed",
+                        error = result.Error ?? "Üretim başarısız"
+                    });
+                }
+            }
+
+            await WriteSseEventAsync(Response, "complete", new
+            {
+                groupId,
+                totalSuccess = successResults.Count,
+                totalFailed = failedResults.Count,
+                results = successResults.Select(r => new
+                {
+                    image = r.ImagePath,
+                    modelUsed = r.ModelUsed,
+                    keyUsedLabel = r.KeyUsedLabel,
+                    imageId = r.ImageId,
+                    sourceSite = r.SourceSite
+                }),
+                failures = failedResults.Select(f => new
+                {
+                    sourceSite = f.SourceSite,
+                    error = f.Error
+                })
+            });
+        }
+
+        private static async Task WriteSseEventAsync(Microsoft.AspNetCore.Http.HttpResponse response, string eventType, object data)
+        {
+            try
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(new { type = eventType, payload = data });
+                var sseLine = $"data: {json}\n\n";
+                await response.WriteAsync(sseLine);
+                await response.Body.FlushAsync();
+            }
+            catch { }
+        }
+
         [HttpPost("cancel")]
         public IActionResult CancelGeneration()
         {

@@ -270,7 +270,7 @@ namespace yz.Services
                 userId = userId
             });
         }
-        private async Task<SiteGenerationResult> GenerateSiteForTripleAsync(string site, string prompt, string aspectRatio, int userId, bool isAdmin, string groupId)
+        public async Task<SiteGenerationResult> GenerateSiteForTripleAsync(string site, string prompt, string aspectRatio, int userId, bool isAdmin, string groupId)
         {
             try
             {
@@ -736,6 +736,59 @@ namespace yz.Services
                 if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
             }
         }
+        private bool CheckForChatGptWarningOrLimit(IWebDriver driver, out string warningMsg)
+        {
+            warningMsg = "";
+            try
+            {
+                var popups = driver.FindElements(By.CssSelector("[role='dialog'], [role='alert'], .modal, div[class*='dialog'], div[class*='modal'], div[class*='toast'], div[class*='banner'], [id*='radix']"));
+                foreach (var popup in popups)
+                {
+                    try
+                    {
+                        if (popup.Displayed)
+                        {
+                            string text = popup.Text.ToLowerInvariant();
+                            if (text.Contains("limit") || text.Contains("too many") || text.Contains("try again") ||
+                                text.Contains("rate") || text.Contains("upgrade") || text.Contains("bekleyin") ||
+                                text.Contains("ulaştınız") || text.Contains("error") || text.Contains("hata") ||
+                                text.Contains("cap") || text.Contains("quota") || text.Contains("exceeded") ||
+                                text.Contains("dall-e") || text.Contains("message limit"))
+                            {
+                                warningMsg = $"Açılır Pencere/Modal Uyarısı: {popup.Text.Trim().Replace("\n", " ")}";
+                                return true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                var messages = driver.FindElements(By.CssSelector("[data-message-author-role='assistant'], .markdown, .result-streaming, .text-message, div[class*='danger'], div[class*='error'], div[class*='warning']"));
+                foreach (var msg in messages.Reverse())
+                {
+                    try
+                    {
+                        if (msg.Displayed)
+                        {
+                            string text = msg.Text.ToLowerInvariant();
+                            if (text.Contains("can't generate") || text.Contains("cannot create") || text.Contains("unable to generate") ||
+                                text.Contains("i'm not able") || text.Contains("couldn't generate") || text.Contains("reached your limit") ||
+                                text.Contains("rate limit") || text.Contains("too many requests") || text.Contains("try again later") ||
+                                text.Contains("limitinize ulaştınız") || text.Contains("günlük limit") || text.Contains("saatlik limit") ||
+                                text.Contains("hızlı istek"))
+                            {
+                                warningMsg = $"Sayfa İçi Uyarı Metni: {msg.Text.Trim().Replace("\n", " ")}";
+                                return true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return false;
+        }
+
         private async Task<SiteGenerationResult> RunChatGptSession(ChatGptAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
         {
             if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" };
@@ -750,6 +803,11 @@ namespace yz.Services
                 {
                     if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" }; }
                     await Task.Delay(1000);
+                    if (CheckForChatGptWarningOrLimit(driver, out var initWarn))
+                    {
+                        Console.WriteLine($"[ChatGPT] Oturum açılışında limit/uyarı algılandı ({initWarn}). Pencere kapatılıp sıradaki hesaba geçiliyor...");
+                        return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
+                    }
                     try
                     {
                         var elements = driver.FindElements(By.CssSelector("#prompt-textarea, div[contenteditable='true'][id='prompt-textarea'], textarea[placeholder], div[role='textbox']"));
@@ -803,20 +861,14 @@ namespace yz.Services
                 for (int i = 0; i < 90; i++)
                 {
                     await Task.Delay(1000);
+                    if (CheckForChatGptWarningOrLimit(driver, out var warnMsg))
+                    {
+                        Console.WriteLine($"[ChatGPT] Üretim beklemesinde limit/uyarı algılandı ({warnMsg}). Pencere derhal kapatılıp sonraki hesaba geçiliyor...");
+                        errorFound = true;
+                        break;
+                    }
                     try
                     {
-                        var messages = driver.FindElements(By.CssSelector("[data-message-author-role='assistant'], .markdown, .result-streaming, .text-message"));
-                        var lastMsg = messages.LastOrDefault();
-                        if (lastMsg != null)
-                        {
-                            string text = lastMsg.Text.ToLower();
-                            if (text.Contains("can't generate") || text.Contains("cannot create") || text.Contains("unable to generate") || text.Contains("i'm not able") || text.Contains("I couldn't generate"))
-                            {
-                                errorFound = true;
-                                Console.WriteLine("[ChatGPT] Hata metni algılandı.");
-                                break;
-                            }
-                        }
                         var isStreaming = driver.FindElements(By.CssSelector(".result-streaming")).Any();
                         if (isStreaming)
                         {
@@ -837,7 +889,7 @@ namespace yz.Services
                     catch { }
                 }
                 if (errorFound)
-                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "generation_failed" };
+                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
                 if (generatedImg == null)
                 {
                     Console.WriteLine("[ChatGPT] Görsel 90 saniye içinde bulunamadı. Debug screenshot kaydediliyor...");

@@ -61,6 +61,10 @@ namespace yz.Services
                 _ => prompt
             };
         }
+        public string FormatPrompt(string prompt, string style)
+        {
+            return EnrichTurkishPromptForAi(ApplyStyle(prompt, style ?? "none"));
+        }
         private void AddFormField(MultipartFormDataContent form, string name, string value)
         {
             var content = new StringContent(value);

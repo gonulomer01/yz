@@ -284,6 +284,13 @@ async function handleGenerate(e) {
   const ratio = ratioEl ? ratioEl.value : '1:1';
   if (!prompt) { showToast('Lütfen bir görsel tarifi girin.', 'error'); return; }
 
+  const selectedModel = modelSelect.value;
+
+  if (selectedModel === 'triple-ai') {
+    await handleTripleStreamGenerate(prompt, ratio, styleSelect.value);
+    return;
+  }
+
   isGenerating = true;
   currentAbortController = new AbortController();
 
@@ -301,10 +308,7 @@ async function handleGenerate(e) {
   if (canvasError) canvasError.style.display = 'none';
   if (canvasLoading) canvasLoading.style.display = 'flex';
 
-  const selectedModel = modelSelect.value;
-  if (selectedModel === 'triple-ai') {
-    loadingStatus.textContent = '🚀 Üçlü üretim: Gemini + ChatGPT + Copilot aynı anda çalışıyor…';
-  } else if (selectedModel.startsWith('gemini-') || selectedModel.startsWith('chatgpt-') || selectedModel.startsWith('copilot-')) {
+  if (selectedModel.startsWith('gemini-') || selectedModel.startsWith('chatgpt-') || selectedModel.startsWith('copilot-')) {
     loadingStatus.textContent = '🤖 Selenium tarayıcı otomasyonu çalışıyor…';
   } else {
     loadingStatus.textContent = 'API sunucularına bağlanılıyor…';
@@ -330,27 +334,10 @@ async function handleGenerate(e) {
     const data = await res.json();
     if (data.success) {
       isSuccess = true;
-      if (data.multiMode && data.results) {
-        if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
-        if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
-        if (typeof canvasSuccess !== 'undefined' && canvasSuccess) canvasSuccess.style.display = 'none';
-        await fetchImages();
-        openTripleGroupModal(data.groupId);
-        if (data.failures && data.failures.length > 0) {
-          let failMsg = "Üretim tamamlandı ancak bazıları başarısız oldu:\n";
-          data.failures.forEach(f => {
-            failMsg += "- " + f.sourceSite + ": " + (f.error === 'login_required' ? 'Oturum açılmamış' : f.error) + "\n";
-          });
-          showToast(failMsg);
-        } else {
-          showToast("Çoklu üretim başarılı! Görseller kaydedildi.");
-        }
-      } else {
-        addStudioImageToFeed(data.image, data.modelUsed, data.keyUsedLabel, true);
-        showToast('Görsel başarıyla üretildi!');
-        await fetchImages();
-        if (isAdmin) await fetchKeys();
-      }
+      addStudioImageToFeed(data.image, data.modelUsed, data.keyUsedLabel, true);
+      showToast('Görsel başarıyla üretildi!');
+      await fetchImages();
+      if (isAdmin) await fetchKeys();
     }
   } catch (err) {
     if (err.name === 'AbortError') {
@@ -364,31 +351,238 @@ async function handleGenerate(e) {
     resetToInitialState(isSuccess);
   }
 }
+
+async function handleTripleStreamGenerate(prompt, ratio, style) {
+  isGenerating = true;
+  currentAbortController = new AbortController();
+
+  btnGenerate.disabled = false;
+  btnGenerate.classList.add('btn-cancel');
+  if (btnLabel) {
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i> İptal Et';
+    btnLabel.style.display = 'flex';
+  }
+  if (btnLoader) btnLoader.style.display = 'none';
+
+  if (promptInput) promptInput.disabled = true;
+  if (canvasPlaceholder) canvasPlaceholder.style.display = 'none';
+  if (canvasLoading) canvasLoading.style.display = 'none';
+  if (canvasError) canvasError.style.display = 'none';
+
+  const feedList = document.getElementById('studio-feed-list');
+  if (!feedList) return;
+  feedList.innerHTML = '';
+
+  if (canvasSuccess) canvasSuccess.style.display = 'flex';
+
+  const wrapper = document.createElement('div');
+  wrapper.style.width = '100%';
+  wrapper.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+      <h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> Üçlü Üretim Akışı (Gemini + ChatGPT + Copilot)</h4>
+      <div id="triple-stream-actions"></div>
+    </div>
+    <div class="triple-stream-grid" id="triple-cards-grid">
+      <div class="triple-stream-card" id="card-site-gemini">
+        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+          <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i>
+          <span style="font-size:0.85rem; color:#aaa;">Google Gemini Üretiliyor...</span>
+        </div>
+        <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5>
+      </div>
+      <div class="triple-stream-card" id="card-site-chatgpt">
+        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+          <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i>
+          <span style="font-size:0.85rem; color:#aaa;">ChatGPT (DALL-E) Üretiliyor...</span>
+        </div>
+        <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT (DALL-E)</h5>
+      </div>
+      <div class="triple-stream-card" id="card-site-copilot">
+        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+          <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i>
+          <span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot Üretiliyor...</span>
+        </div>
+        <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5>
+      </div>
+    </div>
+  `;
+  feedList.appendChild(wrapper);
+
+  const succeededImages = [];
+  let groupId = null;
+
+  try {
+    const url = `/api/generate-triple-stream?prompt=${encodeURIComponent(prompt)}&aspectRatio=${encodeURIComponent(ratio)}&style=${encodeURIComponent(style)}`;
+    const response = await fetch(url, { signal: currentAbortController.signal });
+    if (!response.ok) {
+      throw new Error("Üçlü üretim servisine bağlanılamadı.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.substring(6));
+            if (data.type === 'start') {
+              groupId = data.payload.groupId;
+            } else if (data.type === 'progress') {
+              const item = data.payload;
+              const card = document.getElementById(`card-site-${item.site}`);
+              if (card) {
+                if (item.status === 'success') {
+                  card.classList.add('completed');
+                  const streamDownloadName = getFormattedDownloadFilename(item.image, item.modelUsed, item.site);
+                  card.innerHTML = `
+                    <img src="${item.image}" alt="${item.site}" class="triple-stream-img clickable-img" title="Tam ekran görüntülemek için tıklayın">
+                    <h5 style="margin-top:10px; color:#fff;">${item.modelUsed || item.site.toUpperCase()}</h5>
+                    <span style="font-size:0.78rem; color:#aaa; margin-bottom:8px;">${item.keyUsedLabel || ''}</span>
+                    <a href="${item.image}" download="${streamDownloadName}" class="action-btn" style="width:100%; text-align:center; padding:6px; font-size:0.82rem;">
+                      <i class="fa-solid fa-download"></i> İndir
+                    </a>
+                  `;
+                  const img = card.querySelector('img');
+                  if (img) {
+                    img.addEventListener('click', () => {
+                      openFullscreenLightbox(item.image, prompt, item.modelUsed, item.site);
+                    });
+                  }
+                  succeededImages.push(item);
+                  showToast(`${item.site.toUpperCase()} görseli üretildi ve eklendi!`);
+                } else {
+                  card.classList.add('failed');
+                  card.innerHTML = `
+                    <div style="width:100%; height:240px; background: rgba(239,68,68,0.1); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:12px; text-align:center;">
+                      <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--color-danger);"></i>
+                      <span style="font-size:0.85rem; color:#ff8888; font-weight:600;">${item.site.toUpperCase()} Başarısız</span>
+                      <span style="font-size:0.75rem; color:#ccc;">${item.error === 'login_required' ? 'Oturum Açılmamış' : (item.error || 'Limit/Bağlantı hatası')}</span>
+                    </div>
+                    <h5 style="margin-top:10px; color:#aaa;">${item.site.toUpperCase()}</h5>
+                  `;
+                }
+              }
+            } else if (data.type === 'complete') {
+              const payload = data.payload;
+              const actionsContainer = document.getElementById('triple-stream-actions');
+              if (actionsContainer && succeededImages.length > 0) {
+                const btnBulkDownload = document.createElement('button');
+                btnBulkDownload.className = 'action-btn primary-btn';
+                btnBulkDownload.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${succeededImages.length} Resim + Prompt TXT)`;
+                btnBulkDownload.onclick = () => downloadTripleZip(succeededImages, prompt, groupId || 'multi');
+                actionsContainer.appendChild(btnBulkDownload);
+              }
+              showToast(`Üçlü üretim tamamlandı! (${succeededImages.length}/${succeededImages.length + (payload.failures?.length || 0)} görsel başarılı)`);
+              await fetchImages();
+            }
+          } catch (e) { console.error('SSE Error', e); }
+        }
+      }
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast(err.message, 'error');
+    }
+  } finally {
+    resetToInitialState(succeededImages.length > 0);
+  }
+}
+
+function getModelTagFromItem(item) {
+  if (!item) return 'AI_Gorsel';
+  const src = (((item.sourceSite || '') + ' ' + (item.model || '') + ' ' + (item.image || '') + ' ' + (item.folder || '')).toLowerCase());
+  if (src.includes('copilot')) return 'Microsoft_Copilot';
+  if (src.includes('gemini')) return 'Google_Gemini';
+  if (src.includes('chatgpt') || src.includes('dalle') || src.includes('dall-e')) return 'ChatGPT_DALLE';
+  if (src.includes('flux') || src.includes('pollinations') || src.includes('free')) return 'FLUX_Realism';
+  if (src.includes('stability') || src.includes('sdxl') || src.includes('ultra') || src.includes('core')) return 'Stability_AI';
+  if (item.model) return String(item.model).replace(/[^a-zA-Z0-9_-]/g, '_');
+  return 'AI_Gorsel';
+}
+
+function getFormattedDownloadFilename(imagePath, modelName = '', site = '') {
+  let modelTag = getModelTagFromItem({ model: modelName, sourceSite: site, image: imagePath });
+  let baseName = imagePath ? imagePath.split('/').pop() : '';
+  if (!baseName) baseName = `gorsel_${Date.now()}.png`;
+  if (!baseName.includes('.')) baseName += '.png';
+
+  if (baseName.startsWith('melikgazi-')) {
+    return `Melikgazi_${modelTag}_${baseName.replace('melikgazi-', '')}`;
+  }
+  return `Melikgazi_${modelTag}_${baseName}`;
+}
+
+async function downloadTripleZip(images, promptText, groupId) {
+  if (!images || images.length === 0) return;
+  try {
+    const zip = new JSZip();
+    showToast('Zip arşivi oluşturuluyor...');
+    for (let i = 0; i < images.length; i++) {
+      const item = images[i];
+      let modelTag = getModelTagFromItem(item);
+      let filename = `${i + 1}_${modelTag}.png`;
+      const resp = await fetch(item.image);
+      const blob = await resp.blob();
+      zip.file(filename, blob);
+    }
+    zip.file("prompt.txt", promptText || "Prompt bilgisi bulunamadı.");
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const downloadUrl = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `uclu_uretim_${groupId || Date.now()}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+    showToast("Toplu indirme başarılı!");
+  } catch (err) {
+    showToast("Toplu indirmede hata: " + err.message, "error");
+  }
+}
+
 function addStudioImageToFeed(imageUrl, modelUsed, keyLabel, prepend = true) {
   const feedList = document.getElementById('studio-feed-list');
   if (!feedList) return;
   feedList.innerHTML = '';
   const card = document.createElement('div');
   card.className = 'studio-feed-item';
+  const downloadFilename = getFormattedDownloadFilename(imageUrl, modelUsed, '');
   card.innerHTML = `
     <div class="studio-feed-img-wrap">
-      <img src="${imageUrl}" alt="Üretilen görsel">
+      <img src="${imageUrl}" alt="Üretilen görsel" class="clickable-img" title="Tam ekran görüntülemek için tıklayın">
     </div>
     <div class="result-bar">
       <span class="result-tag"><i class="fa-solid fa-microchip"></i> ${modelUsed || 'AI Model'}</span>
       <span class="result-tag"><i class="fa-solid fa-key"></i> ${keyLabel || 'Anahtar'}</span>
-      <a class="result-tag download-tag" href="${imageUrl}" download="Melikgazi_${Date.now()}.png">
+      <a class="result-tag download-tag" href="${imageUrl}" download="${downloadFilename}">
         <i class="fa-solid fa-download"></i> İndir
       </a>
     </div>
   `;
+  const imgInCard = card.querySelector('img');
+  if (imgInCard) {
+    imgInCard.addEventListener('click', () => {
+      openFullscreenLightbox(imageUrl, promptInput ? promptInput.value : '', modelUsed);
+    });
+  }
   feedList.appendChild(card);
   if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'none';
   if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
   if (typeof canvasError !== 'undefined' && canvasError) canvasError.style.display = 'none';
   if (typeof canvasSuccess !== 'undefined' && canvasSuccess) canvasSuccess.style.display = 'flex';
 }
+
 let currentGalleryFolder = 'all';
+
 async function fetchImages() {
   try {
     const res = await fetch('/api/images');
@@ -398,6 +592,7 @@ async function fetchImages() {
     if (galleryCount) galleryCount.textContent = persistentImages.length;
   } catch { }
 }
+
 function renderGallery() {
   if (!galleryGrid) return;
 
@@ -484,6 +679,7 @@ function renderGallery() {
     galleryGrid.appendChild(div);
   });
 }
+
 async function deleteGroup(e, groupId) {
   e.stopPropagation();
   if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
@@ -498,6 +694,51 @@ async function deleteGroup(e, groupId) {
     showToast('Silinirken hata oluştu');
   }
 }
+
+function openFullscreenLightbox(imageSrc, caption = '', modelName = '', site = '') {
+  const modal = document.getElementById('fullscreen-image-modal');
+  const imgEl = document.getElementById('fullscreen-image-img');
+  const captionEl = document.getElementById('fullscreen-image-caption');
+  const btnDownload = document.getElementById('btn-fullscreen-download');
+
+  if (!modal || !imgEl) return;
+
+  imgEl.src = imageSrc;
+  if (captionEl) captionEl.textContent = caption ? (caption.startsWith('Prompt:') ? caption : "Prompt: " + caption) : '';
+
+  if (btnDownload) {
+    btnDownload.href = imageSrc;
+    btnDownload.download = getFormattedDownloadFilename(imageSrc, modelName, site);
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeFullscreenLightbox() {
+  const modal = document.getElementById('fullscreen-image-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+const btnFullscreenClose = document.getElementById('btn-fullscreen-close');
+if (btnFullscreenClose) {
+  btnFullscreenClose.addEventListener('click', closeFullscreenLightbox);
+}
+
+const fullscreenModal = document.getElementById('fullscreen-image-modal');
+if (fullscreenModal) {
+  fullscreenModal.addEventListener('click', (e) => {
+    if (e.target === fullscreenModal || e.target.classList.contains('fullscreen-lightbox-content')) {
+      closeFullscreenLightbox();
+    }
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeFullscreenLightbox();
+  }
+});
+
 function openTripleGroupModal(groupId, sourceImages = persistentImages) {
   const group = sourceImages.filter(i => i.groupId === groupId);
   if (!group || group.length === 0) return;
@@ -507,16 +748,23 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
   if (container) {
     container.innerHTML = '';
     group.forEach(res => {
+      const downloadFilename = getFormattedDownloadFilename(res.image, res.model, res.sourceSite);
       const col = document.createElement('div');
       col.style.cssText = "background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column;";
       col.innerHTML = `
-        <img src="${res.image}" alt="Generated" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+        <img src="${res.image}" alt="Generated" class="clickable-img" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
         <h6 style="color: #fff; margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
         <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
-        <a href="${res.image}" download class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
+        <a href="${res.image}" download="${downloadFilename}" class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
           <i class="fa-solid fa-download"></i> İndir
         </a>
       `;
+      const imgInCol = col.querySelector('img');
+      if (imgInCol) {
+        imgInCol.addEventListener('click', () => {
+          openFullscreenLightbox(res.image, group[0]?.prompt || '', res.model, res.sourceSite);
+        });
+      }
       container.appendChild(col);
     });
   }
@@ -524,6 +772,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
   if (modal) modal.style.display = 'flex';
   const btnDownloadAll = document.getElementById('btn-triple-group-download-all');
   if (btnDownloadAll) {
+    btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${group.length} Resim + Prompt TXT)`;
     btnDownloadAll.onclick = async () => {
       try {
         const zip = new JSZip();
@@ -531,8 +780,8 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
         btnDownloadAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Hazırlanıyor...';
         for (let i = 0; i < group.length; i++) {
           const res = group[i];
-          let filename = res.image.split('/').pop() || `image_${i + 1}.png`;
-          if (!filename.includes('.')) filename += '.png';
+          let modelTag = getModelTagFromItem(res);
+          let filename = `${i + 1}_${modelTag}.png`;
           const response = await fetch(res.image);
           const blob = await response.blob();
           zip.file(filename, blob);
@@ -555,7 +804,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
         showToast("Toplu indirme sırasında bir hata oluştu.", "error");
       } finally {
         btnDownloadAll.disabled = false;
-        btnDownloadAll.innerHTML = '<i class="fa-solid fa-download"></i> Toplu İndir';
+        btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${group.length} Resim + Prompt TXT)`;
       }
     };
   }
@@ -581,17 +830,21 @@ function openSingleImageModal(item) {
   if (container) {
     container.innerHTML = `
       <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%;">
-        <img src="${item.image}" alt="Generated" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;">
+        <img src="${item.image}" alt="Generated" class="clickable-img" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
         <h6 style="color: #fff; margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
       </div>
     `;
+    const imgInContainer = container.querySelector('img');
+    if (imgInContainer) {
+      imgInContainer.addEventListener('click', () => {
+        openFullscreenLightbox(item.image, item.prompt || item.model || '', item.model, item.sourceSite);
+      });
+    }
   }
   const btnDownload = document.getElementById('btn-single-image-download');
   if (btnDownload) {
     btnDownload.href = item.image;
-    let filename = item.image.split('/').pop() || 'image.png';
-    if (!filename.includes('.')) filename += '.png';
-    btnDownload.download = filename;
+    btnDownload.download = getFormattedDownloadFilename(item.image, item.model, item.sourceSite);
   }
   modal.style.display = 'flex';
 }
