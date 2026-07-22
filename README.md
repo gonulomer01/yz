@@ -12,24 +12,32 @@ Platform, farklı ihtiyaç ve bütçe senaryolarına uygun çoklu yapay zeka mot
 - **💳 Stability AI (Kredili Modeller):**
   - `SDXL 1.0 (~1 Kredi)`: Yüksek stabilite ve düşük maliyetli kurumsal görsel üretimi.
   - `Stable Image Core (3 Kredi)`: Gelişmiş detay, aydınlatma ve kompozisyon desteği.
-  - *Not:* Güvenlik veya kredi yetersizliği nedeniyle hata üretebilen eski/pahalı modeller sistemden temizlenmiştir.
-- **🤖 Google Gemini, ChatGPT, Copilot ve Grok Web Otomasyonu (Selenium Çoklu Hesap Rotasyonu):**
-  - Arka planda Chrome tarayıcı profillerini (`GeminiChromeProfile_1` (1-16), `ChatGptChromeProfile_1` (1-6), `CopilotChromeProfile_1` (1-6) vb.) yöneterek yapay zeka platformlarının web arayüzleri üzerinden görsel üretir.
+  - *Pasifliği Sıfırla:* Tüketilen veya kısıtlanan tüm anahtarlar tek tıkla yeniden aktif konuma getirilebilir.
+- **🤖 Google Gemini, ChatGPT, Copilot Web Otomasyonu (Selenium Çoklu Hesap Rotasyonu):**
+  - Arka planda Chrome tarayıcı profillerini (`GeminiChromeProfile_*`, `ChatGptChromeProfile_*`, `CopilotChromeProfile_*`) yöneterek yapay zeka platformlarının web arayüzleri üzerinden görsel üretir.
   - Bir hesabın günlük kotası dolduğunda sistem otomatik olarak sıradaki aktif hesaba geçiş yapar (Akıllı Rotasyon).
+  - *Sınırsız Anlık İptal ("Durdur"):* "İptal Et / Durdur" butonuna basıldığında arka planda çalışan ve sıradaki tüm Chrome sürücüleri ile arka plan işlemleri anında engellenir ve kapatılır.
 - **🌟 Ücretsiz & Sınırsız FLUX.1 / SDXL Turbo:**
   - Pollinations AI altyapısı üzerinden **FLUX.1 Realism**, **FLUX.1 Schnell** ve **SDXL Turbo** modellerini sınırsız ve ücretsiz kullanabilme olanağı.
 
-### 2. 🔄 Çift Yönlü Klasör & Veritabanı Senkronizasyonu (`SyncDatabaseWithFilesystem`)
+### 2. 🎛️ 3 Parçalı Gelişmiş Yönetim Paneli ve Model Alt Sekmeleri
+Yönetici ekranı (`#section-dashboard`) 3 ana alt panele ayrılmıştır:
+1. **1. Hesap Yönetimi:** Google Gemini, ChatGPT (DALL-E) ve Microsoft Copilot için özel model alt sekmelerine sahiptir. Seçilen modelin hesap profilleri ayrı ayrı listelenir ve "Pasifliği Sıfırla" butonu ile kotalar anında sıfırlanabilir.
+2. **2. Key Yönetimi:** Stability AI için API anahtar havuzu listeleme, yeni anahtar ekleme, düzenleme ve "Pasifliği Sıfırla" yönetimi.
+3. **3. Kullanıcı Yönetimi:** Kullanıcı ekleme, yetki (Yönetici/Kullanıcı) güncelleme, silme ve kullanıcıların ürettiği görselleri inceleme.
+
+### 3. 🔄 Çift Yönlü Klasör & Veritabanı Senkronizasyonu (`SyncDatabaseWithFilesystem`)
 Uygulama, fiziksel dosya sistemi ile veritabanını (`GeneratedImages` tablosu) gerçek zamanlı olarak senkronize eder:
 - **Otomatik Temizleme (`Orphan Cleanup`):** Bilgisayarınızdan veya sunucudan fiziksel bir görsel dosyasını sildiğinizde, arayüzdeki veritabanı kaydı da otomatik olarak silinir; arayüzde resimsiz, kırık kalıntılar kalmaz.
-- **Otomatik Tanıma (`File Discovery`):** Dışarıdan `wwwroot/generated-stability/`, `wwwroot/generated-gemini/`, `wwwroot/generated-chatgpt/`, `wwwroot/generated-copilot/`, `wwwroot/generated-grok/`, `wwwroot/generated-free/` veya `wwwroot/generated/` klasörlerine yeni bir `.png`, `.jpg` veya `.webp` dosyası eklediğinizde, sistem bunu anında algılar, veritabanına kaydeder ve arayüzde listeler.
+- **Otomatik Tanıma (`File Discovery`):** Dışarıdan `wwwroot/generated-stability/`, `wwwroot/generated-gemini/`, `wwwroot/generated-chatgpt/`, `wwwroot/generated-copilot/`, `wwwroot/generated-free/` veya `wwwroot/generated/` klasörlerine yeni bir `.png`, `.jpg` veya `.webp` dosyası eklediğinizde, sistem bunu anında algılar, veritabanına kaydeder ve arayüzde listeler.
 
-### 3. 🖼️ Görsel Arşivi Sekmeleri & Dikey Akış (`Studio Feed`)
-- **Görsel Arşivi Paneli:** `Tümü`, `Stability AI`, `Gemini`, `ChatGPT`, `Copilot`, `Grok` ve `Ücretsiz` sekmelerine ayrılmıştır. Panel üstündeki **"Klasörleri Tara & Senkronize Et"** butonuyla manuel tarama tetiklenebilir.
+### 4. 🖼️ Görsel Arşivi Sekmeleri & Dikey Akış (`Studio Feed`)
+- **Görsel Arşivi Paneli:** `Tümü`, `Stability AI`, `Gemini`, `ChatGPT`, `Copilot` ve `Ücretsiz` sekmelerine ayrılmıştır. Panel üstündeki **"Klasörleri Tara & Senkronize Et"** butonuyla manuel tarama tetiklenebilir.
 - **Dikey Akış (`Feed`) ve Kendi Boyutunda Kartlar:** Stüdyo ekranında üretilen veya arşivden seçilen görseller, kendi boyutlarında (`inline-flex`) alt alta scroll edilebilir dikey akışa eklenir. Oturum boyunca üretilen tüm görsellere kaydırarak erişilebilir ve anında indirilebilir.
 
-### 4. 💎 Yarı Şeffaf Tasarım & Filigran Görünürlüğü
-Tüm arayüz panelleri (`.glass-card`, `.gallery-panel`, header) yarı şeffaf (*backdrop-filter blur*) tasarlanmıştır. Bu sayede Stüdyo veya Görsel Arşivi açıkken bile arka planda yer alan **Melikgazi Belediyesi Logosu** kapanmaz, şık bir derinlik hissiyle görünür kalır.
+### 5. 💎 Yarı Şeffaf Tasarım, Daraltılabilir Menü & Filigran Görünürlüğü
+- Tüm arayüz panelleri (`.glass-card`, `.gallery-panel`, header) yarı şeffaf (*backdrop-filter blur*) tasarlanmıştır. Bu sayede Stüdyo veya Görsel Arşivi açıkken bile arka planda yer alan **Melikgazi Belediyesi Logosu** kapanmaz, şık bir derinlik hissiyle görünür kalır.
+- **Daraltılabilir Yan Menü:** Sol menü daraltıldığında logo otomatik gizlenerek daraltma butonuyla çakışma önlenir.
 
 ---
 

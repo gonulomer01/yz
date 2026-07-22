@@ -24,6 +24,68 @@ namespace yz.Services
         private readonly ApplicationDbContext _context;
         private readonly ImageSyncService _imageSyncService;
         private readonly AiCredentialsService _credentialsService;
+
+        private static readonly List<IWebDriver> _activeDrivers = new();
+        private static readonly object _driverLock = new();
+        private static volatile bool _isCancelRequested = false;
+
+        public static bool IsCancelRequested => _isCancelRequested;
+
+        public static void ResetCancelState()
+        {
+            _isCancelRequested = false;
+        }
+
+        public static void RegisterDriver(IWebDriver driver)
+        {
+            lock (_driverLock)
+            {
+                if (!_activeDrivers.Contains(driver))
+                    _activeDrivers.Add(driver);
+            }
+        }
+
+        public static void UnregisterDriver(IWebDriver? driver)
+        {
+            if (driver == null) return;
+            lock (_driverLock)
+            {
+                _activeDrivers.Remove(driver);
+            }
+        }
+
+        public void CancelAllSessions()
+        {
+            Console.WriteLine("[MultiAiSeleniumService] Tüm aktif tarayıcı oturumları ve işlemler iptal ediliyor...");
+            _isCancelRequested = true;
+
+            List<IWebDriver> driversToClose;
+            lock (_driverLock)
+            {
+                driversToClose = _activeDrivers.ToList();
+                _activeDrivers.Clear();
+            }
+
+            foreach (var driver in driversToClose)
+            {
+                try
+                {
+                    driver.Quit();
+                    driver.Dispose();
+                }
+                catch { }
+            }
+
+            try
+            {
+                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("chromedriver"))
+                {
+                    try { proc.Kill(); } catch { }
+                }
+            }
+            catch { }
+        }
+
         public MultiAiSeleniumService(ApplicationDbContext context, ImageSyncService imageSyncService, AiCredentialsService credentialsService)
         {
             _context = context;
@@ -32,6 +94,7 @@ namespace yz.Services
         }
         public async Task<(int StatusCode, object Response)> GenerateFromGeminiAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
+            ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
             foreach (var acc in creds.GeminiAccounts) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
@@ -42,6 +105,7 @@ namespace yz.Services
             int totalProfiles = profiles.Count;
             for (int attempt = 0; attempt < totalProfiles; attempt++)
             {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
@@ -74,10 +138,11 @@ namespace yz.Services
                     await _credentialsService.SaveCredentialsAsync(creds);
                 }
             }
-            return (503, new { error = "TÃ¼m Google Gemini hesap profillerinin kotasÄ± dolmuÅŸ veya oturumlarÄ± aÃ§Ä±k deÄŸil." });
+            return (503, new { error = "Tüm Google Gemini hesap profillerinin kotası dolmuş veya oturumları açık değil." });
         }
         public async Task<(int StatusCode, object Response)> GenerateFromChatGptAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
+            ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
             foreach (var acc in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
@@ -88,6 +153,7 @@ namespace yz.Services
             int totalProfiles = profiles.Count;
             for (int attempt = 0; attempt < totalProfiles; attempt++)
             {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
@@ -124,6 +190,7 @@ namespace yz.Services
         }
         public async Task<(int StatusCode, object Response)> GenerateFromCopilotAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
+            ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
             foreach (var acc in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
@@ -134,6 +201,7 @@ namespace yz.Services
             int totalProfiles = profiles.Count;
             for (int attempt = 0; attempt < totalProfiles; attempt++)
             {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
@@ -170,6 +238,7 @@ namespace yz.Services
         }
         public async Task<(int StatusCode, object Response)> GenerateTripleAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
+            ResetCancelState();
             string groupId = Guid.NewGuid().ToString("N")[..12];
             var geminiTask = GenerateSiteForTripleAsync("gemini", prompt, aspectRatio, userId, isAdmin, groupId);
             var chatgptTask = GenerateSiteForTripleAsync("chatgpt", prompt, aspectRatio, userId, isAdmin, groupId);
@@ -205,6 +274,7 @@ namespace yz.Services
         {
             try
             {
+                if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
                 var creds = await _credentialsService.GetCredentialsAsync();
                 foreach (var a in creds.GeminiAccounts) { if (a.Status == "Exhausted") a.Status = "Active"; }
                 foreach (var a in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (a.Status == "Exhausted") a.Status = "Active"; }
@@ -215,6 +285,7 @@ namespace yz.Services
                     var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
                     foreach (var acc in profiles)
                     {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunGeminiSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
@@ -227,6 +298,7 @@ namespace yz.Services
                     var profiles = (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>()).OrderBy(a => a.Id).ToList();
                     foreach (var acc in profiles)
                     {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunChatGptSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
@@ -239,6 +311,7 @@ namespace yz.Services
                     var profiles = (creds.CopilotAccounts ?? new List<CopilotAccountItem>()).OrderBy(a => a.Id).ToList();
                     foreach (var acc in profiles)
                     {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunCopilotSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
@@ -256,6 +329,9 @@ namespace yz.Services
         }
         private ChromeDriver CreateDriver(string profileName, bool isAdmin)
         {
+            if (_isCancelRequested)
+                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
+
             var options = new ChromeOptions();
             string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profileName);
             Directory.CreateDirectory(profileDir);
@@ -280,12 +356,24 @@ namespace yz.Services
             {
                 options.AddArgument("--window-size=1400,900");
             }
+
+            if (_isCancelRequested)
+                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
+
             var driver = new ChromeDriver(options);
             driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(60);
             if (!isAdmin)
             {
                 try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
             }
+
+            if (_isCancelRequested)
+            {
+                try { driver.Quit(); driver.Dispose(); } catch { }
+                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü kapatıldı.");
+            }
+
+            RegisterDriver(driver);
             return driver;
         }
         private string BuildRatioInstruction(string aspectRatio)
@@ -498,6 +586,7 @@ namespace yz.Services
         }
         private async Task<SiteGenerationResult> RunGeminiSession(GeminiAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
         {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" };
             IWebDriver? driver = null;
             try
             {
@@ -507,6 +596,7 @@ namespace yz.Services
                 IWebElement? promptBox = null;
                 for (int i = 0; i < 12; i++)
                 {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" }; }
                     await Task.Delay(1000);
                     try
                     {
@@ -641,11 +731,13 @@ namespace yz.Services
             }
             finally
             {
+                UnregisterDriver(driver);
                 if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
             }
         }
         private async Task<SiteGenerationResult> RunChatGptSession(ChatGptAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
         {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" };
             IWebDriver? driver = null;
             try
             {
@@ -655,6 +747,7 @@ namespace yz.Services
                 IWebElement? promptBox = null;
                 for (int i = 0; i < 15; i++)
                 {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" }; }
                     await Task.Delay(1000);
                     try
                     {
@@ -827,11 +920,13 @@ namespace yz.Services
             }
             finally
             {
+                UnregisterDriver(driver);
                 if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
             }
         }
         private async Task<SiteGenerationResult> RunCopilotSession(CopilotAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
         {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "cancelled" };
             IWebDriver? driver = null;
             try
             {
@@ -841,6 +936,7 @@ namespace yz.Services
                 IWebElement? promptBox = null;
                 for (int i = 0; i < 15; i++)
                 {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "cancelled" }; }
                     await Task.Delay(1000);
                     try
                     {
@@ -1051,6 +1147,7 @@ namespace yz.Services
             }
             finally
             {
+                UnregisterDriver(driver);
                 if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
             }
         }
@@ -1087,6 +1184,7 @@ namespace yz.Services
                 options.AddExcludedArgument("enable-automation");
                 options.AddArgument("--window-size=1300,850");
                 var driver = await Task.Run(() => new ChromeDriver(options));
+                RegisterDriver(driver);
                 driver.Navigate().GoToUrl(targetUrl);
                 Console.WriteLine($"[{site} Login] Chrome aÃ§Ä±ldÄ± ({profName}). KullanÄ±cÄ± oturum aÃ§abilir.");
                 return true;

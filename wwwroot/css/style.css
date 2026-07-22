@@ -162,6 +162,14 @@ body {
   white-space: nowrap;
 }
 
+.app-sidebar.collapsed .brand {
+  display: none;
+}
+
+.app-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+}
+
 .app-sidebar.collapsed .brand-text {
   opacity: 0;
   width: 0;
@@ -655,6 +663,25 @@ main {
   cursor: not-allowed;
 }
 
+.btn-generate.btn-cancel {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+  animation: pulseCancel 1.8s infinite;
+}
+
+.btn-generate.btn-cancel:hover {
+  background: #dc2626 !important;
+  box-shadow: 0 0 18px rgba(220, 38, 38, 0.7);
+}
+
+@keyframes pulseCancel {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 .gemini-info-banner {
   width: 100%;
   padding: 14px 18px;
@@ -928,6 +955,109 @@ main {
   background: var(--color-primary-hover) !important;
 }
 
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.secondary-btn:hover {
+  background: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+  border-color: rgba(138, 180, 248, 0.3) !important;
+}
+
+/* 3 Parçalı Yönetim Paneli Sekme Stilleri */
+.dash-subtabs {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dash-subtab-btn {
+  flex: 1;
+  padding: 12px 18px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.dash-subtab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dash-subtab-btn.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: rgba(138, 180, 248, 0.3);
+  box-shadow: 0 4px 15px rgba(138, 180, 248, 0.12);
+}
+
+.dash-subpanel {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dash-subpanel.active {
+  display: flex;
+}
+
+/* Hesap Yönetimi İç Model Alt Sekmeleri */
+.acc-model-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+}
+
+.acc-model-tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.acc-model-tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.acc-model-tab.active {
+  background: var(--bg-surface);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .dash-section-card {
   padding: 24px;
   margin-bottom: 20px;
@@ -974,16 +1104,23 @@ main {
   border-radius: var(--radius-md);
   padding: 18px;
   transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.key-card > div:last-child {
+  margin-top: auto;
 }
 
 .key-card:hover { border-color: var(--border-hover); }
 
 .key-card-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
   gap: 8px;
+  min-width: 0;
 }
 
 .key-slot {
@@ -994,10 +1131,18 @@ main {
   background: rgba(255, 255, 255, 0.08);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  margin-right: 6px;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
-.key-label { font-weight: 600; font-size: 0.9rem; color: #fff; }
+.key-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .badge {
   font-size: 0.7rem;
@@ -1044,12 +1189,23 @@ main {
   cursor: pointer;
   transition: var(--transition);
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
-.key-card button:hover {
+.key-card button:hover:not(:disabled) {
   background: var(--color-primary-light);
   color: var(--color-primary);
   border-color: rgba(138, 180, 248, 0.3);
+}
+
+.key-card button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .modal-overlay {
@@ -1426,9 +1582,9 @@ main {
   top: auto;
   left: auto;
   transform: none;
-  width: 480px;
-  height: 480px;
-  max-width: 90%;
+  width: 580px;
+  height: 580px;
+  max-width: 95%;
   opacity: 0.95;
   z-index: 1;
   display: flex;
@@ -1440,14 +1596,14 @@ main {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 45px rgba(255, 255, 255, 0.18));
+  filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.22));
 }
 
 .auth-container {
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 440px;
+  max-width: 540px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1455,7 +1611,7 @@ main {
 
 @media (max-width: 900px) {
   .auth-body {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     justify-content: center;
     gap: 30px;
     padding: 30px 20px;
@@ -1464,58 +1620,67 @@ main {
     flex: none;
   }
   .auth-body .melikgazi-bg-watermark {
-    width: 200px;
-    height: 200px;
+    width: 240px;
+    height: 240px;
   }
 }
 
 .auth-card {
-  padding: 34px 28px;
-  background: rgba(24, 26, 30, 0.65);
+  width: 100%;
+  padding: 42px 38px;
+  background: rgba(24, 26, 30, 0.68);
   box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-lg);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 }
 
 .auth-logo {
-  width: 64px;
-  height: 64px;
+  width: 90px;
+  height: 90px;
   border-radius: var(--radius-md);
   object-fit: contain;
   background: rgba(255, 255, 255, 0.08);
-  padding: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  margin-bottom: 16px;
 }
 
 .auth-header h2 {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .auth-header p {
   color: var(--text-muted);
-  font-size: 0.84rem;
+  font-size: 0.9rem;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+
+.auth-card .field input[type="text"],
+.auth-card .field input[type="password"] {
+  padding: 12px 16px;
+  font-size: 0.92rem;
 }
 
 .auth-btn {
   width: 100%;
   justify-content: center;
-  height: 44px;
-  font-size: 0.95rem;
-  margin-top: 10px;
+  height: 46px;
+  font-size: 0.98rem;
+  margin-top: 12px;
 }
 
 .auth-footer {

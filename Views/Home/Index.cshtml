@@ -2,6 +2,7 @@
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
+    string userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -19,7 +20,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="icon" href="https://www.melikgazi.bel.tr/images/favicon.webp" type="image/webp">
 </head>
-<body data-is-admin="@(isAdmin ? "true" : "false")">
+<body data-is-admin="@(isAdmin ? "true" : "false")" data-user-id="@userId">
 
   <!-- Arka Plan Yarı Şeffaf Büyük Melikgazi Logosu (Watermark) -->
   <div class="ambient-bg">
@@ -273,112 +274,171 @@
     {
         <!-- === YÖNETİM PANELİ EKRANI (SADECE YÖNETİCİLER İÇİN) === -->
         <section id="section-dashboard" class="page">
-          <div class="dash-stats">
-            <div class="stat-card glass-card">
-              <div class="stat-icon"><i class="fa-solid fa-key"></i></div>
-              <div>
-                <span class="stat-num" id="stats-active">0</span>
-                <span class="stat-label">Aktif Stability Yuvası</span>
-              </div>
-            </div>
-            <div class="stat-card glass-card">
-              <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
-              <div>
-                <span class="stat-num" id="stats-today">0</span>
-                <span class="stat-label">Bugünkü Kredi</span>
-              </div>
-            </div>
-            <div class="stat-card glass-card">
-              <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
-              <div>
-                <span class="stat-num" id="stats-total">0</span>
-                <span class="stat-label">Toplam Kredi</span>
-              </div>
-            </div>
-            <div class="stat-card glass-card">
-              <div class="stat-icon"><i class="fa-solid fa-arrows-spin"></i></div>
-              <div>
-                <span class="stat-num" id="stats-index">#1</span>
-                <span class="stat-label">Sıradaki Anahtar</span>
-              </div>
-            </div>
-          </div>
 
-          <div class="dash-actions">
-            <button id="btn-reset-limits" class="action-btn" title="Tüm sayaçları sıfırla">
-              <i class="fa-solid fa-rotate-left"></i> Sayaçları Sıfırla
+          <!-- 3 Parçalı Yönetim Paneli Sekme Menüsü -->
+          <div class="dash-subtabs glass-card" id="dash-subtabs-nav">
+            <button class="dash-subtab-btn active" data-dash-tab="accounts">
+              <i class="fa-solid fa-layer-group"></i> 1. Hesap Yönetimi
+            </button>
+            <button class="dash-subtab-btn" data-dash-tab="keys">
+              <i class="fa-solid fa-key"></i> 2. Key Yönetimi
+            </button>
+            <button class="dash-subtab-btn" data-dash-tab="users">
+              <i class="fa-solid fa-users-gear"></i> 3. Kullanıcı Yönetimi
             </button>
           </div>
 
-          <!-- KULLANICI & ROL YÖNETİMİ BÖLÜMÜ -->
-          <div class="glass-card dash-section-card">
-            <div class="dash-section-header">
-              <div>
-                <h3><i class="fa-solid fa-users-gear" style="color: var(--color-secondary);"></i> Kullanıcılar & Yetkiler</h3>
-                <p>Kullanıcı hesaplarını düzenleyin, standart kullanıcılara yönetici yetkisi verin veya silin. Diğer yöneticiler hariç, tüm kullanıcıların ürettiği görselleri inceleyebilirsiniz.</p>
-              </div>
-              <button id="btn-add-user" class="action-btn primary-btn">
-                <i class="fa-solid fa-user-plus"></i> Yeni Kullanıcı Ekle
+          <!-- BÖLÜM 1: HESAP YÖNETİMİ (Gemini, ChatGPT, Copilot) -->
+          <div class="dash-subpanel active" id="dash-subpanel-accounts">
+            <!-- Model Seçim Alt Sekmeleri (Gemini, ChatGPT, Copilot) -->
+            <div class="acc-model-tabs glass-card" id="acc-model-tabs-nav">
+              <button class="acc-model-tab active" data-acc-model="gemini">
+                <i class="fa-brands fa-google" style="color: var(--color-primary);"></i> Google Gemini
+              </button>
+              <button class="acc-model-tab" data-acc-model="chatgpt">
+                <i class="fa-solid fa-brain" style="color: var(--color-secondary);"></i> ChatGPT (DALL-E)
+              </button>
+              <button class="acc-model-tab" data-acc-model="copilot">
+                <i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i> Microsoft Copilot
               </button>
             </div>
-            <div class="keys-grid" id="users-grid"></div>
+
+            <!-- Google Gemini Hesapları -->
+            <div class="acc-model-panel active" id="acc-model-panel-gemini">
+              <div class="glass-card dash-section-card">
+                <div class="dash-section-header">
+                  <div>
+                    <h3><i class="fa-brands fa-google" style="color: var(--color-primary);"></i> Google Gemini — Çoklu Hesap Havuzu</h3>
+                    <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button id="btn-reset-gemini-accs" class="action-btn secondary-btn" title="Tüm Gemini hesaplarının pasifliğini sıfırla ve aktifleştir">
+                      <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
+                    </button>
+                    <button id="btn-add-gemini-acc" class="action-btn primary-btn">
+                      <i class="fa-solid fa-plus"></i> Yeni Hesap
+                    </button>
+                  </div>
+                </div>
+                <div class="keys-grid" id="gemini-accounts-grid"></div>
+              </div>
+            </div>
+
+            <!-- ChatGPT Hesapları -->
+            <div class="acc-model-panel" id="acc-model-panel-chatgpt" style="display:none;">
+              <div class="glass-card dash-section-card">
+                <div class="dash-section-header">
+                  <div>
+                    <h3><i class="fa-solid fa-brain" style="color: var(--color-secondary);"></i> ChatGPT (DALL-E) — Çoklu Hesap Havuzu</h3>
+                    <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button id="btn-reset-chatgpt-accs" class="action-btn secondary-btn" title="Tüm ChatGPT hesaplarının pasifliğini sıfırla ve aktifleştir">
+                      <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
+                    </button>
+                    <button id="btn-add-chatgpt-acc" class="action-btn primary-btn">
+                      <i class="fa-solid fa-plus"></i> Yeni Hesap
+                    </button>
+                  </div>
+                </div>
+                <div class="keys-grid" id="chatgpt-accounts-grid"></div>
+              </div>
+            </div>
+
+            <!-- Copilot Hesapları -->
+            <div class="acc-model-panel" id="acc-model-panel-copilot" style="display:none;">
+              <div class="glass-card dash-section-card">
+                <div class="dash-section-header">
+                  <div>
+                    <h3><i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i> Microsoft Copilot — Çoklu Hesap Havuzu</h3>
+                    <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <button id="btn-reset-copilot-accs" class="action-btn secondary-btn" title="Tüm Copilot hesaplarının pasifliğini sıfırla ve aktifleştir">
+                      <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
+                    </button>
+                    <button id="btn-add-copilot-acc" class="action-btn primary-btn">
+                      <i class="fa-solid fa-plus"></i> Yeni Hesap
+                    </button>
+                  </div>
+                </div>
+                <div class="keys-grid" id="copilot-accounts-grid"></div>
+              </div>
+            </div>
           </div>
 
-          <!-- Google Gemini Hesapları -->
-          <div class="glass-card dash-section-card">
-            <div class="dash-section-header">
-              <div>
-                <h3><i class="fa-brands fa-google" style="color: var(--color-primary);"></i> Google Gemini — Çoklu Hesap Havuzu</h3>
-                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+          <!-- BÖLÜM 2: KEY YÖNETİMİ (Stability AI) -->
+          <div class="dash-subpanel" id="dash-subpanel-keys">
+            <div class="dash-stats">
+              <div class="stat-card glass-card">
+                <div class="stat-icon"><i class="fa-solid fa-key"></i></div>
+                <div>
+                  <span class="stat-num" id="stats-active">0</span>
+                  <span class="stat-label">Aktif Stability Yuvası</span>
+                </div>
               </div>
-              <button id="btn-add-gemini-acc" class="action-btn primary-btn">
-                <i class="fa-solid fa-plus"></i> Yeni Hesap
-              </button>
+              <div class="stat-card glass-card">
+                <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                <div>
+                  <span class="stat-num" id="stats-today">0</span>
+                  <span class="stat-label">Bugünkü Kredi</span>
+                </div>
+              </div>
+              <div class="stat-card glass-card">
+                <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div>
+                  <span class="stat-num" id="stats-total">0</span>
+                  <span class="stat-label">Toplam Kredi</span>
+                </div>
+              </div>
+              <div class="stat-card glass-card">
+                <div class="stat-icon"><i class="fa-solid fa-arrows-spin"></i></div>
+                <div>
+                  <span class="stat-num" id="stats-index">#1</span>
+                  <span class="stat-label">Sıradaki Anahtar</span>
+                </div>
+              </div>
             </div>
-            <div class="keys-grid" id="gemini-accounts-grid"></div>
+
+            <!-- Stability Anahtarları -->
+            <div class="glass-card dash-section-card">
+              <div class="dash-section-header">
+                <div>
+                  <h3><i class="fa-solid fa-key" style="color: var(--color-secondary);"></i> Stability AI — Anahtar Havuzu</h3>
+                  <p>Stability AI modelleri için API anahtar havuzu. Kısıtlama olduğunda sistem otomatik olarak bir sonrakine geçer.</p>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button id="btn-reset-limits" class="action-btn secondary-btn" title="Tüm Stability AI anahtarlarını aktif duruma getir ve sayaçları sıfırla">
+                    <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
+                  </button>
+                  <button id="btn-add-key" class="action-btn primary-btn">
+                    <i class="fa-solid fa-plus"></i> Yeni Anahtar
+                  </button>
+                </div>
+              </div>
+              <div class="keys-grid" id="keys-grid"></div>
+            </div>
           </div>
 
-          <!-- ChatGPT Hesapları -->
-          <div class="glass-card dash-section-card">
-            <div class="dash-section-header">
-              <div>
-                <h3><i class="fa-solid fa-brain" style="color: var(--color-secondary);"></i> ChatGPT (DALL-E) — Çoklu Hesap Havuzu</h3>
-                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
+          <!-- BÖLÜM 3: KULLANICI YÖNETİMİ (Kullanıcılar) -->
+          <div class="dash-subpanel" id="dash-subpanel-users">
+            <!-- KULLANICI & ROL YÖNETİMİ BÖLÜMÜ -->
+            <div class="glass-card dash-section-card">
+              <div class="dash-section-header">
+                <div>
+                  <h3><i class="fa-solid fa-users-gear" style="color: var(--color-secondary);"></i> Kullanıcılar & Yetkiler</h3>
+                  <p>Kullanıcı hesaplarını düzenleyin, standart kullanıcılara yönetici yetkisi verin veya silin. Diğer yöneticiler hariç, tüm kullanıcıların ürettiği görselleri inceleyebilirsiniz.</p>
+                </div>
+                <button id="btn-add-user" class="action-btn primary-btn">
+                  <i class="fa-solid fa-user-plus"></i> Yeni Kullanıcı Ekle
+                </button>
               </div>
-              <button id="btn-add-chatgpt-acc" class="action-btn primary-btn">
-                <i class="fa-solid fa-plus"></i> Yeni Hesap
-              </button>
+              <div class="keys-grid" id="users-grid"></div>
             </div>
-            <div class="keys-grid" id="chatgpt-accounts-grid"></div>
           </div>
 
-          <!-- Copilot Hesapları -->
-          <div class="glass-card dash-section-card">
-            <div class="dash-section-header">
-              <div>
-                <h3><i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i> Microsoft Copilot — Çoklu Hesap Havuzu</h3>
-                <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
-              </div>
-              <button id="btn-add-copilot-acc" class="action-btn primary-btn">
-                <i class="fa-solid fa-plus"></i> Yeni Hesap
-              </button>
-            </div>
-            <div class="keys-grid" id="copilot-accounts-grid"></div>
-          </div>
-
-          <!-- Stability Anahtarları -->
-          <div class="glass-card dash-section-card">
-            <div class="dash-section-header">
-              <div>
-                <h3><i class="fa-solid fa-key" style="color: var(--color-secondary);"></i> Stability AI — Anahtar Havuzu</h3>
-                <p>Stability AI modelleri için API anahtar havuzu. Kısıtlama olduğunda sistem otomatik olarak bir sonrakine geçer.</p>
-              </div>
-              <button id="btn-add-key" class="action-btn primary-btn">
-                <i class="fa-solid fa-plus"></i> Yeni Anahtar
-              </button>
-            </div>
-            <div class="keys-grid" id="keys-grid"></div>
-          </div>
+        </section>
+    }
 
           <!-- Stability Düzenleme Modalı -->
           <div id="edit-modal" class="modal-overlay" style="display:none">

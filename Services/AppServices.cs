@@ -446,13 +446,12 @@ namespace yz.Services
                         var data = JsonSerializer.Deserialize<AiCredentialsData>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (data == null) data = new AiCredentialsData();
                         if (data.StabilityApiKeys == null) data.StabilityApiKeys = new List<StabilityKeyItem>();
-                        while (data.StabilityApiKeys.Count < 10)
+                        if (data.StabilityApiKeys.Count == 0)
                         {
-                            int nextId = (data.StabilityApiKeys.Count == 0 ? 1 : data.StabilityApiKeys.Max(k => k.Id) + 1);
                             data.StabilityApiKeys.Add(new StabilityKeyItem
                             {
-                                Id = nextId,
-                                Label = $"Hesap {nextId}",
+                                Id = 1,
+                                Label = "Stability Anahtarı #1",
                                 KeyValue = "",
                                 Status = "Active",
                                 UsageToday = 0,
@@ -613,7 +612,7 @@ namespace yz.Services
                         dbKey.UsageToday = item.UsageToday;
                         dbKey.TotalUsage = item.TotalUsage;
                     }
-                    else
+                    else if (!_context.ApiKeys.Local.Any(k => k.Id == item.Id))
                     {
                         _context.ApiKeys.Add(new ApiKey
                         {

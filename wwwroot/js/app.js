@@ -48,6 +48,8 @@ let persistentImages = [];
 let usersData = [];
 let geminiAccountsData = [];
 let currentGeminiProfileIndex = 0;
+let isGenerating = false;
+let currentAbortController = null;
 const samplePrompts = [
   "Kayseri Erciyes Dağı'nın zirvesinde kar yağışı altında kuzey ışıkları, sinematik ultra detaylı manzara",
   "Melikgazi tarihi sokaklarında gün batımı, taş konaklar ve sıcak sarı sokak lambalarının dramatik ışığı",
@@ -82,14 +84,12 @@ function showToast(msg, type = 'success') {
   container.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }
-// Sidebar Genişletme / Daraltma Mantığı
 const appSidebar = document.getElementById('app-sidebar');
 const mainContent = document.getElementById('main-content');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const pageTitleHeading = document.getElementById('page-title-heading');
 
 if (sidebarToggle && appSidebar && mainContent) {
-  // Kayıtlı daraltma tercihini yükle
   if (localStorage.getItem('sidebar_collapsed') === 'true') {
     appSidebar.classList.add('collapsed');
     mainContent.classList.add('sidebar-collapsed-main');
@@ -139,6 +139,8 @@ function switchPage(page) {
     if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>Yönetim Paneli</h2>';
     fetchKeys();
     fetchGeminiAccounts();
+    loadChatGptAccounts();
+    loadCopilotAccounts();
     fetchUsers();
     fetchImages();
   }
@@ -205,24 +207,88 @@ if (btnTranslate) {
   });
 }
 if (generatorForm) generatorForm.addEventListener('submit', handleGenerate);
+if (btnGenerate) {
+  btnGenerate.addEventListener('click', (e) => {
+    if (isGenerating) {
+      e.preventDefault();
+      cancelGeneration();
+    }
+  });
+}
 if (btnRetry) {
   btnRetry.addEventListener('click', () => {
     if (canvasError) canvasError.style.display = 'none';
     if (canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
   });
 }
+
+function resetToInitialState(isSuccess = false) {
+  isGenerating = false;
+  currentAbortController = null;
+
+  if (btnGenerate) {
+    btnGenerate.disabled = false;
+    btnGenerate.classList.remove('btn-cancel');
+    if (btnLabel) {
+      btnLabel.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i> Oluştur';
+      btnLabel.style.display = 'flex';
+    }
+    if (btnLoader) btnLoader.style.display = 'none';
+  }
+
+  if (promptInput) promptInput.disabled = false;
+  if (canvasLoading) canvasLoading.style.display = 'none';
+
+  if (!isSuccess) {
+    if (canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
+    if (canvasSuccess) canvasSuccess.style.display = 'none';
+    if (canvasError) canvasError.style.display = 'none';
+    if (loadingStatus) loadingStatus.textContent = '';
+  }
+}
+
+async function cancelGeneration() {
+  if (currentAbortController) {
+    try { currentAbortController.abort(); } catch {}
+    currentAbortController = null;
+  }
+  try {
+    await fetch('/api/cancel', { method: 'POST' });
+  } catch {}
+  resetToInitialState(false);
+  showToast('Üretim işlemi durduruldu ve başlangıç konumuna geçildi.', 'info');
+}
+
 async function handleGenerate(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
+
+  if (isGenerating) {
+    await cancelGeneration();
+    return;
+  }
+
   const prompt = promptInput.value.trim();
-  const ratio = document.querySelector('input[name="ratio"]:checked').value;
+  const ratioEl = document.querySelector('input[name="ratio"]:checked');
+  const ratio = ratioEl ? ratioEl.value : '1:1';
   if (!prompt) { showToast('Lütfen bir görsel tarifi girin.', 'error'); return; }
-  btnGenerate.disabled = true;
-  if (btnLabel) btnLabel.style.display = 'none';
-  if (btnLoader) btnLoader.style.display = 'flex';
+
+  isGenerating = true;
+  currentAbortController = new AbortController();
+
+  btnGenerate.disabled = false;
+  btnGenerate.classList.add('btn-cancel');
+  if (btnLabel) {
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i> İptal Et';
+    btnLabel.style.display = 'flex';
+  }
+  if (btnLoader) btnLoader.style.display = 'none';
+
+  if (promptInput) promptInput.disabled = true;
   if (canvasPlaceholder) canvasPlaceholder.style.display = 'none';
   if (canvasSuccess) canvasSuccess.style.display = 'none';
   if (canvasError) canvasError.style.display = 'none';
   if (canvasLoading) canvasLoading.style.display = 'flex';
+
   const selectedModel = modelSelect.value;
   if (selectedModel === 'triple-ai') {
     loadingStatus.textContent = '🚀 Üçlü üretim: Gemini + ChatGPT + Copilot aynı anda çalışıyor…';
@@ -231,10 +297,13 @@ async function handleGenerate(e) {
   } else {
     loadingStatus.textContent = 'API sunucularına bağlanılıyor…';
   }
+
+  let isSuccess = false;
   try {
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: currentAbortController.signal,
       body: JSON.stringify({
         prompt,
         aspectRatio: ratio,
@@ -248,6 +317,7 @@ async function handleGenerate(e) {
     }
     const data = await res.json();
     if (data.success) {
+      isSuccess = true;
       if (data.multiMode && data.results) {
         if (typeof canvasLoading !== 'undefined' && canvasLoading) canvasLoading.style.display = 'none';
         if (typeof canvasPlaceholder !== 'undefined' && canvasPlaceholder) canvasPlaceholder.style.display = 'flex';
@@ -271,14 +341,15 @@ async function handleGenerate(e) {
       }
     }
   } catch (err) {
+    if (err.name === 'AbortError') {
+      return;
+    }
     if (canvasLoading) canvasLoading.style.display = 'none';
     if (canvasError) canvasError.style.display = 'flex';
     if (errorMessage) errorMessage.textContent = err.message;
     showToast(err.message, 'error');
   } finally {
-    btnGenerate.disabled = false;
-    if (btnLabel) btnLabel.style.display = 'flex';
-    if (btnLoader) btnLoader.style.display = 'none';
+    resetToInitialState(isSuccess);
   }
 }
 function addStudioImageToFeed(imageUrl, modelUsed, keyLabel, prepend = true) {
@@ -459,12 +530,10 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages) {
           const response = await fetch(res.image);
           const blob = await response.blob();
           zip.file(filename, blob);
-
-          // Prompt metnini .txt dosyası olarak zip içine ekle
-          const baseName = filename.substring(0, filename.lastIndexOf('.')) || `image_${i + 1}`;
-          const promptText = res.prompt || groupPrompt || "Prompt bilgisi mevcut değil.";
-          zip.file(`${baseName}_prompt.txt`, promptText);
         }
+
+        const promptText = (group[0] && group[0].prompt) || "Prompt bilgisi mevcut değil.";
+        zip.file("prompt.txt", promptText);
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const downloadUrl = URL.createObjectURL(zipBlob);
         const a = document.createElement("a");
@@ -599,15 +668,101 @@ function updateStats() {
   statsTotal.textContent = total;
   statsIndex.textContent = keysData.some(k => k.hasKey) ? `#${currentKeyIndex + 1}` : '—';
 }
+const dashSubtabsNav = document.getElementById('dash-subtabs-nav');
+if (dashSubtabsNav) {
+  dashSubtabsNav.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('.dash-subtab-btn');
+    if (!tabBtn) return;
+    const targetTab = tabBtn.getAttribute('data-dash-tab');
+    if (!targetTab) return;
+
+    dashSubtabsNav.querySelectorAll('.dash-subtab-btn').forEach(btn => btn.classList.remove('active'));
+    tabBtn.classList.add('active');
+
+    document.querySelectorAll('.dash-subpanel').forEach(panel => {
+      panel.classList.remove('active');
+    });
+
+    const activePanel = document.getElementById(`dash-subpanel-${targetTab}`);
+    if (activePanel) activePanel.classList.add('active');
+  });
+}
+
+const accModelTabsNav = document.getElementById('acc-model-tabs-nav');
+if (accModelTabsNav) {
+  accModelTabsNav.addEventListener('click', (e) => {
+    const tabBtn = e.target.closest('.acc-model-tab');
+    if (!tabBtn) return;
+    const targetModel = tabBtn.getAttribute('data-acc-model');
+    if (!targetModel) return;
+
+    accModelTabsNav.querySelectorAll('.acc-model-tab').forEach(btn => btn.classList.remove('active'));
+    tabBtn.classList.add('active');
+
+    document.querySelectorAll('.acc-model-panel').forEach(panel => {
+      panel.style.display = 'none';
+      panel.classList.remove('active');
+    });
+
+    const activePanel = document.getElementById(`acc-model-panel-${targetModel}`);
+    if (activePanel) {
+      activePanel.style.display = 'block';
+      activePanel.classList.add('active');
+    }
+  });
+}
+
 if (btnResetLimits) {
   btnResetLimits.addEventListener('click', async () => {
-    if (!confirm('Tüm kullanım sayaçlarını sıfırlamak istediğinize emin misiniz?')) return;
+    if (!confirm('Tüm Stability AI anahtarlarının pasifliğini sıfırlamak istediğinize emin misiniz?')) return;
     try {
       const res = await fetch('/api/keys/reset', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        showToast('Sayaçlar sıfırlandı!');
+        showToast('Stability AI anahtarları ve sayaçlar sıfırlandı!');
         fetchKeys();
+      }
+    } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+  });
+}
+
+const btnResetGeminiAccs = document.getElementById('btn-reset-gemini-accs');
+if (btnResetGeminiAccs) {
+  btnResetGeminiAccs.addEventListener('click', async () => {
+    if (!confirm('Tüm Google Gemini hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    try {
+      const res = await fetch('/api/gemini-accounts/reset', { method: 'POST' });
+      if (res.ok) {
+        showToast('Tüm Google Gemini hesapları aktif konuma getirildi!');
+        fetchGeminiAccounts();
+      }
+    } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+  });
+}
+
+const btnResetChatgptAccs = document.getElementById('btn-reset-chatgpt-accs');
+if (btnResetChatgptAccs) {
+  btnResetChatgptAccs.addEventListener('click', async () => {
+    if (!confirm('Tüm ChatGPT hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    try {
+      const res = await fetch('/api/chatgpt-accounts/reset', { method: 'POST' });
+      if (res.ok) {
+        showToast('Tüm ChatGPT hesapları aktif konuma getirildi!');
+        loadChatGptAccounts();
+      }
+    } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+  });
+}
+
+const btnResetCopilotAccs = document.getElementById('btn-reset-copilot-accs');
+if (btnResetCopilotAccs) {
+  btnResetCopilotAccs.addEventListener('click', async () => {
+    if (!confirm('Tüm Microsoft Copilot hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    try {
+      const res = await fetch('/api/copilot-accounts/reset', { method: 'POST' });
+      if (res.ok) {
+        showToast('Tüm Microsoft Copilot hesapları aktif konuma getirildi!');
+        loadCopilotAccounts();
       }
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
   });
@@ -682,14 +837,17 @@ function renderGeminiAccounts() {
     card.className = 'key-card';
     card.innerHTML = `
       <div class="key-card-top">
-        <div><span class="key-slot">#${a.id}</span> <span class="key-label">${a.accountLabel}</span></div>
+        <div style="min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; overflow: hidden;">
+          <span class="key-slot">#${a.id}</span>
+          <span class="key-label" title="${a.accountLabel}">${a.accountLabel}</span>
+        </div>
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-masked">${a.profileName}</div>
       <div class="key-stats-row">
         <span>Son: <strong>${a.lastUsed || '—'}</strong></span>
       </div>
-      <div style="display:flex; gap: 6px;">
+      <div style="display:flex; gap: 6px; margin-top: auto;">
         <button onclick="openGeminiLogin(${a.id}, '${a.accountLabel.replace(/'/g, "\\'")}')" style="flex:1;">
           <i class="fa-solid fa-right-to-bracket"></i> Oturum Aç
         </button>
@@ -820,18 +978,20 @@ function renderChatGptAccounts() {
     const safeLabel = (a.accountLabel || '').replace(/'/g, "\\'");
     card.innerHTML = `
       <div class="key-card-top">
-        <div><span class="key-slot">#${a.id}</span> <span class="key-label">${a.accountLabel}</span></div>
+        <div style="min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; overflow: hidden;">
+          <span class="key-slot">#${a.id}</span>
+          <span class="key-label" title="${a.accountLabel}">${a.accountLabel}</span>
+        </div>
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-masked">${a.profileName}</div>
       <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
-      <div style="display:flex; gap: 6px;">
+      <div style="display:flex; gap: 6px; margin-top: auto;">
         <button data-login-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
         <button data-edit-chatgpt="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
         <button data-del-chatgpt="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
       </div>
     `;
-    // Event listeners
     card.querySelector('[data-login-chatgpt]').addEventListener('click', () => openChatGptLogin(a.id, a.accountLabel));
     card.querySelector('[data-edit-chatgpt]').addEventListener('click', () => openChatGptEditModal(a.id, a.accountLabel, a.status));
     card.querySelector('[data-del-chatgpt]').addEventListener('click', () => deleteChatGptAccount(a.id));
@@ -900,7 +1060,6 @@ async function deleteChatGptAccount(id) {
     else { throw new Error(data.error || 'Silinemedi.'); }
   } catch (err) { showToast(err.message, 'error'); }
 }
-/* === Copilot Hesap Yönetimi === */
 let copilotAccountsData = [];
 async function loadCopilotAccounts() {
   if (!isAdmin) return;
@@ -924,12 +1083,15 @@ function renderCopilotAccounts() {
     const safeLabel = (a.accountLabel || '').replace(/'/g, "\\'");
     card.innerHTML = `
       <div class="key-card-top">
-        <div><span class="key-slot">#${a.id}</span> <span class="key-label">${a.accountLabel}</span></div>
+        <div style="min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; overflow: hidden;">
+          <span class="key-slot">#${a.id}</span>
+          <span class="key-label" title="${a.accountLabel}">${a.accountLabel}</span>
+        </div>
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-masked">${a.profileName}</div>
       <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
-      <div style="display:flex; gap: 6px;">
+      <div style="display:flex; gap: 6px; margin-top: auto;">
         <button data-login-copilot="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
         <button data-edit-copilot="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
         <button data-del-copilot="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
@@ -1006,7 +1168,8 @@ async function deleteCopilotAccount(id) {
 const btnAddKey = document.getElementById('btn-add-key');
 if (btnAddKey) {
   btnAddKey.addEventListener('click', async () => {
-    const label = prompt('Yeni anahtar etiketi:', `Stability #${keysData.length + 1}`);
+    const nextNum = keysData.length === 0 ? 1 : (Math.max(...keysData.map(k => k.id || 0)) + 1);
+    const label = prompt('Yeni anahtar etiketi:', `Stability #${nextNum}`);
     if (label === null) return;
     const apiKey = prompt('API anahtarı (sk-...) veya boş bırakın:', '');
     if (apiKey === null) return;
@@ -1039,7 +1202,6 @@ window.deleteKeySlot = async function(id) {
     }
   } catch (err) { showToast(err.message, 'error'); }
 };
-/* === KULLANICI PROFİLİM YÖNETİMİ === */
 const profileModal = document.getElementById('profile-modal');
 const btnProfile = document.getElementById('btn-profile');
 const btnProfileClose = document.getElementById('btn-profile-close');
@@ -1073,7 +1235,7 @@ if (btnProfile) {
       if (profileUsername) profileUsername.value = data.username;
       if (profileRole) profileRole.value = data.role;
       if (profileDisplayName) profileDisplayName.value = data.displayName;
-      if (profilePassword) profilePassword.value = ''; // Şifre boş kutu olarak gelmeli
+      if (profilePassword) profilePassword.value = '';
       
       initialProfileDisplayName = data.displayName || '';
       initialProfilePassword = '';
@@ -1122,7 +1284,6 @@ if (profileForm) {
     }
   });
 }
-/* === KULLANICI & ROL YÖNETİMİ (SADECE YÖNETİCİLER İÇİN) === */
 async function fetchUsers() {
   if (!isAdmin) return;
   try {
@@ -1135,11 +1296,15 @@ async function fetchUsers() {
 function renderUsers() {
   if (!usersGrid || !isAdmin) return;
   usersGrid.innerHTML = '';
+  const currentUserId = parseInt(document.body.getAttribute('data-user-id') || '0');
   usersData.forEach(u => {
     let badgeClass = u.role === 'Yönetici' ? 'badge-active' : 'badge-empty';
     let badgeText = u.role === 'Yönetici' ? 'Yönetici (Admin)' : 'Standart Kullanıcı';
     const card = document.createElement('div');
     card.className = 'key-card';
+    const isCurrentAdmin = u.id === currentUserId;
+    const canSeeImages = u.role !== 'Yönetici' || isCurrentAdmin;
+
     card.innerHTML = `
       <div class="key-card-top">
         <div><span class="key-slot">#${u.id}</span> <span class="key-label">${u.displayName}</span> <small style="color:var(--text-muted);">(@${u.username})</small></div>
@@ -1149,11 +1314,15 @@ function renderUsers() {
         <span>Üretilen Görsel Sayısı: <strong>${u.imageCount}</strong> adet</span>
       </div>
       <div style="display:flex; gap: 6px; flex-wrap: wrap;">
-        ${(u.role !== 'Yönetici' || u.id === parseInt(document.body.getAttribute('data-user-id') || '0')) ? `
+        ${canSeeImages ? `
           <button onclick="openUserImagesModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}')" style="flex:1;" title="Ürettiği görselleri gör">
             <i class="fa-solid fa-images"></i> Görseller (${u.imageCount})
           </button>
-        ` : `<span style="font-size:0.75rem; color:var(--text-muted); flex:1; display:flex; align-items:center;"><i class="fa-solid fa-shield-halved"></i> Diğer Yönetici</span>`}
+        ` : `
+          <button disabled style="flex:1; opacity:0.55; cursor:not-allowed;" title="Diğer yöneticilerin ürettiği görseller görüntülenemez">
+            <i class="fa-solid fa-shield-halved"></i> Diğer Yönetici
+          </button>
+        `}
         <button onclick="openUserEditModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}', '${u.role}')" title="Kullanıcıyı Düzenle">
           <i class="fa-solid fa-user-pen"></i> Düzenle
         </button>

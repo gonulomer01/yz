@@ -14,12 +14,10 @@ namespace yz.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            for (int i = 1; i <= 10; i++)
+            modelBuilder.Entity<ApiKey>(entity =>
             {
-                modelBuilder.Entity<ApiKey>().HasData(
-                    new ApiKey { Id = i, Label = $"Hesap {i}", KeyValue = "", Status = "Active", UsageToday = 0, TotalUsage = 0 }
-                );
-            }
+                entity.Property(k => k.Id).ValueGeneratedNever();
+            });
             modelBuilder.Entity<AppSetting>().HasData(
                 new AppSetting { Key = "CurrentKeyIndex", Value = "0" },
                 new AppSetting { Key = "LastResetDate", Value = "" }

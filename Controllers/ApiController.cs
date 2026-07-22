@@ -93,11 +93,48 @@ namespace yz.Controllers
                 k.Status = "Active";
             }
             creds.CurrentKeyIndex = 0;
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("gemini-accounts/reset")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> ResetGeminiAccounts()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
             foreach (var g in creds.GeminiAccounts)
             {
                 g.Status = "Active";
             }
             creds.CurrentGeminiProfileIndex = 0;
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("chatgpt-accounts/reset")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> ResetChatGptAccounts()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            foreach (var c in creds.ChatGptAccounts)
+            {
+                c.Status = "Active";
+            }
+            creds.CurrentChatGptProfileIndex = 0;
+            await _credentialsService.SaveCredentialsAsync(creds);
+            return Ok(new { success = true });
+        }
+
+        [HttpPost("copilot-accounts/reset")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> ResetCopilotAccounts()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            foreach (var c in creds.CopilotAccounts)
+            {
+                c.Status = "Active";
+            }
+            creds.CurrentCopilotProfileIndex = 0;
             await _credentialsService.SaveCredentialsAsync(creds);
             return Ok(new { success = true });
         }
@@ -130,6 +167,10 @@ namespace yz.Controllers
             if (creds.StabilityApiKeys.Count <= 1)
                 return BadRequest(new { error = "En az bir Stability AI anahtarı yuvası kalmalıdır." });
             creds.StabilityApiKeys.Remove(key);
+            if (creds.CurrentKeyIndex >= creds.StabilityApiKeys.Count)
+            {
+                creds.CurrentKeyIndex = 0;
+            }
             await _credentialsService.SaveCredentialsAsync(creds);
             return Ok(new { success = true });
         }
@@ -401,6 +442,12 @@ namespace yz.Controllers
             bool isAdmin = User.IsInRole("Yönetici");
             var (statusCode, response) = await _aiGenerationService.GenerateAsync(req, currentUserId, isAdmin);
             return StatusCode(statusCode, response);
+        }
+        [HttpPost("cancel")]
+        public IActionResult CancelGeneration()
+        {
+            _multiAiSeleniumService.CancelAllSessions();
+            return Ok(new { success = true, message = "Tüm üretim işlemleri durduruldu." });
         }
         [HttpPost("gemini-web/login")]
         [Authorize(Roles = "Yönetici")]
