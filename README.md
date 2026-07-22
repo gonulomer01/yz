@@ -1,6 +1,6 @@
-# Melikgazi Belediyesi — Yapay Zeka Görsel Üretim ve Yönetim Platformu
+# Mega Image Studio — Yapay Zeka Görsel Üretim ve Yönetim Platformu
 
-**Melikgazi Belediyesi YZ Platformu**, modern **.NET 10 ASP.NET Core MVC** altyapısıyla geliştirilmiş, çoklu yapay zeka motorunu tek bir merkezi arayüz üzerinden yöneten, yarı şeffaf (*Glassmorphism*) şık bir tasarıma, canlı akışlı (SSE) üçlü üretime, tam ekran görsel inceleyicisine (Lightbox) ve çift yönlü dosya-veritabanı senkronizasyonuna sahip gelişmiş bir kurumsal görsel otomasyon sistemidir.
+**Mega Image Studio**, modern **.NET 10 ASP.NET Core MVC** altyapısıyla geliştirilmiş, çoklu yapay zeka motorunu tek bir merkezi arayüz üzerinden yöneten, yarı şeffaf (*Glassmorphism*) şık bir tasarıma, canlı akışlı (SSE) üçlü üretime, tam ekran görsel inceleyicisine (Lightbox) ve çift yönlü dosya-veritabanı senkronizasyonuna sahip gelişmiş bir kurumsal görsel otomasyon sistemidir.
 
 ---
 
