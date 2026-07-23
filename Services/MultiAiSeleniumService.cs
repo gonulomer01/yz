@@ -866,6 +866,25 @@ namespace yz.Services
                 {
                     string currentUrl = driver.Url;
                     ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chatgpt_fail.png"));
+                    if (currentUrl.Contains("auth") || currentUrl.Contains("login") || currentUrl.Contains("session") || driver.PageSource.Contains("Log in") || driver.PageSource.Contains("Oturum"))
+                    {
+                        Console.WriteLine($"[ChatGPT] Oturumun sona erdiği tespit edildi ({account.AccountLabel}). Otomatik yeniden oturum açma deneniyor...");
+                        bool reLoggedIn = await TryAutoReLoginChatGptAsync(driver, account);
+                        if (reLoggedIn)
+                        {
+                            driver.Navigate().GoToUrl("https://chatgpt.com/");
+                            await Task.Delay(3000);
+                            var elements = driver.FindElements(By.CssSelector("#prompt-textarea, div[contenteditable='true'][id='prompt-textarea'], textarea[placeholder], div[role='textbox']"));
+                            foreach (var el in elements)
+                            {
+                                if (el.Displayed && el.Enabled) { promptBox = el; break; }
+                            }
+                        }
+                    }
+                }
+                if (promptBox == null)
+                {
+                    string currentUrl = driver.Url;
                     if (currentUrl.Contains("auth") || currentUrl.Contains("login"))
                         return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "login_required" };
                     return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "prompt_not_found" };
@@ -1420,6 +1439,58 @@ namespace yz.Services
                 Console.WriteLine($"[{site} Custom Login Url Error] {ex.Message}");
                 return false;
             }
+        }
+
+        private async Task<bool> TryAutoReLoginChatGptAsync(IWebDriver driver, ChatGptAccountItem account)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    string targetEmail = ExtractEmailFromAccountLabel(account.AccountLabel);
+                    if (string.IsNullOrEmpty(targetEmail)) return false;
+
+                    Console.WriteLine($"[Auto Re-Login] {account.AccountLabel} için ({targetEmail}) otomatik oturum açma adımları başlatılıyor...");
+
+                    driver.Navigate().GoToUrl($"https://auth.openai.com/u/login/identifier?email_hint={Uri.EscapeDataString(targetEmail)}");
+                    Thread.Sleep(3000);
+
+                    // 1. E-Posta doldur
+                    var emailInput = FindVisibleElement(driver, By.CssSelector("input[type='email'], input#email-input, input[name='email']"), 6);
+                    if (emailInput != null)
+                    {
+                        if (string.IsNullOrEmpty(emailInput.GetAttribute("value")))
+                        {
+                            emailInput.Clear();
+                            emailInput.SendKeys(targetEmail);
+                            Thread.Sleep(500);
+                        }
+                        var submitBtn = FindVisibleElement(driver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                        submitBtn?.Click();
+                        Thread.Sleep(3000);
+                    }
+
+                    // 2. Şifre doldur (jvnhaXXt0038)
+                    var pwdInput = FindVisibleElement(driver, By.CssSelector("input[type='password'], input[name='password']"), 6);
+                    if (pwdInput != null)
+                    {
+                        pwdInput.Clear();
+                        pwdInput.SendKeys("jvnhaXXt0038");
+                        Thread.Sleep(500);
+
+                        var pwdSubmit = FindVisibleElement(driver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                        pwdSubmit?.Click();
+                        Thread.Sleep(4000);
+                    }
+
+                    return !driver.Url.Contains("login") && !driver.Url.Contains("auth");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Re-Login Error] {ex.Message}");
+                    return false;
+                }
+            });
         }
 
         private static void CleanSingletonLocks(string profileDir)
