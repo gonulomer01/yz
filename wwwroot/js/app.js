@@ -4,12 +4,34 @@ const sectionStudio = document.getElementById('section-studio');
 const sectionDashboard = document.getElementById('section-dashboard');
 const generatorForm = document.getElementById('generator-form');
 
-// Sidebar ve Mobil Menü Kontrolleri
+// Sidebar ve Mobil Çekmece Menü Kontrolleri (Global & Güvenilir)
 const sidebarToggleBtn = document.getElementById('sidebar-toggle');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const appSidebar = document.getElementById('app-sidebar');
 const mainContent = document.getElementById('main-content');
 const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+window.toggleMobileSidebar = function(e) {
+  if (e) { try { e.stopPropagation(); e.preventDefault(); } catch {} }
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if (isOpen) {
+    sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+  } else {
+    sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+  }
+};
+
+window.closeMobileSidebar = function() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+};
 
 function toggleDesktopSidebar() {
   if (!appSidebar) return;
@@ -17,24 +39,20 @@ function toggleDesktopSidebar() {
   if (mainContent) mainContent.classList.toggle('sidebar-collapsed-main');
 }
 
-function openMobileSidebar() {
-  if (appSidebar) appSidebar.classList.add('mobile-open');
-  if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
-}
-
-function closeMobileSidebar() {
-  if (appSidebar) appSidebar.classList.remove('mobile-open');
-  if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-}
-
 if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
-if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileSidebar);
-if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+if (mobileMenuBtn) {
+  mobileMenuBtn.addEventListener('click', window.toggleMobileSidebar);
+  mobileMenuBtn.addEventListener('touchstart', window.toggleMobileSidebar, { passive: false });
+}
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener('click', window.closeMobileSidebar);
+  sidebarBackdrop.addEventListener('touchstart', window.closeMobileSidebar, { passive: true });
+}
 
 document.querySelectorAll('.sidebar-nav-item').forEach(item => {
   item.addEventListener('click', () => {
     if (window.innerWidth <= 900) {
-      closeMobileSidebar();
+      window.closeMobileSidebar();
     }
   });
 });
