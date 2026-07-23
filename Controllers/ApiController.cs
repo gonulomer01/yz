@@ -274,7 +274,12 @@ namespace yz.Controllers
         public async Task<IActionResult> AddChatGptAccount([FromBody] GeminiAccountAddRequest? req)
         {
             var creds = await _credentialsService.GetCredentialsAsync();
-            int nextId = (creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1);
+            int nextId = 1;
+            var existingIds = creds.ChatGptAccounts.Select(a => a.Id).ToHashSet();
+            while (existingIds.Contains(nextId))
+            {
+                nextId++;
+            }
             string label = !string.IsNullOrWhiteSpace(req?.AccountLabel) ? req.AccountLabel.Trim() : $"ChatGPT Hesap #{nextId}";
             creds.ChatGptAccounts.Add(new ChatGptAccountItem
             {

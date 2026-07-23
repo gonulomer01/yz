@@ -1372,33 +1372,6 @@ if (btnAddChatgptAcc) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
-const btnAutoChatgptPlus = document.getElementById('btn-auto-chatgpt-plus');
-if (btnAutoChatgptPlus) {
-  btnAutoChatgptPlus.addEventListener('click', async () => {
-    showToast("Yeni '+' ChatGPT hesabı oluşturuluyor ve Gmail açılıyor...", 'info');
-    try {
-      const res = await fetch('/api/chatgpt-accounts/auto-create-plus', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        if (data.aliasEmail) {
-          try { await navigator.clipboard.writeText(data.aliasEmail); } catch {}
-          showToast(`📋 Klon E-Posta Kopyalandı: ${data.aliasEmail} (Ctrl+V ile yapıştırabilirsiniz)`, 'success');
-        } else {
-          showToast(data.message || `Yeni ChatGPT hesabı oluşturuldu!`, 'success');
-        }
-        loadChatGptAccounts();
-      } else {
-        showToast('Hata: ' + (data.error || 'İşlem başarısız'), 'error');
-      }
-    } catch (err) {
-      showToast('Bağlantı hatası: ' + err.message, 'error');
-    }
-  });
-}
 async function deleteChatGptAccount(id) {
   if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
   try {
