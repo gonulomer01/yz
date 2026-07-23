@@ -1284,8 +1284,8 @@ namespace yz.Services
                     profName = acc?.ProfileName ?? $"ChatGptChromeProfile_{profileId}";
                     email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
                     targetUrl = !string.IsNullOrEmpty(email) 
-                        ? $"https://chatgpt.com/auth/login" 
-                        : "https://chatgpt.com/";
+                        ? $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(email)}" 
+                        : "https://chatgpt.com/auth/login";
                 }
                 else if (site == "copilot")
                 {
