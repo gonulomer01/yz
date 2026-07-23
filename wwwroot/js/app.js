@@ -1477,6 +1477,33 @@ function stopAutoGeneratorUI() {
     btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
   }
 }
+const btnAddChatgptTempmail = document.getElementById('btn-add-chatgpt-tempmail');
+if (btnAddChatgptTempmail) {
+  btnAddChatgptTempmail.addEventListener('click', async () => {
+    btnAddChatgptTempmail.disabled = true;
+    btnAddChatgptTempmail.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Temp-Mail Başlatılıyor...';
+    showToast('⚡ Temp-Mail.org ile ChatGPT otomatik hesap üretimi başlatıldı...', 'info');
+
+    try {
+      const res = await fetch('/api/chatgpt-accounts/auto-create-tempmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`🎉 ${data.message}`, 'success');
+        setTimeout(() => { loadChatGptAccounts(); }, 2000);
+      } else {
+        showToast('Hata: ' + (data.error || 'Temp-Mail hesap oluşturulamadı'), 'error');
+      }
+    } catch (err) {
+      showToast('Bağlantı Hatası: ' + err.message, 'error');
+    } finally {
+      btnAddChatgptTempmail.disabled = false;
+      btnAddChatgptTempmail.innerHTML = '<i class="fa-solid fa-bolt"></i> ⚡ Temp-Mail ile Otomatik Hesap Oluştur';
+    }
+  });
+}
 async function deleteChatGptAccount(id) {
   if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
   try {

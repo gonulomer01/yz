@@ -482,6 +482,64 @@ namespace yz.Controllers
                 message = $"{email} adresiyle ChatGPT Hesap #{nextId} otomatik oluşturma başlatıldı."
             });
         }
+
+        [HttpPost("chatgpt-accounts/auto-create-tempmail")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AutoCreateTempMailChatGptAccount()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+
+            int nextId = 1;
+            var existingIds = creds.ChatGptAccounts.Select(a => a.Id).ToHashSet();
+            while (existingIds.Contains(nextId))
+            {
+                nextId++;
+            }
+
+            string profileName = $"ChatGptChromeProfile_{nextId}";
+            string label = $"ChatGPT Temp-Mail Hesap #{nextId}";
+
+            creds.ChatGptAccounts.Add(new ChatGptAccountItem
+            {
+                Id = nextId,
+                ProfileName = profileName,
+                AccountLabel = label,
+                Status = "Active",
+                LastUsed = ""
+            });
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var res = await _multiAiSeleniumService.AutoCreateChatGptWithTempMailAsync(nextId);
+                    if (res.success && !string.IsNullOrWhiteSpace(res.tempEmail))
+                    {
+                        var updatedCreds = await _credentialsService.GetCredentialsAsync();
+                        var acc = updatedCreds.ChatGptAccounts.FirstOrDefault(a => a.Id == nextId);
+                        if (acc != null)
+                        {
+                            acc.AccountLabel = $"ChatGPT Hesap #{nextId} ({res.tempEmail})";
+                            await _credentialsService.SaveCredentialsAsync(updatedCreds);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Temp-Mail Robot Thread Error] {ex.Message}");
+                }
+            });
+
+            return Ok(new
+            {
+                success = true,
+                id = nextId,
+                label = label,
+                message = $"Temp-Mail ile ChatGPT Hesap #{nextId} otomatik oluşturma başlatıldı."
+            });
+        }
         [HttpDelete("chatgpt-accounts/{id}")]
         [Authorize(Roles = "Yönetici")]
         public async Task<IActionResult> DeleteChatGptAccount(int id)
