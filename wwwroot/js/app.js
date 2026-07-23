@@ -140,18 +140,15 @@ function showToast(msg, type = 'success') {
   container.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }
-const appSidebar = document.getElementById('app-sidebar');
-const mainContent = document.getElementById('main-content');
-const sidebarToggle = document.getElementById('sidebar-toggle');
 const pageTitleHeading = document.getElementById('page-title-heading');
 
-if (sidebarToggle && appSidebar && mainContent) {
+if (sidebarToggleBtn && appSidebar && mainContent) {
   if (localStorage.getItem('sidebar_collapsed') === 'true') {
     appSidebar.classList.add('collapsed');
     mainContent.classList.add('sidebar-collapsed-main');
   }
 
-  sidebarToggle.addEventListener('click', () => {
+  sidebarToggleBtn.addEventListener('click', () => {
     appSidebar.classList.toggle('collapsed');
     mainContent.classList.toggle('sidebar-collapsed-main');
     const isCollapsed = appSidebar.classList.contains('collapsed');
