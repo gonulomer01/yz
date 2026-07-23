@@ -1901,65 +1901,8 @@ window.deleteImageFromUserModal = async function(e, imageId, userId) {
 function closeUserImagesModal() { if (userImagesModal) userImagesModal.style.display = 'none'; }
 if (btnUserImagesClose) btnUserImagesClose.addEventListener('click', closeUserImagesModal);
 if (userImagesModal) userImagesModal.addEventListener('click', (e) => { if (e.target === userImagesModal) closeUserImagesModal(); });
-// Gmail Plus (+) Otomatik Klonlayıcı Entegrasyonu
-const inputBaseGmail = document.getElementById('input-base-gmail');
-const btnClonePlusGemini = document.getElementById('btn-clone-plus-gemini');
-const btnClonePlusChatgpt = document.getElementById('btn-clone-plus-chatgpt');
-const btnClonePlusCopilot = document.getElementById('btn-clone-plus-copilot');
-
-async function loadBaseGmailSetting() {
-  if (!inputBaseGmail) return;
-  try {
-    const res = await fetch('/api/accounts/base-gmail');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.baseGmail) inputBaseGmail.value = data.baseGmail;
-    }
-  } catch {}
-}
-
-async function clonePlusAccount(modelType) {
-  const baseGmail = inputBaseGmail ? inputBaseGmail.value.trim() : '';
-  if (!baseGmail || !baseGmail.includes('@')) {
-    showToast('Lütfen geçerli bir ana Gmail adresi yazınız (örneğin: adiniz@gmail.com)', 'error');
-    if (inputBaseGmail) inputBaseGmail.focus();
-    return;
-  }
-
-  showToast(`Yeni '+' hesabı klonlanıyor ve Chrome masaüstünde açılıyor...`, 'info');
-
-  try {
-    const res = await fetch('/api/accounts/clone-plus-profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        modelType: modelType,
-        baseGmail: baseGmail,
-        autoOpenLogin: true
-      })
-    });
-
-    const data = await res.json();
-    if (res.ok && data.success) {
-      showToast(`Yeni hesap klonlandı! Adres: ${data.email}`, 'success');
-      if (modelType === 'gemini') fetchGeminiAccounts();
-      else if (modelType === 'chatgpt') loadChatGptAccounts();
-      else if (modelType === 'copilot') loadCopilotAccounts();
-    } else {
-      showToast('Klonlama Hatası: ' + (data.error || 'İşlem başarısız'), 'error');
-    }
-  } catch (err) {
-    showToast('Bağlantı hatası: ' + err.message, 'error');
-  }
-}
-
-if (btnClonePlusGemini) btnClonePlusGemini.addEventListener('click', () => clonePlusAccount('gemini'));
-if (btnClonePlusChatgpt) btnClonePlusChatgpt.addEventListener('click', () => clonePlusAccount('chatgpt'));
-if (btnClonePlusCopilot) btnClonePlusCopilot.addEventListener('click', () => clonePlusAccount('copilot'));
-
 fetchImages();
 if (isAdmin) {
-  loadBaseGmailSetting();
   fetchKeys();
   fetchGeminiAccounts();
   loadChatGptAccounts();
