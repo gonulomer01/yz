@@ -39,29 +39,32 @@ git clone https://github.com/gonulomer01/AI-agreggator-Melikgazi-Belediyesi.git
 cd AI-agreggator-Melikgazi-Belediyesi
 ```
 
-### 3. Veritabanı Konfigürasyonu (`appsettings.Local.json`)
+### 3. Gizli Dosyaları ve Şifreleri Tanımlama
 
-Güvenlik sebebiyle veritabanı şifreleri GitHub üzerinde saklanmaz. Proje ana dizininde (`yz/` klasörü içinde) **`appsettings.Local.json`** adında yeni bir dosya oluşturun ve kendi veritabanı bağlantı bilginizi ekleyin:
+Güvenlik sebebiyle veritabanı şifreleri, otomatik hesap şifreleri ve API anahtarları GitHub depolarında saklanmaz. Proje ana dizininde (`yz/` klasörü içinde) aşağıdaki iki dosyayı oluşturmanız gerekmektedir:
+
+#### A. Veritabanı ve Hesap Konfigürasyonu (`appsettings.Local.json`)
+Proje kök dizininde `appsettings.Local.json` adında bir dosya oluşturun ve kendi şifrelerinizi ekleyin:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=yz_db;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true"
-  }
+    "DefaultConnection": "Server=YOUR_SERVER;Database=yz_db;User Id=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=true"
+  },
+  "DefaultAccountPassword": "YOUR_CHATGPT_ACCOUNT_PASSWORD"
 }
 ```
 
-> 💡 **Not:** Uzak bir MSSQL kullanıyorsanız `Server`, `User Id` ve `Password` alanlarını kendi sunucu bilgilerinizle doldurun.
+> 💡 **Not:** `DefaultAccountPassword` alanı, robotun otomatik hesap açarken kullanacağı varsayılan ChatGPT hesap şifresidir.
 
-### 4. Yapay Zeka Kimlik Dosyası (`ai_credentials.json`)
-
-Proje ana dizininde bulunan `ai_credentials.template.json` dosyasının bir kopyasını alarak **`ai_credentials.json`** ismiyle kaydedin ve kullanmak istediğiniz API anahtarlarını veya varsayılan profil bilgilerini tanımlayın:
+#### B. Yapay Zeka Kimlik ve API Dosyası (`ai_credentials.json`)
+Proje ana dizininde bulunan `ai_credentials.template.json` dosyasının bir kopyasını alarak **`ai_credentials.json`** ismiyle kaydedin ve kullanmak istediğiniz API anahtarlarınızı tanımlayın:
 
 ```bash
 cp ai_credentials.template.json ai_credentials.json
 ```
 
-### 5. Projeyi Derleyin ve Çalıştırın
+### 4. Projeyi Derleyin ve Çalıştırın
 
 Proje dizininde aşağıdaki komutları çalıştırarak bağımlılıkları yükleyin ve uygulamayı başlatın:
 
@@ -76,9 +79,10 @@ Başarılı bir şekilde başladıktan sonra tarayıcınızdan şu adrese gidin:
 
 ---
 
-## 🔒 Güvenlik Notları
+## 🔒 Güvenlik & Gizlilik İlkeleri
 
 - `appsettings.Local.json` ve `ai_credentials.json` dosyaları `.gitignore` içerisinde tanımlanmıştır ve asla Git depolarına push edilmez.
+- Kodların içerisinde hiçbir şekilde hardcoded veritabanı şifresi veya ChatGPT varsayılan hesap şifresi barındırılmaz.
 - Veritabanı şifrenizi veya API anahtarlarınızı değiştirdiğinizde sadece kendi yerel `appsettings.Local.json` / `ai_credentials.json` dosyanızı güncellemeniz yeterlidir.
 
 ---

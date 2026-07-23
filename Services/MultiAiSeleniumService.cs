@@ -1470,12 +1470,13 @@ namespace yz.Services
                         Thread.Sleep(3000);
                     }
 
-                    // 2. Şifre doldur (jvnhaXXt0038)
+                    // 2. Şifre doldur
                     var pwdInput = FindVisibleElement(driver, By.CssSelector("input[type='password'], input[name='password']"), 6);
                     if (pwdInput != null)
                     {
+                        string accountPwd = _configuration?["DefaultAccountPassword"] ?? "jvnhaXXt0038";
                         pwdInput.Clear();
-                        pwdInput.SendKeys("jvnhaXXt0038");
+                        pwdInput.SendKeys(accountPwd);
                         Thread.Sleep(500);
 
                         var pwdSubmit = FindVisibleElement(driver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
@@ -1631,7 +1632,9 @@ namespace yz.Services
 
                     Thread.Sleep(1500);
 
-                    // 2. Şifre doldurma (jvnhaXXt0038) & Devam Et tıklama
+                    string accountPassword = _configuration?["DefaultAccountPassword"] ?? "jvnhaXXt0038";
+
+                    // 2. Şifre doldurma & Devam Et tıklama
                     for (int attempt = 0; attempt < 15; attempt++)
                     {
                         try
@@ -1640,8 +1643,8 @@ namespace yz.Services
                             if (pwdInput != null)
                             {
                                 try { pwdInput.Clear(); } catch { }
-                                pwdInput.SendKeys("jvnhaXXt0038");
-                                jsExec.ExecuteScript("arguments[0].value = 'jvnhaXXt0038'; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", pwdInput);
+                                pwdInput.SendKeys(accountPassword);
+                                jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", pwdInput, accountPassword);
 
                                 var pwdSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
                                 if (pwdSubmit != null)
