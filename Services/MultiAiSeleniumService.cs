@@ -1561,10 +1561,33 @@ namespace yz.Services
 
                     var jsExec = (IJavaScriptExecutor)newAccountDriver;
 
-                    // 1. Doğrudan OpenAI Kayıt Ol (Sign Up) Adresine Git
-                    string signupUrl = $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}";
-                    newAccountDriver.Navigate().GoToUrl(signupUrl);
-                    Thread.Sleep(3000);
+                    // 1. Düz chatgpt.com Adresine Git ve "Ücretsiz Kaydol" Butonuna Bas
+                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
+                    Thread.Sleep(3500);
+
+                    for (int retry = 0; retry < 10; retry++)
+                    {
+                        try
+                        {
+                            var allBtns = newAccountDriver.FindElements(By.CssSelector("a, button, div[role='button']"));
+                            var signupBtn = allBtns.FirstOrDefault(e => e.Displayed && (
+                                e.Text.ToLower().Contains("kaydol") ||
+                                e.Text.ToLower().Contains("sign up") ||
+                                e.Text.ToLower().Contains("kayıt") ||
+                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
+                            ));
+
+                            if (signupBtn != null)
+                            {
+                                Console.WriteLine($"[Robot] 'Ücretsiz Kaydol' butonuna tıklanıyor: '{signupBtn.Text}'");
+                                try { signupBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupBtn); }
+                                Thread.Sleep(3000);
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(800);
+                    }
 
                     // Eğer Login ekranı açıldıysa, alttaki "Kaydol" / "Sign up" bağlantısına tıkla
                     try
@@ -1884,7 +1907,7 @@ namespace yz.Services
                     Thread.Sleep(3000);
 
                     // "Ücretsiz kaydol" / "Kayıt Ol" / "Sign up" butonunu bul ve tıkla
-                    for (int retry = 0; retry < 5; retry++)
+                    for (int retry = 0; retry < 10; retry++)
                     {
                         try
                         {
@@ -1908,12 +1931,17 @@ namespace yz.Services
                         Thread.Sleep(800);
                     }
 
-                    // Eğer yönlenmediyse hedeflenmiş kayıt adresine git
-                    if (driver.Url.Contains("chatgpt.com") && !driver.Url.Contains("auth"))
+                    // Eğer Login ekranına geçildiyse "Kaydol" moduna geç
+                    try
                     {
-                        driver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(tempEmail)}");
-                        Thread.Sleep(3000);
+                        var switchSignup = driver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register']")).FirstOrDefault(e => e.Displayed);
+                        if (switchSignup != null && (driver.Url.Contains("login") || driver.PageSource.Contains("Oturum aç") || driver.PageSource.Contains("Welcome back")))
+                        {
+                            try { switchSignup.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", switchSignup); }
+                            Thread.Sleep(2500);
+                        }
                     }
+                    catch { }
 
                     // 3. E-posta Doldur
                     for (int attempt = 0; attempt < 15; attempt++)
