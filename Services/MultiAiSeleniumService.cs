@@ -1616,7 +1616,7 @@ namespace yz.Services
                     }
                     catch { }
 
-                    // 3. Gmail profilinden (baseProfileId) gelen doğrulama kodunu çek
+                    // 3. E-posta kutusundan doğrulama kodunu çek (Temp-Mail veya Gmail)
                     try
                     {
                         string baseProfName = $"ChatGptChromeProfile_{baseProfileId}";
@@ -1633,9 +1633,17 @@ namespace yz.Services
                         baseGmailDriver = new ChromeDriver(baseOptions);
                         RegisterDriver(baseGmailDriver);
 
-                        baseGmailDriver.Navigate().GoToUrl("https://mail.google.com/mail/u/0/#inbox");
+                        // Eğer aliasEmail bir temp-mail adresi ise veya base mail yoksa temp-mail.org'a git
+                        if (aliasEmail.Contains("@apdtax.com") || aliasEmail.Contains("@temp-mail") || aliasEmail.Contains("tempmail"))
+                        {
+                            baseGmailDriver.Navigate().GoToUrl("https://temp-mail.org/");
+                        }
+                        else
+                        {
+                            baseGmailDriver.Navigate().GoToUrl("https://mail.google.com/mail/u/0/#inbox");
+                        }
 
-                        for (int attempt = 0; attempt < 8; attempt++)
+                        for (int attempt = 0; attempt < 10; attempt++)
                         {
                             Thread.Sleep(2500);
                             try
@@ -1651,7 +1659,7 @@ namespace yz.Services
                                         int start = Math.Max(0, idx - 150);
                                         int len = Math.Min(300, pageSource.Length - start);
                                         string context = pageSource.Substring(start, len).ToLowerInvariant();
-                                        if (context.Contains("openai") || context.Contains("verify") || context.Contains("code") || context.Contains("doğrulama"))
+                                        if (context.Contains("openai") || context.Contains("chatgpt") || context.Contains("verify") || context.Contains("code") || context.Contains("doğrulama") || context.Contains("parola"))
                                         {
                                             extractedCode = codeVal;
                                             break;
@@ -1660,10 +1668,11 @@ namespace yz.Services
                                 }
                                 if (!string.IsNullOrEmpty(extractedCode)) break;
 
-                                var firstRow = baseGmailDriver.FindElements(By.CssSelector("tr.zA")).FirstOrDefault();
-                                if (firstRow != null && firstRow.Text.ToLower().Contains("openai"))
+                                // Temp-Mail veya Gmail listesindeki e-postaya tıkla
+                                var firstMail = baseGmailDriver.FindElements(By.CssSelector("tr.zA, a.link-detail, div.inbox-dataList ul li, a[href*='temp-mail.org']")).FirstOrDefault(e => e.Text.ToLower().Contains("openai") || e.Text.ToLower().Contains("chatgpt"));
+                                if (firstMail != null)
                                 {
-                                    firstRow.Click();
+                                    firstMail.Click();
                                     Thread.Sleep(2000);
                                     var codeMatch = System.Text.RegularExpressions.Regex.Match(baseGmailDriver.PageSource, @"\b\d{6}\b");
                                     if (codeMatch.Success)
@@ -1678,7 +1687,7 @@ namespace yz.Services
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[Gmail Code Fetch Error] {ex.Message}");
+                        Console.WriteLine($"[Mail Code Fetch Error] {ex.Message}");
                     }
 
                     // 4. Doğrulama kodunu yeni ChatGPT sayfasına gir
