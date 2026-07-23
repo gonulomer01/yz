@@ -1498,14 +1498,14 @@ namespace yz.Services
                     }
                     catch { }
 
-                    // 2. Şifreyi otomatik doldur (Staj2026!Melikgazi)
+                    // 2. Şifreyi otomatik doldur (jvnhaXXt0038)
                     try
                     {
                         var pwdInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[type='password'], input[name='password']"), 8);
                         if (pwdInput != null)
                         {
                             pwdInput.Clear();
-                            pwdInput.SendKeys("Staj2026!Melikgazi");
+                            pwdInput.SendKeys("jvnhaXXt0038");
                             Thread.Sleep(500);
 
                             var pwdSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
