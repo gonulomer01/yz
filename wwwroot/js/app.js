@@ -34,7 +34,7 @@ window.closeMobileSidebar = function() {
   if (backdrop) backdrop.classList.remove('active');
 };
 
-function toggleDesktopSidebar(e) {
+window.toggleDesktopSidebar = function(e) {
   if (e) { try { e.preventDefault(); e.stopPropagation(); } catch {} }
   const sidebar = document.getElementById('app-sidebar');
   const main = document.getElementById('main-content');
@@ -47,10 +47,10 @@ function toggleDesktopSidebar(e) {
     const isCollapsed = sidebar.classList.contains('collapsed');
     localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
   }
-}
+};
 
 if (sidebarToggleBtn) {
-  sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
+  sidebarToggleBtn.addEventListener('click', window.toggleDesktopSidebar);
 }
 if (mobileMenuBtn) {
   mobileMenuBtn.addEventListener('click', window.toggleMobileSidebar);

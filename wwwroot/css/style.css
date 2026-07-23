@@ -2540,6 +2540,24 @@ main {
     font-size: 0.85rem !important;
     padding: 0 10px !important;
   }
+
+  /* Mobil Giriş / Kayıt Sayfası İyileştirmeleri */
+  .auth-card {
+    padding: 26px 20px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .auth-header h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .card-title-white {
+    font-size: 1.3rem !important;
+  }
+
+  .auth-container {
+    padding: 12px !important;
+  }
 }
 
 @media (max-width: 480px) {
