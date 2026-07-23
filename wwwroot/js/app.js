@@ -1372,6 +1372,111 @@ if (btnAddChatgptAcc) {
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
+
+let isAutoGenRunning = false;
+
+function incrementEmailAlias(email) {
+  if (!email || !email.includes('@')) return email;
+  const parts = email.split('@');
+  const user = parts[0];
+  const domain = parts[1];
+
+  if (user.includes('+')) {
+    const plusParts = user.split('+');
+    const baseUser = plusParts[0];
+    const numStr = plusParts[1];
+    const num = parseInt(numStr, 10);
+    if (!isNaN(num)) {
+      return `${baseUser}+${num + 1}@${domain}`;
+    }
+  }
+  return `${user}+1@${domain}`;
+}
+
+const btnStartAutoChatgptGen = document.getElementById('btn-start-auto-chatgpt-gen');
+if (btnStartAutoChatgptGen) {
+  btnStartAutoChatgptGen.addEventListener('click', async () => {
+    if (isAutoGenRunning) {
+      isAutoGenRunning = false;
+      btnStartAutoChatgptGen.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+      btnStartAutoChatgptGen.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
+      showToast('Otomatik hesap üretici durduruldu.', 'info');
+      return;
+    }
+
+    const emailInput = document.getElementById('auto-chatgpt-email-input');
+    const loopToggle = document.getElementById('auto-chatgpt-loop-toggle');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email || !email.includes('@')) {
+      showToast('Lütfen geçerli bir e-posta adresi girin.', 'error');
+      return;
+    }
+
+    isAutoGenRunning = true;
+    btnStartAutoChatgptGen.innerHTML = '<i class="fa-solid fa-stop"></i> Durdur';
+    btnStartAutoChatgptGen.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+
+    const isLoopMode = loopToggle ? loopToggle.checked : false;
+
+    await runAutoGeneratorStep(email, isLoopMode);
+  });
+}
+
+async function runAutoGeneratorStep(currentEmail, isLoopMode) {
+  if (!isAutoGenRunning) return;
+
+  showToast(`⚡ ${currentEmail} adresi ile hesap oluşturuluyor ve robot başlatılıyor...`, 'info');
+
+  try {
+    const res = await fetch('/api/chatgpt-accounts/auto-create-custom-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentEmail })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showToast(`🎉 ${currentEmail} hesabı oluşturuldu ve doğrulama robotu çalıştı!`, 'success');
+      loadChatGptAccounts();
+
+      if (isLoopMode && isAutoGenRunning) {
+        const nextEmail = incrementEmailAlias(currentEmail);
+        const emailInput = document.getElementById('auto-chatgpt-email-input');
+        if (emailInput) emailInput.value = nextEmail;
+
+        showToast(`🔄 Sonsuz Döngü: 4 saniye sonra ${nextEmail} hesabı açılacak...`, 'info');
+        setTimeout(() => {
+          if (isAutoGenRunning) {
+            runAutoGeneratorStep(nextEmail, true);
+          }
+        }, 4000);
+      } else {
+        isAutoGenRunning = false;
+        const btn = document.getElementById('btn-start-auto-chatgpt-gen');
+        if (btn) {
+          btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+          btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
+        }
+      }
+    } else {
+      showToast('Hata: ' + (data.error || 'Hesap oluşturulamadı'), 'error');
+      stopAutoGeneratorUI();
+    }
+  } catch (err) {
+    showToast('Bağlantı hatası: ' + err.message, 'error');
+    stopAutoGeneratorUI();
+  }
+}
+
+function stopAutoGeneratorUI() {
+  isAutoGenRunning = false;
+  const btn = document.getElementById('btn-start-auto-chatgpt-gen');
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+    btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
+  }
+}
 async function deleteChatGptAccount(id) {
   if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
   try {

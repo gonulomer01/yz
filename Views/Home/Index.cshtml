@@ -336,12 +336,23 @@
             <!-- ChatGPT Hesapları -->
             <div class="acc-model-panel" id="acc-model-panel-chatgpt" style="display:none;">
               <div class="glass-card dash-section-card">
-                <div class="dash-section-header">
+                <div class="dash-section-header" style="flex-wrap: wrap; gap: 12px;">
                   <div>
                     <h3><i class="fa-solid fa-brain" style="color: var(--color-secondary);"></i> ChatGPT (DALL-E) — Çoklu Hesap Havuzu</h3>
                     <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
                   </div>
-                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.06); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);">
+                      <input type="text" id="auto-chatgpt-email-input" class="form-control" placeholder="tygotr001+4@gmail.com" value="tygotr001+4@gmail.com" style="width: 210px; padding: 4px 8px; font-size: 13px; height: 34px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px;">
+                      <label style="display:flex; align-items:center; gap:6px; font-size: 12px; font-weight:600; cursor:pointer; color:#e2e8f0; margin:0; user-select:none;">
+                        <input type="checkbox" id="auto-chatgpt-loop-toggle" style="width:16px; height:16px; cursor:pointer; accent-color: #10a37f;">
+                        <span>Sonsuz Döngü Modu</span>
+                      </label>
+                      <button id="btn-start-auto-chatgpt-gen" class="action-btn primary-btn" style="background: linear-gradient(135deg, #10a37f, #059669); font-size:12px; padding: 6px 12px; height: 34px;" title="Belirtilen e-posta ile otomatik hesap oluşturmayı ve doğrulayıcıyı başlatır">
+                        <i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat
+                      </button>
+                    </div>
+
                     <button id="btn-reset-chatgpt-accs" class="action-btn secondary-btn" title="Tüm ChatGPT hesaplarının pasifliğini sıfırla ve aktifleştir">
                       <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
                     </button>

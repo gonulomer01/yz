@@ -413,6 +413,71 @@ namespace yz.Controllers
                 message = $"{aliasEmail} adresiyle ChatGPT Hesap #{nextId} oluşturuldu! Robot otomatik doldurma ve Gmail kod çekme işlemini başlattı."
             });
         }
+
+        [HttpPost("chatgpt-accounts/auto-create-custom-email")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AutoCreateCustomEmailChatGptAccount([FromBody] CustomEmailRequest? req)
+        {
+            string email = req?.Email?.Trim() ?? "";
+            if (string.IsNullOrEmpty(email) || !email.Contains("@"))
+            {
+                return BadRequest(new { error = "Lütfen geçerli bir e-posta adresi girin." });
+            }
+
+            var creds = await _credentialsService.GetCredentialsAsync();
+
+            int nextId = 1;
+            var existingIds = creds.ChatGptAccounts.Select(a => a.Id).ToHashSet();
+            while (existingIds.Contains(nextId))
+            {
+                nextId++;
+            }
+
+            string profileName = $"ChatGptChromeProfile_{nextId}";
+            string label = $"ChatGPT Hesap #{nextId} ({email})";
+
+            int targetBaseProfileId = 1;
+            if (email.Contains("+"))
+            {
+                string baseUser = email.Split('+')[0];
+                var matchedBase = creds.ChatGptAccounts.FirstOrDefault(a => a.AccountLabel.ToLower().Contains(baseUser.ToLower()));
+                if (matchedBase != null) targetBaseProfileId = matchedBase.Id;
+            }
+
+            creds.ChatGptAccounts.Add(new ChatGptAccountItem
+            {
+                Id = nextId,
+                ProfileName = profileName,
+                AccountLabel = label,
+                Status = "Active",
+                LastUsed = ""
+            });
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+
+            // Arka planda Tam Otomatik Robotu ve Pencereleri Başlat
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _multiAiSeleniumService.AutoCreateAndVerifyChatGptAccountAsync(nextId, email, targetBaseProfileId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Custom Robot Thread Error] {ex.Message}");
+                }
+            });
+
+            return Ok(new
+            {
+                success = true,
+                id = nextId,
+                email = email,
+                label = label,
+                baseProfileId = targetBaseProfileId,
+                message = $"{email} adresiyle ChatGPT Hesap #{nextId} otomatik oluşturma başlatıldı."
+            });
+        }
         [HttpDelete("chatgpt-accounts/{id}")]
         [Authorize(Roles = "Yönetici")]
         public async Task<IActionResult> DeleteChatGptAccount(int id)
@@ -1014,9 +1079,14 @@ namespace yz.Controllers
         public string? AccountLabel { get; set; }
         public string? Status { get; set; }
     }
+    public class CustomEmailRequest
+    {
+        public string? Email { get; set; }
+    }
+
     public class GeminiAccountAddRequest
     {
-        public string? AccountLabel { get; set; }
+        public string AccountLabel { get; set; } = "";
     }
     public class GeminiLoginRequest
     {
