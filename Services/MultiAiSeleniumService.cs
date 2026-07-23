@@ -1834,19 +1834,33 @@ namespace yz.Services
                     driver.Navigate().GoToUrl("https://temp-mail.org/");
                     string tempMailTab = driver.CurrentWindowHandle;
 
-                    for (int attempt = 0; attempt < 20; attempt++)
+                    for (int attempt = 0; attempt < 30; attempt++)
                     {
                         Thread.Sleep(1000);
                         try
                         {
+                            // 1. JS ile DOM'dan oku
+                            string jsVal = Convert.ToString(jsExec.ExecuteScript(@"
+                                var el = document.getElementById('mail') || document.querySelector('input#mail') || document.querySelector('input#email') || document.querySelector('input[readonly]');
+                                return el ? (el.value || el.getAttribute('value') || el.innerText) : '';
+                            ")) ?? "";
+
+                            if (!string.IsNullOrWhiteSpace(jsVal) && jsVal.Contains("@") && !jsVal.ToLower().Contains("loading") && !jsVal.ToLower().Contains("yükleniyor"))
+                            {
+                                tempEmail = jsVal.Trim();
+                                Console.WriteLine($"[Temp-Mail JS] Alınan E-Posta: {tempEmail}");
+                                break;
+                            }
+
+                            // 2. Element seçicileri ile dene
                             var mailInput = driver.FindElements(By.CssSelector("input#mail, input#email, #mail, input[readonly], .email-box")).FirstOrDefault(e => e.Displayed && !string.IsNullOrWhiteSpace(e.GetAttribute("value")));
                             if (mailInput != null)
                             {
                                 string val = mailInput.GetAttribute("value");
-                                if (!string.IsNullOrWhiteSpace(val) && val.Contains("@"))
+                                if (!string.IsNullOrWhiteSpace(val) && val.Contains("@") && !val.ToLower().Contains("loading"))
                                 {
                                     tempEmail = val.Trim();
-                                    Console.WriteLine($"[Temp-Mail] Alınan E-Posta: {tempEmail}");
+                                    Console.WriteLine($"[Temp-Mail Selector] Alınan E-Posta: {tempEmail}");
                                     break;
                                 }
                             }
