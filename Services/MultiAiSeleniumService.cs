@@ -1817,14 +1817,20 @@ namespace yz.Services
                         catch { }
                     }
 
-                    // 5. Ana menüye (https://chatgpt.com/) ulaşana kadar bekle
-                    for (int waitMenu = 0; waitMenu < 12; waitMenu++)
+                    // 5. Ana menüye (https://chatgpt.com/) ulaşana kadar bekle (kullanıcı elle tamamlarsa da otomatik algılar)
+                    for (int waitMenu = 0; waitMenu < 60; waitMenu++)
                     {
-                        if (newAccountDriver.Url.Contains("chatgpt.com") && !newAccountDriver.Url.Contains("auth") && !newAccountDriver.Url.Contains("login"))
+                        try
                         {
-                            Console.WriteLine($"[Robot Success] ChatGPT ana menüsüne ulaşıldı: {aliasEmail}");
-                            break;
+                            string currentUrl = newAccountDriver.Url.ToLowerInvariant();
+                            if (currentUrl.Contains("chatgpt.com") && !currentUrl.Contains("auth") && !currentUrl.Contains("login") && !currentUrl.Contains("signup"))
+                            {
+                                Console.WriteLine($"[Robot Success] ChatGPT ana menüsüne başarıyla ulaşıldı: {aliasEmail}");
+                                Thread.Sleep(2000);
+                                break;
+                            }
                         }
+                        catch { }
                         Thread.Sleep(1000);
                     }
 
