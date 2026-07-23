@@ -1249,6 +1249,26 @@ namespace yz.Services
                 if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
             }
         }
+        private static string ExtractEmailFromAccountLabel(string label)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(label)) return "";
+                if (label.Contains("(") && label.Contains(")"))
+                {
+                    int start = label.IndexOf("(") + 1;
+                    int end = label.IndexOf(")", start);
+                    if (end > start)
+                    {
+                        string candidate = label.Substring(start, end - start).Trim();
+                        if (candidate.Contains("@")) return candidate;
+                    }
+                }
+            }
+            catch { }
+            return "";
+        }
+
         public async Task<bool> OpenBrowserForLoginAsync(string site, int profileId = 1)
         {
             try
@@ -1256,23 +1276,34 @@ namespace yz.Services
                 var creds = await _credentialsService.GetCredentialsAsync();
                 string profName;
                 string targetUrl;
+                string email = "";
+
                 if (site == "chatgpt")
                 {
                     var acc = creds.ChatGptAccounts?.FirstOrDefault(a => a.Id == profileId);
                     profName = acc?.ProfileName ?? $"ChatGptChromeProfile_{profileId}";
-                    targetUrl = "https://chatgpt.com/";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = !string.IsNullOrEmpty(email) 
+                        ? $"https://chatgpt.com/auth/login" 
+                        : "https://chatgpt.com/";
                 }
                 else if (site == "copilot")
                 {
                     var acc = creds.CopilotAccounts?.FirstOrDefault(a => a.Id == profileId);
                     profName = acc?.ProfileName ?? $"CopilotChromeProfile_{profileId}";
-                    targetUrl = "https://copilot.microsoft.com/images/create";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = !string.IsNullOrEmpty(email) 
+                        ? $"https://login.live.com/login.srf?username={Uri.EscapeDataString(email)}" 
+                        : "https://copilot.microsoft.com/images/create";
                 }
                 else 
                 {
-                    var acc = creds.GeminiAccounts.FirstOrDefault(a => a.Id == profileId);
+                    var acc = creds.GeminiAccounts?.FirstOrDefault(a => a.Id == profileId);
                     profName = acc?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
-                    targetUrl = "https://gemini.google.com/app";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = !string.IsNullOrEmpty(email) 
+                        ? $"https://accounts.google.com/ServiceLogin?Email={Uri.EscapeDataString(email)}&continue=https%3A%2F%2Fgemini.google.com%2Fapp" 
+                        : "https://gemini.google.com/app";
                 }
 
                 string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
