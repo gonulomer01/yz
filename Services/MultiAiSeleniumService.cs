@@ -1421,5 +1421,200 @@ namespace yz.Services
                 return false;
             }
         }
+
+        private static void CleanSingletonLocks(string profileDir)
+        {
+            try
+            {
+                string lock1 = Path.Combine(profileDir, "SingletonLock");
+                if (File.Exists(lock1)) File.Delete(lock1);
+                string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                if (File.Exists(lock2)) File.Delete(lock2);
+                string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                if (File.Exists(lock3)) File.Delete(lock3);
+            }
+            catch { }
+        }
+
+        private static IWebElement? FindVisibleElement(IWebDriver driver, By by, int timeoutSeconds = 5)
+        {
+            for (int i = 0; i < timeoutSeconds * 2; i++)
+            {
+                try
+                {
+                    var el = driver.FindElements(by).FirstOrDefault(e => e.Displayed && e.Enabled);
+                    if (el != null) return el;
+                }
+                catch { }
+                Thread.Sleep(500);
+            }
+            return null;
+        }
+
+        public async Task<(bool success, string message, string code)> AutoCreateAndVerifyChatGptAccountAsync(int newProfileId, string aliasEmail, int baseProfileId)
+        {
+            return await Task.Run(() =>
+            {
+                IWebDriver? newAccountDriver = null;
+                IWebDriver? baseGmailDriver = null;
+                string extractedCode = "";
+                try
+                {
+                    string newProfName = $"ChatGptChromeProfile_{newProfileId}";
+                    string newProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, newProfName);
+                    Directory.CreateDirectory(newProfileDir);
+                    CleanSingletonLocks(newProfileDir);
+
+                    var newOptions = new ChromeOptions();
+                    newOptions.AddArgument($"--user-data-dir={newProfileDir}");
+                    newOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                    newOptions.AddExcludedArgument("enable-automation");
+                    newOptions.AddArgument("--start-maximized");
+                    newOptions.AddArgument("--remote-allow-origins=*");
+
+                    newAccountDriver = new ChromeDriver(newOptions);
+                    RegisterDriver(newAccountDriver);
+
+                    // 1. OpenAI Kayıt Sayfasına Git
+                    newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
+                    Thread.Sleep(3000);
+
+                    // E-Posta kutusunu doldur
+                    try
+                    {
+                        var emailInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[type='email'], input#email-input, input[name='email']"), 6);
+                        if (emailInput != null)
+                        {
+                            if (string.IsNullOrEmpty(emailInput.GetAttribute("value")))
+                            {
+                                emailInput.Clear();
+                                emailInput.SendKeys(aliasEmail);
+                                Thread.Sleep(500);
+                            }
+                            var submitBtn = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                            submitBtn?.Click();
+                            Thread.Sleep(3000);
+                        }
+                    }
+                    catch { }
+
+                    // 2. Şifreyi otomatik doldur (Staj2026!Melikgazi)
+                    try
+                    {
+                        var pwdInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[type='password'], input[name='password']"), 8);
+                        if (pwdInput != null)
+                        {
+                            pwdInput.Clear();
+                            pwdInput.SendKeys("Staj2026!Melikgazi");
+                            Thread.Sleep(500);
+
+                            var pwdSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                            pwdSubmit?.Click();
+                            Thread.Sleep(4000);
+                        }
+                    }
+                    catch { }
+
+                    // 3. Gmail profilinden (baseProfileId) gelen doğrulama kodunu çek
+                    try
+                    {
+                        string baseProfName = $"ChatGptChromeProfile_{baseProfileId}";
+                        string baseProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, baseProfName);
+                        CleanSingletonLocks(baseProfileDir);
+
+                        var baseOptions = new ChromeOptions();
+                        baseOptions.AddArgument($"--user-data-dir={baseProfileDir}");
+                        baseOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                        baseOptions.AddExcludedArgument("enable-automation");
+                        baseOptions.AddArgument("--start-maximized");
+                        baseOptions.AddArgument("--remote-allow-origins=*");
+
+                        baseGmailDriver = new ChromeDriver(baseOptions);
+                        RegisterDriver(baseGmailDriver);
+
+                        baseGmailDriver.Navigate().GoToUrl("https://mail.google.com/mail/u/0/#inbox");
+
+                        for (int attempt = 0; attempt < 8; attempt++)
+                        {
+                            Thread.Sleep(2500);
+                            try
+                            {
+                                string pageSource = baseGmailDriver.PageSource;
+                                var matches = System.Text.RegularExpressions.Regex.Matches(pageSource, @"\b\d{6}\b");
+                                foreach (System.Text.RegularExpressions.Match match in matches)
+                                {
+                                    string codeVal = match.Value;
+                                    int idx = pageSource.IndexOf(codeVal);
+                                    if (idx > -1)
+                                    {
+                                        int start = Math.Max(0, idx - 150);
+                                        int len = Math.Min(300, pageSource.Length - start);
+                                        string context = pageSource.Substring(start, len).ToLowerInvariant();
+                                        if (context.Contains("openai") || context.Contains("verify") || context.Contains("code") || context.Contains("doğrulama"))
+                                        {
+                                            extractedCode = codeVal;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(extractedCode)) break;
+
+                                var firstRow = baseGmailDriver.FindElements(By.CssSelector("tr.zA")).FirstOrDefault();
+                                if (firstRow != null && firstRow.Text.ToLower().Contains("openai"))
+                                {
+                                    firstRow.Click();
+                                    Thread.Sleep(2000);
+                                    var codeMatch = System.Text.RegularExpressions.Regex.Match(baseGmailDriver.PageSource, @"\b\d{6}\b");
+                                    if (codeMatch.Success)
+                                    {
+                                        extractedCode = codeMatch.Value;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Gmail Code Fetch Error] {ex.Message}");
+                    }
+
+                    // 4. Doğrulama kodunu yeni ChatGPT sayfasına gir
+                    if (!string.IsNullOrEmpty(extractedCode))
+                    {
+                        try
+                        {
+                            var codeInputs = newAccountDriver.FindElements(By.CssSelector("input[name='code'], input[type='text'], input.code-input"));
+                            if (codeInputs.Count > 0)
+                            {
+                                if (codeInputs.Count >= 6)
+                                {
+                                    for (int i = 0; i < 6 && i < extractedCode.Length; i++)
+                                    {
+                                        codeInputs[i].SendKeys(extractedCode[i].ToString());
+                                    }
+                                }
+                                else
+                                {
+                                    codeInputs[0].SendKeys(extractedCode);
+                                }
+                                Thread.Sleep(1000);
+                                var codeSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary"));
+                                codeSubmit?.Click();
+                                Thread.Sleep(3000);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    return (true, $"Hesap {aliasEmail} robot ile dolduruldu. Kod: {(string.IsNullOrEmpty(extractedCode) ? "Pencerelerde e-posta kodunu giriniz" : extractedCode)}", extractedCode);
+                }
+                catch (Exception ex)
+                {
+                    return (false, "Robot İşlem Hatası: " + ex.Message, "");
+                }
+            });
+        }
     }
 }

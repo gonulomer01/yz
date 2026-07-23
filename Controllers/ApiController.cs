@@ -391,6 +391,19 @@ namespace yz.Controllers
             // 2. Ana mailin Chrome profilini Gmail için aç (#targetBaseProfileId)
             await _multiAiSeleniumService.OpenBrowserForLoginUrlAsync("chatgpt", targetBaseProfileId, "https://mail.google.com");
 
+            // 3. Arka planda Tam Otomatik Robotu çalıştır (Mail doldurur, şifre yazar, Gmail'den kodu çekip onaylar)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _multiAiSeleniumService.AutoCreateAndVerifyChatGptAccountAsync(nextId, aliasEmail, targetBaseProfileId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Robot Thread Error] {ex.Message}");
+                }
+            });
+
             return Ok(new
             {
                 success = true,
@@ -398,7 +411,7 @@ namespace yz.Controllers
                 aliasEmail = aliasEmail,
                 label = label,
                 baseProfileId = targetBaseProfileId,
-                message = $"{aliasEmail} adresiyle ChatGPT Hesap #{nextId} oluşturuldu. {targetBaseProfileId}. profil Gmail ve #{nextId}. profil ChatGPT ekranda açıldı!"
+                message = $"{aliasEmail} adresiyle ChatGPT Hesap #{nextId} oluşturuldu! Robot otomatik doldurma ve Gmail kod çekme işlemini başlattı."
             });
         }
         [HttpDelete("chatgpt-accounts/{id}")]
