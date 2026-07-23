@@ -437,11 +437,15 @@ namespace yz.Controllers
             string label = $"ChatGPT Hesap #{nextId} ({email})";
 
             int targetBaseProfileId = 1;
-            if (email.Contains("+"))
+            if (email.Contains("@"))
             {
-                string baseUser = email.Split('+')[0];
-                var matchedBase = creds.ChatGptAccounts.FirstOrDefault(a => a.AccountLabel.ToLower().Contains(baseUser.ToLower()));
-                if (matchedBase != null) targetBaseProfileId = matchedBase.Id;
+                string userPart = email.Split('@')[0];
+                string baseUser = userPart.Split('+')[0];
+                var digitsMatch = System.Text.RegularExpressions.Regex.Match(baseUser, @"\d+");
+                if (digitsMatch.Success && int.TryParse(digitsMatch.Value, out int profileNum) && profileNum >= 1)
+                {
+                    targetBaseProfileId = profileNum;
+                }
             }
 
             creds.ChatGptAccounts.Add(new ChatGptAccountItem

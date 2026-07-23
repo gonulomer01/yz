@@ -1531,6 +1531,18 @@ namespace yz.Services
                 string extractedCode = "";
                 try
                 {
+                    // Taban e-posta profil ID'sini dinamik hesapla (Örn: tygotr002+5 -> 2. Profil)
+                    if (aliasEmail.Contains("@"))
+                    {
+                        string userPart = aliasEmail.Split('@')[0];
+                        string baseUser = userPart.Split('+')[0];
+                        var digitsMatch = System.Text.RegularExpressions.Regex.Match(baseUser, @"\d+");
+                        if (digitsMatch.Success && int.TryParse(digitsMatch.Value, out int profileNum) && profileNum >= 1)
+                        {
+                            baseProfileId = profileNum;
+                        }
+                    }
+
                     string newProfName = $"ChatGptChromeProfile_{newProfileId}";
                     string newProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, newProfName);
                     Directory.CreateDirectory(newProfileDir);
@@ -1546,99 +1558,102 @@ namespace yz.Services
                     newAccountDriver = new ChromeDriver(newOptions);
                     RegisterDriver(newAccountDriver);
 
-                    // 1. Düz ChatGPT.com Sayfasına Git ve Kayıt Ol'a Bas
-                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
-                    Thread.Sleep(3000);
+                    var jsExec = (IJavaScriptExecutor)newAccountDriver;
 
-                    try
-                    {
-                        var signupBtn = FindVisibleElement(newAccountDriver, By.CssSelector("a[href*='signup'], button[data-testid='signup-button'], a[href*='auth/signup'], button.btn-secondary, button.btn-primary"), 4);
-                        if (signupBtn != null)
-                        {
-                            signupBtn.Click();
-                            Thread.Sleep(3000);
-                        }
-                        else
-                        {
-                            newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
-                            Thread.Sleep(3000);
-                        }
-                    }
-                    catch
-                    {
-                        newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
-                        Thread.Sleep(3000);
-                    }
+                    // 1. OpenAI Kayıt Sayfasına Doğrudan ve Hızlı Git
+                    string signupUrl = $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}";
+                    newAccountDriver.Navigate().GoToUrl(signupUrl);
+                    Thread.Sleep(2000);
 
                     // E-Posta kutusunu doldur
-                    try
+                    for (int i = 0; i < 12; i++)
                     {
-                        var emailInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[type='email'], input#email-input, input[name='email']"), 6);
-                        if (emailInput != null)
+                        try
                         {
-                            if (string.IsNullOrEmpty(emailInput.GetAttribute("value")))
+                            var emailInput = newAccountDriver.FindElements(By.CssSelector("input[type='email'], input#email-input, input[name='email']")).FirstOrDefault(e => e.Displayed);
+                            if (emailInput != null)
                             {
                                 emailInput.Clear();
                                 emailInput.SendKeys(aliasEmail);
-                                Thread.Sleep(500);
+                                jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", emailInput, aliasEmail);
+                                Thread.Sleep(300);
+                                var submitBtn = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
+                                if (submitBtn != null)
+                                {
+                                    try { submitBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", submitBtn); }
+                                    break;
+                                }
                             }
-                            var submitBtn = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
-                            submitBtn?.Click();
-                            Thread.Sleep(3000);
                         }
+                        catch { }
+                        Thread.Sleep(500);
                     }
-                    catch { }
 
-                    // 2. Şifreyi otomatik doldur (jvnhaXXt0038)
-                    try
+                    Thread.Sleep(2000);
+
+                    // 2. Şifreyi doldur (jvnhaXXt0038)
+                    for (int i = 0; i < 12; i++)
                     {
-                        var pwdInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[type='password'], input[name='password']"), 8);
-                        if (pwdInput != null)
+                        try
                         {
-                            pwdInput.Clear();
-                            pwdInput.SendKeys("jvnhaXXt0038");
-                            Thread.Sleep(500);
-
-                            var pwdSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
-                            pwdSubmit?.Click();
-                            Thread.Sleep(4000);
+                            var pwdInput = newAccountDriver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                            if (pwdInput != null)
+                            {
+                                pwdInput.Clear();
+                                pwdInput.SendKeys("jvnhaXXt0038");
+                                jsExec.ExecuteScript("arguments[0].value = 'jvnhaXXt0038'; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", pwdInput);
+                                Thread.Sleep(300);
+                                var pwdSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
+                                if (pwdSubmit != null)
+                                {
+                                    try { pwdSubmit.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", pwdSubmit); }
+                                    break;
+                                }
+                            }
                         }
+                        catch { }
+                        Thread.Sleep(500);
                     }
-                    catch { }
 
-                    // 2.5. Ad Soyad / Doğum Tarihi Ekranını Otomatik Doldur
+                    Thread.Sleep(2500);
+
+                    // 2.5. Ad Soyad / Doğum Tarihi Ekranını Doldur
                     try
                     {
-                        var nameInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='firstName'], input[name='given_name'], input#firstName, input[name='name']"), 4);
+                        var nameInput = newAccountDriver.FindElements(By.CssSelector("input[name='firstName'], input[name='given_name'], input#firstName, input[name='name']")).FirstOrDefault(e => e.Displayed);
                         if (nameInput != null)
                         {
                             nameInput.Clear();
                             nameInput.SendKeys("Ahmet");
 
-                            var lastNameInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName"), 2);
+                            var lastNameInput = newAccountDriver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
                             if (lastNameInput != null)
                             {
                                 lastNameInput.Clear();
                                 lastNameInput.SendKeys("Yılmaz");
                             }
 
-                            var dobInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']"), 2);
+                            var dobInput = newAccountDriver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']")).FirstOrDefault(e => e.Displayed);
                             if (dobInput != null)
                             {
                                 dobInput.Clear();
                                 dobInput.SendKeys("01011995");
                             }
 
-                            var infoSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary"), 3);
-                            infoSubmit?.Click();
-                            Thread.Sleep(3000);
+                            var infoSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                            if (infoSubmit != null)
+                            {
+                                try { infoSubmit.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", infoSubmit); }
+                            }
+                            Thread.Sleep(2500);
                         }
                     }
                     catch { }
 
-                    // 3. E-posta kutusundan doğrulama kodunu çek (Temp-Mail veya Gmail)
+                    // 3. E-posta kutusundan doğrulama kodunu çek (Taban Profil: ChatGptChromeProfile_{baseProfileId})
                     try
                     {
+                        Console.WriteLine($"[Mail Fetch] Taban E-Posta Profili #{baseProfileId} açılıyor ({aliasEmail})...");
                         string baseProfName = $"ChatGptChromeProfile_{baseProfileId}";
                         string baseProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, baseProfName);
                         CleanSingletonLocks(baseProfileDir);
