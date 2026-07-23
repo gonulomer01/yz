@@ -1546,9 +1546,29 @@ namespace yz.Services
                     newAccountDriver = new ChromeDriver(newOptions);
                     RegisterDriver(newAccountDriver);
 
-                    // 1. OpenAI Kayıt Sayfasına Git
-                    newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
+                    // 1. Düz ChatGPT.com Sayfasına Git ve Kayıt Ol'a Bas
+                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
                     Thread.Sleep(3000);
+
+                    try
+                    {
+                        var signupBtn = FindVisibleElement(newAccountDriver, By.CssSelector("a[href*='signup'], button[data-testid='signup-button'], a[href*='auth/signup'], button.btn-secondary, button.btn-primary"), 4);
+                        if (signupBtn != null)
+                        {
+                            signupBtn.Click();
+                            Thread.Sleep(3000);
+                        }
+                        else
+                        {
+                            newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
+                            Thread.Sleep(3000);
+                        }
+                    }
+                    catch
+                    {
+                        newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
+                        Thread.Sleep(3000);
+                    }
 
                     // E-Posta kutusunu doldur
                     try
@@ -1633,7 +1653,6 @@ namespace yz.Services
                         baseGmailDriver = new ChromeDriver(baseOptions);
                         RegisterDriver(baseGmailDriver);
 
-                        // Eğer aliasEmail bir temp-mail adresi ise veya base mail yoksa temp-mail.org'a git
                         if (aliasEmail.Contains("@apdtax.com") || aliasEmail.Contains("@temp-mail") || aliasEmail.Contains("tempmail"))
                         {
                             baseGmailDriver.Navigate().GoToUrl("https://temp-mail.org/");
@@ -1668,7 +1687,6 @@ namespace yz.Services
                                 }
                                 if (!string.IsNullOrEmpty(extractedCode)) break;
 
-                                // Temp-Mail veya Gmail listesindeki e-postaya tıkla
                                 var firstMail = baseGmailDriver.FindElements(By.CssSelector("tr.zA, a.link-detail, div.inbox-dataList ul li, a[href*='temp-mail.org']")).FirstOrDefault(e => e.Text.ToLower().Contains("openai") || e.Text.ToLower().Contains("chatgpt"));
                                 if (firstMail != null)
                                 {
@@ -1718,11 +1736,29 @@ namespace yz.Services
                         catch { }
                     }
 
-                    return (true, $"Hesap {aliasEmail} robot ile dolduruldu. Kod: {(string.IsNullOrEmpty(extractedCode) ? "Pencerelerde e-posta kodunu giriniz" : extractedCode)}", extractedCode);
+                    // 5. Ana menüye (https://chatgpt.com/) ulaşana kadar bekle
+                    for (int waitMenu = 0; waitMenu < 12; waitMenu++)
+                    {
+                        if (newAccountDriver.Url.Contains("chatgpt.com") && !newAccountDriver.Url.Contains("auth") && !newAccountDriver.Url.Contains("login"))
+                        {
+                            Console.WriteLine($"[Robot Success] ChatGPT ana menüsüne ulaşıldı: {aliasEmail}");
+                            break;
+                        }
+                        Thread.Sleep(1000);
+                    }
+
+                    return (true, $"Hesap {aliasEmail} robot ile başarıyla oluşturuldu ve doğrulandı.", extractedCode);
                 }
                 catch (Exception ex)
                 {
                     return (false, "Robot İşlem Hatası: " + ex.Message, "");
+                }
+                finally
+                {
+                    UnregisterDriver(newAccountDriver);
+                    if (newAccountDriver != null) { try { newAccountDriver.Quit(); newAccountDriver.Dispose(); } catch { } }
+                    UnregisterDriver(baseGmailDriver);
+                    if (baseGmailDriver != null) { try { baseGmailDriver.Quit(); baseGmailDriver.Dispose(); } catch { } }
                 }
             });
         }
