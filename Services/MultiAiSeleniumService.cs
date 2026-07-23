@@ -1515,6 +1515,36 @@ namespace yz.Services
                     }
                     catch { }
 
+                    // 2.5. Ad Soyad / Doğum Tarihi Ekranını Otomatik Doldur
+                    try
+                    {
+                        var nameInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='firstName'], input[name='given_name'], input#firstName, input[name='name']"), 4);
+                        if (nameInput != null)
+                        {
+                            nameInput.Clear();
+                            nameInput.SendKeys("Ahmet");
+
+                            var lastNameInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName"), 2);
+                            if (lastNameInput != null)
+                            {
+                                lastNameInput.Clear();
+                                lastNameInput.SendKeys("Yılmaz");
+                            }
+
+                            var dobInput = FindVisibleElement(newAccountDriver, By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']"), 2);
+                            if (dobInput != null)
+                            {
+                                dobInput.Clear();
+                                dobInput.SendKeys("01011995");
+                            }
+
+                            var infoSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary"), 3);
+                            infoSubmit?.Click();
+                            Thread.Sleep(3000);
+                        }
+                    }
+                    catch { }
+
                     // 3. Gmail profilinden (baseProfileId) gelen doğrulama kodunu çek
                     try
                     {

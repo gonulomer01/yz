@@ -385,13 +385,7 @@ namespace yz.Controllers
 
             await _credentialsService.SaveCredentialsAsync(creds);
 
-            // 1. Yeni ChatGPT hesabının kayıt penceresini aç (#nextId)
-            await _multiAiSeleniumService.OpenBrowserForLoginAsync("chatgpt", nextId);
-
-            // 2. Ana mailin Chrome profilini Gmail için aç (#targetBaseProfileId)
-            await _multiAiSeleniumService.OpenBrowserForLoginUrlAsync("chatgpt", targetBaseProfileId, "https://mail.google.com");
-
-            // 3. Arka planda Tam Otomatik Robotu çalıştır (Mail doldurur, şifre yazar, Gmail'den kodu çekip onaylar)
+            // Arka planda tam otomatik robotu ve 2 pencereyi aç (1: Yeni ChatGPT Kayıt, 2: Ana Gmail Kutusu)
             _ = Task.Run(async () =>
             {
                 try
