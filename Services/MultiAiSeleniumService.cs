@@ -1560,10 +1560,48 @@ namespace yz.Services
 
                     var jsExec = (IJavaScriptExecutor)newAccountDriver;
 
-                    // 1. OpenAI Kayıt Sayfasına Git
-                    string signupUrl = $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}";
-                    newAccountDriver.Navigate().GoToUrl(signupUrl);
-                    Thread.Sleep(2500);
+                    // 1. Düz chatgpt.com Adresine Git
+                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
+                    Thread.Sleep(3000);
+
+                    // Eğer "Kayıt Ol" / "Sign Up" / "Oturum Aç" butonu varsa tıkla
+                    try
+                    {
+                        var signupBtn = newAccountDriver.FindElements(By.CssSelector("button[data-testid='signup-button'], a[href*='signup'], a[href*='auth'], button.btn-secondary, button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                        if (signupBtn != null)
+                        {
+                            try { signupBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupBtn); }
+                            Thread.Sleep(3000);
+                        }
+                    }
+                    catch { }
+
+                    // Eğer "Oturumun sona erdi" ekranı çıktıysa, ekrandaki "Oturum Aç" / "Kayıt Ol" butonuna tıkla
+                    try
+                    {
+                        if (newAccountDriver.PageSource.Contains("Oturumun sona erdi") || newAccountDriver.PageSource.Contains("Session expired"))
+                        {
+                            var expiredBtn = newAccountDriver.FindElements(By.CssSelector("button, a")).FirstOrDefault(e => e.Displayed && (e.Text.Contains("Oturum") || e.Text.Contains("Log in") || e.Text.Contains("Kayıt") || e.Text.Contains("Sign up")));
+                            if (expiredBtn != null)
+                            {
+                                try { expiredBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", expiredBtn); }
+                                Thread.Sleep(3000);
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // Eğer sayfa Oturum Aç sayfasında kaldıysa, alttaki "Kayıt Ol" / "Sign up" bağlantısına tıkla
+                    try
+                    {
+                        var switchSignup = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register']")).FirstOrDefault(e => e.Displayed);
+                        if (switchSignup != null)
+                        {
+                            try { switchSignup.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", switchSignup); }
+                            Thread.Sleep(3000);
+                        }
+                    }
+                    catch { }
 
                     // E-Posta doldurma & Devam Et tıklama
                     for (int attempt = 0; attempt < 15; attempt++)
