@@ -508,6 +508,7 @@ namespace yz.Services
         public int CurrentChatGptProfileIndex { get; set; } = 0;
         public List<CopilotAccountItem> CopilotAccounts { get; set; } = new();
         public int CurrentCopilotProfileIndex { get; set; } = 0;
+        public string BaseGmail { get; set; } = "";
     }
     public class AiCredentialsService
     {

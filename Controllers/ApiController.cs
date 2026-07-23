@@ -749,6 +749,119 @@ namespace yz.Controllers
                 activeSeleniumDrivers = MultiAiSeleniumService.ActiveDriversCount
             });
         }
+
+        [HttpGet("accounts/base-gmail")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> GetBaseGmail()
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            return Ok(new { baseGmail = creds.BaseGmail });
+        }
+
+        [HttpPost("accounts/clone-plus-profile")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> ClonePlusProfile([FromBody] PlusProfileCloneRequest req)
+        {
+            if (req == null) return BadRequest(new { error = "Geçersiz istek." });
+
+            var creds = await _credentialsService.GetCredentialsAsync();
+            string baseGmail = !string.IsNullOrWhiteSpace(req.BaseGmail) ? req.BaseGmail.Trim() : creds.BaseGmail;
+
+            if (string.IsNullOrWhiteSpace(baseGmail) || !baseGmail.Contains("@"))
+            {
+                return BadRequest(new { error = "Lütfen geçerli bir ana Gmail adresi giriniz (örnek: hesabiniz@gmail.com)." });
+            }
+
+            creds.BaseGmail = baseGmail;
+            string modelType = (req.ModelType ?? "gemini").ToLowerInvariant().Trim();
+
+            string userPart = baseGmail.Split('@')[0];
+            string domainPart = baseGmail.Split('@')[1];
+
+            int nextId;
+            string newEmail;
+            string profileName;
+            string accountLabel;
+            string loginUrl;
+
+            if (modelType == "chatgpt")
+            {
+                nextId = creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1;
+                newEmail = $"{userPart}+chatgpt{nextId}@{domainPart}";
+                profileName = $"ChatGptChromeProfile_{nextId}";
+                accountLabel = $"ChatGPT Hesap #{nextId} ({newEmail})";
+                loginUrl = "https://chatgpt.com";
+
+                creds.ChatGptAccounts.Add(new ChatGptAccountItem
+                {
+                    Id = nextId,
+                    ProfileName = profileName,
+                    AccountLabel = accountLabel,
+                    Status = "Active",
+                    LastUsed = ""
+                });
+            }
+            else if (modelType == "copilot")
+            {
+                nextId = creds.CopilotAccounts.Count == 0 ? 1 : creds.CopilotAccounts.Max(a => a.Id) + 1;
+                newEmail = $"{userPart}+copilot{nextId}@{domainPart}";
+                profileName = $"CopilotChromeProfile_{nextId}";
+                accountLabel = $"Copilot Hesap #{nextId} ({newEmail})";
+                loginUrl = "https://copilot.microsoft.com";
+
+                creds.CopilotAccounts.Add(new CopilotAccountItem
+                {
+                    Id = nextId,
+                    ProfileName = profileName,
+                    AccountLabel = accountLabel,
+                    Status = "Active",
+                    LastUsed = ""
+                });
+            }
+            else
+            {
+                nextId = creds.GeminiAccounts.Count == 0 ? 1 : creds.GeminiAccounts.Max(a => a.Id) + 1;
+                newEmail = $"{userPart}+gemini{nextId}@{domainPart}";
+                profileName = $"GeminiChromeProfile_{nextId}";
+                accountLabel = $"Google Hesap #{nextId} ({newEmail})";
+                loginUrl = "https://gemini.google.com/app";
+
+                creds.GeminiAccounts.Add(new GeminiAccountItem
+                {
+                    Id = nextId,
+                    ProfileName = profileName,
+                    AccountLabel = accountLabel,
+                    Status = "Active",
+                    LastUsed = ""
+                });
+            }
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+
+            bool opened = false;
+            if (req.AutoOpenLogin)
+            {
+                opened = await _multiAiSeleniumService.OpenBrowserForLoginAsync(modelType, nextId);
+            }
+
+            return Ok(new
+            {
+                success = true,
+                email = newEmail,
+                profileName = profileName,
+                accountLabel = accountLabel,
+                id = nextId,
+                opened = opened,
+                baseGmail = baseGmail
+            });
+        }
+    }
+
+    public class PlusProfileCloneRequest
+    {
+        public string ModelType { get; set; } = "gemini";
+        public string BaseGmail { get; set; } = "";
+        public bool AutoOpenLogin { get; set; } = true;
     }
     public class KeyUpdateRequest
     {
