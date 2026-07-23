@@ -35,19 +35,22 @@ window.closeMobileSidebar = function() {
 };
 
 function toggleDesktopSidebar(e) {
-  if (e) { try { e.stopPropagation(); } catch {} }
+  if (e) { try { e.preventDefault(); e.stopPropagation(); } catch {} }
+  const sidebar = document.getElementById('app-sidebar');
+  const main = document.getElementById('main-content');
+  if (!sidebar) return;
   if (window.innerWidth <= 900) {
     window.closeMobileSidebar();
   } else {
-    if (!appSidebar) return;
-    appSidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('sidebar-collapsed-main');
+    sidebar.classList.toggle('collapsed');
+    if (main) main.classList.toggle('sidebar-collapsed-main');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
   }
 }
 
 if (sidebarToggleBtn) {
   sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
-  sidebarToggleBtn.addEventListener('touchstart', toggleDesktopSidebar, { passive: false });
 }
 if (mobileMenuBtn) {
   mobileMenuBtn.addEventListener('click', window.toggleMobileSidebar);

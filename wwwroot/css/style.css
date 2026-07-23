@@ -2397,10 +2397,10 @@ main {
   }
 
   /* Mobil Menü Açıkken Tüm Metinleri Görünür Yap */
-  .app-sidebar .nav-text,
-  .app-sidebar .brand-text,
-  .app-sidebar .user-info-text,
-  .app-sidebar .gallery-count {
+  .app-sidebar.mobile-open .nav-text,
+  .app-sidebar.mobile-open .brand-text,
+  .app-sidebar.mobile-open .user-info-text,
+  .app-sidebar.mobile-open .gallery-count {
     display: inline-block !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -2408,25 +2408,25 @@ main {
     pointer-events: auto !important;
   }
 
-  .app-sidebar .brand-text {
+  .app-sidebar.mobile-open .brand-text {
     display: flex !important;
     flex-direction: column !important;
   }
 
-  .app-sidebar .brand {
+  .app-sidebar.mobile-open .brand {
     display: flex !important;
   }
 
-  .app-sidebar .sidebar-nav-item {
+  .app-sidebar.mobile-open .sidebar-nav-item {
     justify-content: flex-start !important;
     padding: 11px 14px !important;
   }
 
-  .app-sidebar .user-badge-info {
+  .app-sidebar.mobile-open .user-badge-info {
     justify-content: flex-start !important;
   }
 
-  .app-sidebar .sidebar-header {
+  .app-sidebar.mobile-open .sidebar-header {
     justify-content: space-between !important;
   }
 
