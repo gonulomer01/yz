@@ -3,6 +3,41 @@ const navDashboard = document.getElementById('nav-dashboard');
 const sectionStudio = document.getElementById('section-studio');
 const sectionDashboard = document.getElementById('section-dashboard');
 const generatorForm = document.getElementById('generator-form');
+
+// Sidebar ve Mobil Menü Kontrolleri
+const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const appSidebar = document.getElementById('app-sidebar');
+const mainContent = document.getElementById('main-content');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+function toggleDesktopSidebar() {
+  if (!appSidebar) return;
+  appSidebar.classList.toggle('collapsed');
+  if (mainContent) mainContent.classList.toggle('sidebar-collapsed-main');
+}
+
+function openMobileSidebar() {
+  if (appSidebar) appSidebar.classList.add('mobile-open');
+  if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+}
+
+function closeMobileSidebar() {
+  if (appSidebar) appSidebar.classList.remove('mobile-open');
+  if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+}
+
+if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
+if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', openMobileSidebar);
+if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      closeMobileSidebar();
+    }
+  });
+});
 const modelSelect = document.getElementById('model-select');
 const styleSelect = document.getElementById('style-select');
 const promptInput = document.getElementById('prompt-input');
