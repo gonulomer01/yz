@@ -1474,7 +1474,7 @@ namespace yz.Services
                     var pwdInput = FindVisibleElement(driver, By.CssSelector("input[type='password'], input[name='password']"), 6);
                     if (pwdInput != null)
                     {
-                        string accountPwd = _configuration?["DefaultAccountPassword"] ?? "jvnhaXXt0038";
+                        string accountPwd = _configuration?["DefaultAccountPassword"] ?? "";
                         pwdInput.Clear();
                         pwdInput.SendKeys(accountPwd);
                         Thread.Sleep(500);
@@ -1632,7 +1632,7 @@ namespace yz.Services
 
                     Thread.Sleep(1500);
 
-                    string accountPassword = _configuration?["DefaultAccountPassword"] ?? "jvnhaXXt0038";
+                    string accountPassword = _configuration?["DefaultAccountPassword"] ?? "";
 
                     // 2. Şifre doldurma & Devam Et tıklama
                     for (int attempt = 0; attempt < 15; attempt++)
