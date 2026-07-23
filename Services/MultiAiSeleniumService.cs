@@ -1600,22 +1600,30 @@ namespace yz.Services
                         Thread.Sleep(3500);
                     }
 
-                    // Eğer "Oturumun sona erdi" veya Login sayfasında kaldıysa "Kayıt Ol / Ücretsiz Kaydol" butonuna tıkla
-                    try
+                    // Kesin olarak LOGIN (Oturum Aç) modundaysa, KAYDOL (Sign Up) moduna geçmesini sağla
+                    for (int checkSignUpMode = 0; checkSignUpMode < 5; checkSignUpMode++)
                     {
-                        var loginOrExpiredBtn = newAccountDriver.FindElements(By.CssSelector("a, button")).FirstOrDefault(e => e.Displayed && (
-                            e.Text.ToLower().Contains("kaydol") || 
-                            e.Text.ToLower().Contains("sign up") || 
-                            e.Text.ToLower().Contains("oturum") ||
-                            e.Text.ToLower().Contains("log in")
-                        ));
-                        if (loginOrExpiredBtn != null && !newAccountDriver.PageSource.Contains("password") && !newAccountDriver.PageSource.Contains("email"))
+                        try
                         {
-                            try { loginOrExpiredBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", loginOrExpiredBtn); }
-                            Thread.Sleep(3000);
+                            var signupLink = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register'], a")).FirstOrDefault(e => e.Displayed && (
+                                e.Text.ToLower().Contains("kaydol") ||
+                                e.Text.ToLower().Contains("sign up") ||
+                                e.Text.ToLower().Contains("kayıt") ||
+                                e.Text.ToLower().Contains("create account") ||
+                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
+                            ));
+
+                            if (signupLink != null && (newAccountDriver.Url.Contains("login") || newAccountDriver.PageSource.Contains("Oturum aç") || newAccountDriver.PageSource.Contains("Welcome back")))
+                            {
+                                Console.WriteLine($"[Robot] Oturum Aç ekranından KAYDOL moduna geçiliyor: '{signupLink.Text}'");
+                                try { signupLink.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupLink); }
+                                Thread.Sleep(3000);
+                                break;
+                            }
                         }
+                        catch { }
+                        Thread.Sleep(500);
                     }
-                    catch { }
 
                     // E-Posta doldurma & Devam Et tıklama
                     for (int attempt = 0; attempt < 15; attempt++)
