@@ -313,33 +313,64 @@ namespace yz.Controllers
         public async Task<IActionResult> AutoCreatePlusChatGptAccount([FromBody] GeminiAccountAddRequest? req)
         {
             var creds = await _credentialsService.GetCredentialsAsync();
-            string baseEmail = "";
-            var prof1 = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == 1);
-            if (prof1 != null && !string.IsNullOrEmpty(prof1.AccountLabel))
-            {
-                baseEmail = ExtractEmailFromAccountLabel(prof1.AccountLabel);
-            }
-            if (string.IsNullOrEmpty(baseEmail))
+
+            // 1. Ana (taban) Gmail hesaplarını tespit et ('+' içermeyenler)
+            var baseAccounts = creds.ChatGptAccounts
+                .Where(a => {
+                    string e = ExtractEmailFromAccountLabel(a.AccountLabel);
+                    return !string.IsNullOrEmpty(e) && !e.Contains("+");
+                })
+                .OrderBy(a => a.Id)
+                .ToList();
+
+            // Aktif taban hesabı seç (Varsayılan 1. profil veya aktif olan ilk taban profil)
+            var selectedBaseAccount = baseAccounts.FirstOrDefault(a => a.Status == "Active") 
+                                   ?? baseAccounts.FirstOrDefault() 
+                                   ?? creds.ChatGptAccounts.FirstOrDefault(a => a.Id == 1);
+
+            string baseEmail = ExtractEmailFromAccountLabel(selectedBaseAccount?.AccountLabel ?? "");
+            if (string.IsNullOrEmpty(baseEmail) && !string.IsNullOrEmpty(creds.BaseGmail))
             {
                 baseEmail = creds.BaseGmail;
             }
-            if (string.IsNullOrEmpty(baseEmail) && !string.IsNullOrWhiteSpace(req?.AccountLabel) && req.AccountLabel.Contains("@"))
+            if (string.IsNullOrEmpty(baseEmail))
             {
-                baseEmail = req.AccountLabel.Trim();
+                baseEmail = "tygotr001@gmail.com";
             }
 
-            if (string.IsNullOrWhiteSpace(baseEmail) || !baseEmail.Contains("@"))
-            {
-                return BadRequest(new { error = "İlk ChatGPT hesabınızın etiketinde geçerli e-posta adresiniz bulunamadı. Lütfen 1. hesabın etiketine e-posta adresinizi yazın (ör: ChatGPT Hesap #1 (ornek@gmail.com))." });
-            }
-
-            creds.BaseGmail = baseEmail;
-            int nextId = (creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1);
-            int plusIndex = nextId - 1;
+            int targetBaseProfileId = selectedBaseAccount?.Id ?? 1;
 
             string userPart = baseEmail.Split('@')[0];
             string domainPart = baseEmail.Split('@')[1];
-            string aliasEmail = $"{userPart}+{plusIndex}@{domainPart}";
+
+            // 2. Bu ana e-posta adresi için kullanılmış en yüksek '+' numarasını bul
+            int maxPlus = 0;
+            foreach (var acc in creds.ChatGptAccounts)
+            {
+                string e = ExtractEmailFromAccountLabel(acc.AccountLabel);
+                if (!string.IsNullOrEmpty(e) && e.Contains("+") && e.StartsWith(userPart + "+", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        int plusPos = e.IndexOf("+");
+                        int atPos = e.IndexOf("@");
+                        if (plusPos > 0 && atPos > plusPos)
+                        {
+                            string numStr = e.Substring(plusPos + 1, atPos - plusPos - 1);
+                            if (int.TryParse(numStr, out int val) && val > maxPlus)
+                            {
+                                maxPlus = val;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            int nextPlusNum = maxPlus + 1;
+            string aliasEmail = $"{userPart}+{nextPlusNum}@{domainPart}";
+
+            int nextId = (creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1);
             string profileName = $"ChatGptChromeProfile_{nextId}";
             string label = $"ChatGPT Hesap #{nextId} ({aliasEmail})";
 
@@ -354,11 +385,11 @@ namespace yz.Controllers
 
             await _credentialsService.SaveCredentialsAsync(creds);
 
-            // 1. Yeni ChatGPT profilini kayıt sayfasında aç
+            // 1. Yeni ChatGPT hesabının kayıt penceresini aç (#nextId)
             await _multiAiSeleniumService.OpenBrowserForLoginAsync("chatgpt", nextId);
 
-            // 2. İlk ChatGPT profilinin (Profil 1) Gmail ekranını aç (Onay kodunu kolayca almak için)
-            await _multiAiSeleniumService.OpenBrowserForLoginUrlAsync("chatgpt", 1, "https://mail.google.com");
+            // 2. Ana mailin Chrome profilini Gmail için aç (#targetBaseProfileId)
+            await _multiAiSeleniumService.OpenBrowserForLoginUrlAsync("chatgpt", targetBaseProfileId, "https://mail.google.com");
 
             return Ok(new
             {
@@ -366,7 +397,8 @@ namespace yz.Controllers
                 id = nextId,
                 aliasEmail = aliasEmail,
                 label = label,
-                message = $"{aliasEmail} adresiyle ChatGPT hesabı oluşturuldu. Yeni profil ve 1. profil Gmail ekranı açıldı!"
+                baseProfileId = targetBaseProfileId,
+                message = $"{aliasEmail} adresiyle ChatGPT Hesap #{nextId} oluşturuldu. {targetBaseProfileId}. profil Gmail ve #{nextId}. profil ChatGPT ekranda açıldı!"
             });
         }
         [HttpDelete("chatgpt-accounts/{id}")]
