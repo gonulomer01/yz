@@ -1563,42 +1563,55 @@ namespace yz.Services
 
                     // 1. Düz chatgpt.com Adresine Git
                     newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
-                    Thread.Sleep(3000);
+                    Thread.Sleep(3500);
 
-                    // Eğer "Kayıt Ol" / "Sign Up" / "Oturum Aç" butonu varsa tıkla
-                    try
+                    bool signupClicked = false;
+                    // "Ücretsiz kaydol" / "Kayıt Ol" / "Sign up" butonunu ara ve tıkla
+                    for (int retry = 0; retry < 5; retry++)
                     {
-                        var signupBtn = newAccountDriver.FindElements(By.CssSelector("button[data-testid='signup-button'], a[href*='signup'], a[href*='auth'], button.btn-secondary, button.btn-primary")).FirstOrDefault(e => e.Displayed);
-                        if (signupBtn != null)
+                        try
                         {
-                            try { signupBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupBtn); }
-                            Thread.Sleep(3000);
-                        }
-                    }
-                    catch { }
+                            var allElements = newAccountDriver.FindElements(By.CssSelector("a, button, div[role='button']"));
+                            var targetBtn = allElements.FirstOrDefault(e => e.Displayed && (
+                                e.Text.ToLower().Contains("kaydol") || 
+                                e.Text.ToLower().Contains("sign up") || 
+                                e.Text.ToLower().Contains("kayıt") ||
+                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
+                            ));
 
-                    // Eğer "Oturumun sona erdi" ekranı çıktıysa, ekrandaki "Oturum Aç" / "Kayıt Ol" butonuna tıkla
-                    try
-                    {
-                        if (newAccountDriver.PageSource.Contains("Oturumun sona erdi") || newAccountDriver.PageSource.Contains("Session expired"))
-                        {
-                            var expiredBtn = newAccountDriver.FindElements(By.CssSelector("button, a")).FirstOrDefault(e => e.Displayed && (e.Text.Contains("Oturum") || e.Text.Contains("Log in") || e.Text.Contains("Kayıt") || e.Text.Contains("Sign up")));
-                            if (expiredBtn != null)
+                            if (targetBtn != null)
                             {
-                                try { expiredBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", expiredBtn); }
-                                Thread.Sleep(3000);
+                                Console.WriteLine($"[Robot] 'Ücretsiz Kaydol' butonuna tıklanıyor: '{targetBtn.Text}'");
+                                try { targetBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", targetBtn); }
+                                signupClicked = true;
+                                Thread.Sleep(3500);
+                                break;
                             }
                         }
+                        catch { }
+                        Thread.Sleep(800);
                     }
-                    catch { }
 
-                    // Eğer sayfa Oturum Aç sayfasında kaldıysa, alttaki "Kayıt Ol" / "Sign up" bağlantısına tıkla
+                    // Eğer buton tıklanamadıysa veya hala chatgpt.com anasayfasındaysa doğrudan signup URL'sine git
+                    if (!signupClicked || (newAccountDriver.Url.Contains("chatgpt.com") && !newAccountDriver.Url.Contains("auth")))
+                    {
+                        Console.WriteLine($"[Robot] Kayıt sayfasına doğrudan gidiliyor...");
+                        newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
+                        Thread.Sleep(3500);
+                    }
+
+                    // Eğer "Oturumun sona erdi" veya Login sayfasında kaldıysa "Kayıt Ol / Ücretsiz Kaydol" butonuna tıkla
                     try
                     {
-                        var switchSignup = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register']")).FirstOrDefault(e => e.Displayed);
-                        if (switchSignup != null)
+                        var loginOrExpiredBtn = newAccountDriver.FindElements(By.CssSelector("a, button")).FirstOrDefault(e => e.Displayed && (
+                            e.Text.ToLower().Contains("kaydol") || 
+                            e.Text.ToLower().Contains("sign up") || 
+                            e.Text.ToLower().Contains("oturum") ||
+                            e.Text.ToLower().Contains("log in")
+                        ));
+                        if (loginOrExpiredBtn != null && !newAccountDriver.PageSource.Contains("password") && !newAccountDriver.PageSource.Contains("email"))
                         {
-                            try { switchSignup.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", switchSignup); }
+                            try { loginOrExpiredBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", loginOrExpiredBtn); }
                             Thread.Sleep(3000);
                         }
                     }
