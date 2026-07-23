@@ -1560,59 +1560,63 @@ namespace yz.Services
 
                     var jsExec = (IJavaScriptExecutor)newAccountDriver;
 
-                    // 1. OpenAI Kayıt Sayfasına Doğrudan ve Hızlı Git
+                    // 1. OpenAI Kayıt Sayfasına Git
                     string signupUrl = $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}";
                     newAccountDriver.Navigate().GoToUrl(signupUrl);
-                    Thread.Sleep(2000);
+                    Thread.Sleep(2500);
 
-                    // E-Posta kutusunu doldur
-                    for (int i = 0; i < 12; i++)
+                    // E-Posta doldurma & Devam Et tıklama
+                    for (int attempt = 0; attempt < 15; attempt++)
                     {
                         try
                         {
-                            var emailInput = newAccountDriver.FindElements(By.CssSelector("input[type='email'], input#email-input, input[name='email']")).FirstOrDefault(e => e.Displayed);
+                            var emailInput = newAccountDriver.FindElements(By.CssSelector("input[type='email'], input#email-input, input[name='email'], input[id='email-input']")).FirstOrDefault(e => e.Displayed);
                             if (emailInput != null)
                             {
-                                emailInput.Clear();
+                                try { emailInput.Clear(); } catch { }
                                 emailInput.SendKeys(aliasEmail);
                                 jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", emailInput, aliasEmail);
-                                Thread.Sleep(300);
-                                var submitBtn = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
-                                if (submitBtn != null)
-                                {
-                                    try { submitBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", submitBtn); }
-                                    break;
-                                }
                             }
+
+                            var submitBtn = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary, button[name='action'], button[value='default']")).FirstOrDefault(e => e.Displayed);
+                            if (submitBtn != null)
+                            {
+                                try { submitBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", submitBtn); }
+                            }
+
+                            var pwdCheck = newAccountDriver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                            if (pwdCheck != null) break;
                         }
                         catch { }
-                        Thread.Sleep(500);
+                        Thread.Sleep(800);
                     }
 
-                    Thread.Sleep(2000);
+                    Thread.Sleep(1500);
 
-                    // 2. Şifreyi doldur (jvnhaXXt0038)
-                    for (int i = 0; i < 12; i++)
+                    // 2. Şifre doldurma (jvnhaXXt0038) & Devam Et tıklama
+                    for (int attempt = 0; attempt < 15; attempt++)
                     {
                         try
                         {
                             var pwdInput = newAccountDriver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
                             if (pwdInput != null)
                             {
-                                pwdInput.Clear();
+                                try { pwdInput.Clear(); } catch { }
                                 pwdInput.SendKeys("jvnhaXXt0038");
                                 jsExec.ExecuteScript("arguments[0].value = 'jvnhaXXt0038'; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", pwdInput);
-                                Thread.Sleep(300);
-                                var pwdSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
+
+                                var pwdSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
                                 if (pwdSubmit != null)
                                 {
                                     try { pwdSubmit.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", pwdSubmit); }
-                                    break;
                                 }
                             }
+
+                            var codeOrName = newAccountDriver.FindElements(By.CssSelector("input[name='firstName'], input[name='code'], input[type='text']")).FirstOrDefault(e => e.Displayed);
+                            if (codeOrName != null) break;
                         }
                         catch { }
-                        Thread.Sleep(500);
+                        Thread.Sleep(800);
                     }
 
                     Thread.Sleep(2500);

@@ -30,6 +30,7 @@ yayinla/
 publish/
 
 ## Credentials & Runtime State
+appsettings.Local.json
 ai_credentials.json
 GeminiChromeProfile_*
 ChatGptChromeProfile_*
