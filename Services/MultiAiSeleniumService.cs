@@ -1561,69 +1561,22 @@ namespace yz.Services
 
                     var jsExec = (IJavaScriptExecutor)newAccountDriver;
 
-                    // 1. Düz chatgpt.com Adresine Git
-                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
-                    Thread.Sleep(3500);
+                    // 1. Doğrudan OpenAI Kayıt Ol (Sign Up) Adresine Git
+                    string signupUrl = $"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}";
+                    newAccountDriver.Navigate().GoToUrl(signupUrl);
+                    Thread.Sleep(3000);
 
-                    bool signupClicked = false;
-                    // "Ücretsiz kaydol" / "Kayıt Ol" / "Sign up" butonunu ara ve tıkla
-                    for (int retry = 0; retry < 5; retry++)
+                    // Eğer Login ekranı açıldıysa, alttaki "Kaydol" / "Sign up" bağlantısına tıkla
+                    try
                     {
-                        try
+                        var signupLink = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register']")).FirstOrDefault(e => e.Displayed);
+                        if (signupLink != null && (newAccountDriver.Url.Contains("login") || newAccountDriver.PageSource.Contains("Oturum aç") || newAccountDriver.PageSource.Contains("Welcome back")))
                         {
-                            var allElements = newAccountDriver.FindElements(By.CssSelector("a, button, div[role='button']"));
-                            var targetBtn = allElements.FirstOrDefault(e => e.Displayed && (
-                                e.Text.ToLower().Contains("kaydol") || 
-                                e.Text.ToLower().Contains("sign up") || 
-                                e.Text.ToLower().Contains("kayıt") ||
-                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
-                            ));
-
-                            if (targetBtn != null)
-                            {
-                                Console.WriteLine($"[Robot] 'Ücretsiz Kaydol' butonuna tıklanıyor: '{targetBtn.Text}'");
-                                try { targetBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", targetBtn); }
-                                signupClicked = true;
-                                Thread.Sleep(3500);
-                                break;
-                            }
+                            try { signupLink.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupLink); }
+                            Thread.Sleep(2500);
                         }
-                        catch { }
-                        Thread.Sleep(800);
                     }
-
-                    // Eğer buton tıklanamadıysa veya hala chatgpt.com anasayfasındaysa doğrudan signup URL'sine git
-                    if (!signupClicked || (newAccountDriver.Url.Contains("chatgpt.com") && !newAccountDriver.Url.Contains("auth")))
-                    {
-                        Console.WriteLine($"[Robot] Kayıt sayfasına doğrudan gidiliyor...");
-                        newAccountDriver.Navigate().GoToUrl($"https://auth.openai.com/u/signup/identifier?email_hint={Uri.EscapeDataString(aliasEmail)}");
-                        Thread.Sleep(3500);
-                    }
-
-                    // Kesin olarak LOGIN (Oturum Aç) modundaysa, KAYDOL (Sign Up) moduna geçmesini sağla
-                    for (int checkSignUpMode = 0; checkSignUpMode < 5; checkSignUpMode++)
-                    {
-                        try
-                        {
-                            var signupLink = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register'], a")).FirstOrDefault(e => e.Displayed && (
-                                e.Text.ToLower().Contains("kaydol") ||
-                                e.Text.ToLower().Contains("sign up") ||
-                                e.Text.ToLower().Contains("kayıt") ||
-                                e.Text.ToLower().Contains("create account") ||
-                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
-                            ));
-
-                            if (signupLink != null && (newAccountDriver.Url.Contains("login") || newAccountDriver.PageSource.Contains("Oturum aç") || newAccountDriver.PageSource.Contains("Welcome back")))
-                            {
-                                Console.WriteLine($"[Robot] Oturum Aç ekranından KAYDOL moduna geçiliyor: '{signupLink.Text}'");
-                                try { signupLink.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupLink); }
-                                Thread.Sleep(3000);
-                                break;
-                            }
-                        }
-                        catch { }
-                        Thread.Sleep(500);
-                    }
+                    catch { }
 
                     // E-Posta doldurma & Devam Et tıklama
                     for (int attempt = 0; attempt < 15; attempt++)
