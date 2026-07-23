@@ -1277,14 +1277,31 @@ namespace yz.Services
                 var options = new ChromeOptions();
                 string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
                 Directory.CreateDirectory(profileDir);
+
+                try
+                {
+                    string lock1 = Path.Combine(profileDir, "SingletonLock");
+                    if (File.Exists(lock1)) File.Delete(lock1);
+                    string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                    if (File.Exists(lock2)) File.Delete(lock2);
+                    string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                    if (File.Exists(lock3)) File.Delete(lock3);
+                }
+                catch { }
+
                 options.AddArgument($"--user-data-dir={profileDir}");
                 options.AddArgument("--disable-blink-features=AutomationControlled");
                 options.AddExcludedArgument("enable-automation");
-                options.AddArgument("--window-size=1300,850");
+                options.AddArgument("--start-maximized");
+                options.AddArgument("--no-sandbox");
+                options.AddArgument("--disable-dev-shm-usage");
+                options.AddArgument("--remote-allow-origins=*");
+
                 var driver = await Task.Run(() => new ChromeDriver(options));
                 RegisterDriver(driver);
+                try { driver.Manage().Window.Maximize(); } catch { }
                 driver.Navigate().GoToUrl(targetUrl);
-                Console.WriteLine($"[{site} Login] Chrome aÃ§Ä±ldÄ± ({profName}). KullanÄ±cÄ± oturum aÃ§abilir.");
+                Console.WriteLine($"[{site} Login] Chrome ekranda tam ekran açıldı ({profName}). Yönetici oturum açabilir.");
                 return true;
             }
             catch (Exception ex)
