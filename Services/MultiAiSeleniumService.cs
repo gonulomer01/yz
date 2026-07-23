@@ -1274,7 +1274,7 @@ namespace yz.Services
                     profName = acc?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
                     targetUrl = "https://gemini.google.com/app";
                 }
-                var options = new ChromeOptions();
+
                 string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
                 Directory.CreateDirectory(profileDir);
 
@@ -1289,17 +1289,34 @@ namespace yz.Services
                 }
                 catch { }
 
+                string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                if (!File.Exists(chromePath))
+                {
+                    chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                }
+
+                if (File.Exists(chromePath))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"{targetUrl}\" --user-data-dir=\"{profileDir}\" --start-maximized --disable-blink-features=AutomationControlled",
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[{site} Login] Process.Start ile Chrome doğrudan masaüstünde açıldı ({profName}).");
+                    return true;
+                }
+
+                var options = new ChromeOptions();
                 options.AddArgument($"--user-data-dir={profileDir}");
                 options.AddArgument("--disable-blink-features=AutomationControlled");
                 options.AddExcludedArgument("enable-automation");
                 options.AddArgument("--start-maximized");
-                options.AddArgument("--no-sandbox");
-                options.AddArgument("--disable-dev-shm-usage");
                 options.AddArgument("--remote-allow-origins=*");
 
                 var driver = await Task.Run(() => new ChromeDriver(options));
                 RegisterDriver(driver);
-                try { driver.Manage().Window.Maximize(); } catch { }
                 driver.Navigate().GoToUrl(targetUrl);
                 Console.WriteLine($"[{site} Login] Chrome ekranda tam ekran açıldı ({profName}). Yönetici oturum açabilir.");
                 return true;
