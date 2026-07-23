@@ -287,6 +287,88 @@ namespace yz.Controllers
             await _credentialsService.SaveCredentialsAsync(creds);
             return Ok(new { success = true, id = nextId });
         }
+
+        private static string ExtractEmailFromAccountLabel(string label)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(label)) return "";
+                if (label.Contains("(") && label.Contains(")"))
+                {
+                    int start = label.IndexOf("(") + 1;
+                    int end = label.IndexOf(")", start);
+                    if (end > start)
+                    {
+                        string candidate = label.Substring(start, end - start).Trim();
+                        if (candidate.Contains("@")) return candidate;
+                    }
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        [HttpPost("chatgpt-accounts/auto-create-plus")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AutoCreatePlusChatGptAccount([FromBody] GeminiAccountAddRequest? req)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            string baseEmail = "";
+            var prof1 = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == 1);
+            if (prof1 != null && !string.IsNullOrEmpty(prof1.AccountLabel))
+            {
+                baseEmail = ExtractEmailFromAccountLabel(prof1.AccountLabel);
+            }
+            if (string.IsNullOrEmpty(baseEmail))
+            {
+                baseEmail = creds.BaseGmail;
+            }
+            if (string.IsNullOrEmpty(baseEmail) && !string.IsNullOrWhiteSpace(req?.AccountLabel) && req.AccountLabel.Contains("@"))
+            {
+                baseEmail = req.AccountLabel.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(baseEmail) || !baseEmail.Contains("@"))
+            {
+                return BadRequest(new { error = "İlk ChatGPT hesabınızın etiketinde geçerli e-posta adresiniz bulunamadı. Lütfen 1. hesabın etiketine e-posta adresinizi yazın (ör: ChatGPT Hesap #1 (ornek@gmail.com))." });
+            }
+
+            creds.BaseGmail = baseEmail;
+            int nextId = (creds.ChatGptAccounts.Count == 0 ? 1 : creds.ChatGptAccounts.Max(a => a.Id) + 1);
+            int plusIndex = nextId - 1;
+
+            string userPart = baseEmail.Split('@')[0];
+            string domainPart = baseEmail.Split('@')[1];
+            string aliasEmail = $"{userPart}+{plusIndex}@{domainPart}";
+            string profileName = $"ChatGptChromeProfile_{nextId}";
+            string label = $"ChatGPT Hesap #{nextId} ({aliasEmail})";
+
+            creds.ChatGptAccounts.Add(new ChatGptAccountItem
+            {
+                Id = nextId,
+                ProfileName = profileName,
+                AccountLabel = label,
+                Status = "Active",
+                LastUsed = ""
+            });
+
+            await _credentialsService.SaveCredentialsAsync(creds);
+
+            // 1. Yeni ChatGPT profilini kayıt sayfasında aç
+            await _multiAiSeleniumService.OpenBrowserForLoginAsync("chatgpt", nextId);
+
+            // 2. İlk ChatGPT profilinin (Profil 1) Gmail ekranını aç (Onay kodunu kolayca almak için)
+            await _multiAiSeleniumService.OpenBrowserForLoginUrlAsync("chatgpt", 1, "https://mail.google.com");
+
+            return Ok(new
+            {
+                success = true,
+                id = nextId,
+                aliasEmail = aliasEmail,
+                label = label,
+                message = $"{aliasEmail} adresiyle ChatGPT hesabı oluşturuldu. Yeni profil ve 1. profil Gmail ekranı açıldı!"
+            });
+        }
         [HttpDelete("chatgpt-accounts/{id}")]
         [Authorize(Roles = "Yönetici")]
         public async Task<IActionResult> DeleteChatGptAccount(int id)

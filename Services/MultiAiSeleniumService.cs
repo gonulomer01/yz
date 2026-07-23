@@ -1358,5 +1358,68 @@ namespace yz.Services
                 return false;
             }
         }
+
+        public async Task<bool> OpenBrowserForLoginUrlAsync(string site, int profileId, string customUrl)
+        {
+            try
+            {
+                var creds = await _credentialsService.GetCredentialsAsync();
+                string profName = $"ChatGptChromeProfile_{profileId}";
+                if (site == "gemini")
+                {
+                    var acc = creds.GeminiAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
+                }
+                else if (site == "chatgpt")
+                {
+                    var acc = creds.ChatGptAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"ChatGptChromeProfile_{profileId}";
+                }
+                else if (site == "copilot")
+                {
+                    var acc = creds.CopilotAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"CopilotChromeProfile_{profileId}";
+                }
+
+                string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
+                Directory.CreateDirectory(profileDir);
+
+                try
+                {
+                    string lock1 = Path.Combine(profileDir, "SingletonLock");
+                    if (File.Exists(lock1)) File.Delete(lock1);
+                    string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                    if (File.Exists(lock2)) File.Delete(lock2);
+                    string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                    if (File.Exists(lock3)) File.Delete(lock3);
+                }
+                catch { }
+
+                string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                if (!File.Exists(chromePath))
+                {
+                    chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                }
+
+                if (File.Exists(chromePath))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"{customUrl}\" --user-data-dir=\"{profileDir}\" --start-maximized --disable-blink-features=AutomationControlled",
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[{site} Custom Login Url] Process.Start ile Chrome açıldı ({profName}) -> {customUrl}");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{site} Custom Login Url Error] {ex.Message}");
+                return false;
+            }
+        }
     }
 }
