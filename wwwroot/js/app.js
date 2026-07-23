@@ -21,6 +21,7 @@ window.toggleMobileSidebar = function(e) {
     sidebar.classList.remove('mobile-open');
     if (backdrop) backdrop.classList.remove('active');
   } else {
+    sidebar.classList.remove('collapsed');
     sidebar.classList.add('mobile-open');
     if (backdrop) backdrop.classList.add('active');
   }
@@ -33,13 +34,21 @@ window.closeMobileSidebar = function() {
   if (backdrop) backdrop.classList.remove('active');
 };
 
-function toggleDesktopSidebar() {
-  if (!appSidebar) return;
-  appSidebar.classList.toggle('collapsed');
-  if (mainContent) mainContent.classList.toggle('sidebar-collapsed-main');
+function toggleDesktopSidebar(e) {
+  if (e) { try { e.stopPropagation(); } catch {} }
+  if (window.innerWidth <= 900) {
+    window.closeMobileSidebar();
+  } else {
+    if (!appSidebar) return;
+    appSidebar.classList.toggle('collapsed');
+    if (mainContent) mainContent.classList.toggle('sidebar-collapsed-main');
+  }
 }
 
-if (sidebarToggleBtn) sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
+if (sidebarToggleBtn) {
+  sidebarToggleBtn.addEventListener('click', toggleDesktopSidebar);
+  sidebarToggleBtn.addEventListener('touchstart', toggleDesktopSidebar, { passive: false });
+}
 if (mobileMenuBtn) {
   mobileMenuBtn.addEventListener('click', window.toggleMobileSidebar);
   mobileMenuBtn.addEventListener('touchstart', window.toggleMobileSidebar, { passive: false });

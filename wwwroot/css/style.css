@@ -2385,6 +2385,7 @@ main {
     left: 0 !important;
     bottom: 0 !important;
     width: 280px !important;
+    max-width: 82vw !important;
     z-index: 9999 !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -2393,6 +2394,40 @@ main {
 
   .app-sidebar.mobile-open {
     transform: translateX(0) !important;
+  }
+
+  /* Mobil Menü Açıkken Tüm Metinleri Görünür Yap */
+  .app-sidebar .nav-text,
+  .app-sidebar .brand-text,
+  .app-sidebar .user-info-text,
+  .app-sidebar .gallery-count {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: auto !important;
+    pointer-events: auto !important;
+  }
+
+  .app-sidebar .brand-text {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .app-sidebar .brand {
+    display: flex !important;
+  }
+
+  .app-sidebar .sidebar-nav-item {
+    justify-content: flex-start !important;
+    padding: 11px 14px !important;
+  }
+
+  .app-sidebar .user-badge-info {
+    justify-content: flex-start !important;
+  }
+
+  .app-sidebar .sidebar-header {
+    justify-content: space-between !important;
   }
 
   main {
