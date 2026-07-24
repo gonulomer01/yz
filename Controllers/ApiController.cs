@@ -483,6 +483,88 @@ namespace yz.Controllers
             });
         }
 
+        public class CreateChatGptGmailRequest
+        {
+            public int? TargetProfileId { get; set; }
+            public int GmailNo { get; set; }
+            public int AliasNo { get; set; }
+        }
+
+        [HttpPost("dashboard/create-chatgpt-gmail")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> CreateChatGptAccountWithGmail([FromBody] CreateChatGptGmailRequest req)
+        {
+            if (req == null || req.GmailNo <= 0 || req.AliasNo <= 0)
+                return BadRequest(new { success = false, message = "Geçersiz parametreler." });
+
+            var creds = await _credentialsService.GetCredentialsAsync();
+
+            int nextId = 1;
+            var existingIds = creds.ChatGptAccounts.Select(a => a.Id).ToHashSet();
+            
+            if (req.TargetProfileId.HasValue && req.TargetProfileId.Value > 0)
+            {
+                nextId = req.TargetProfileId.Value;
+            }
+            else
+            {
+                while (existingIds.Contains(nextId))
+                {
+                    nextId++;
+                }
+            }
+
+            string profileName = $"ChatGptChromeProfile_{nextId}";
+            string mailPlaceholder = $"Gmail_{req.GmailNo}+{req.AliasNo}@Bekleniyor";
+            string label = $"ChatGPT Hesap #{nextId} (E-Posta Aranıyor...)";
+
+            var existingAcc = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == nextId);
+            if (existingAcc != null)
+            {
+                existingAcc.AccountLabel = label;
+                existingAcc.Status = "Active";
+                existingAcc.LastUsed = "";
+            }
+            else
+            {
+                var newAcc = new ChatGptAccountItem
+                {
+                    Id = nextId,
+                    AccountLabel = label,
+                    ProfileName = profileName,
+                    Status = "Active",
+                    LastUsed = ""
+                };
+                creds.ChatGptAccounts.Add(newAcc);
+            }
+            
+            await _credentialsService.SaveCredentialsAsync(creds);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // Pass aliasNo, targetProfileId (nextId), and gmailProfileId (GmailNo)
+                    var result = await _multiAiSeleniumService.CreateChatGptAccountWithGmailAsync(req.AliasNo, nextId, req.GmailNo);
+                    
+                    if (!result.success)
+                    {
+                        Console.WriteLine($"[Gmail Robot Error] {result.message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Gmail Robot Thread Error] {ex.Message}");
+                }
+            });
+
+            return Ok(new
+            {
+                success = true,
+                message = $"{mailPlaceholder} adresi aranıyor ve otomatik kayıt başlatılıyor."
+            });
+        }
+
         [HttpPost("chatgpt-accounts/auto-create-tempmail")]
         [Authorize(Roles = "Yönetici")]
         public async Task<IActionResult> AutoCreateTempMailChatGptAccount()
@@ -538,6 +620,44 @@ namespace yz.Controllers
                 id = nextId,
                 label = label,
                 message = $"Temp-Mail ile ChatGPT Hesap #{nextId} otomatik oluşturma başlatıldı."
+            });
+        }
+
+        [HttpPost("chatgpt-accounts/auto-create-tempmail/{id}")]
+        [Authorize(Roles = "Yönetici")]
+        public async Task<IActionResult> AutoCreateTempMailChatGptAccountForExisting(int id)
+        {
+            var creds = await _credentialsService.GetCredentialsAsync();
+            var acc = creds.ChatGptAccounts.FirstOrDefault(a => a.Id == id);
+            if (acc == null) return NotFound(new { success = false, message = "Hesap bulunamadı." });
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var res = await _multiAiSeleniumService.AutoCreateChatGptWithTempMailAsync(id);
+                    if (res.success && !string.IsNullOrWhiteSpace(res.tempEmail))
+                    {
+                        var updatedCreds = await _credentialsService.GetCredentialsAsync();
+                        var dbAcc = updatedCreds.ChatGptAccounts.FirstOrDefault(a => a.Id == id);
+                        if (dbAcc != null)
+                        {
+                            dbAcc.AccountLabel = $"ChatGPT Hesap #{id} ({res.tempEmail})";
+                            await _credentialsService.SaveCredentialsAsync(updatedCreds);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Temp-Mail Robot Thread Error] {ex.Message}");
+                }
+            });
+
+            return Ok(new
+            {
+                success = true,
+                id = id,
+                message = $"Temp-Mail ile ChatGPT Hesap #{id} (Mevcut Profil) için otomatik oluşturma başlatıldı."
             });
         }
         [HttpDelete("chatgpt-accounts/{id}")]

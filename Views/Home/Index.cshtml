@@ -342,26 +342,27 @@
                     <p>Hesap profilleri <strong style="color: var(--color-primary);">ai_credentials.json</strong> içinde saklanır. Bir hesabın limiti dolduğunda sıradaki profile geçer.</p>
                   </div>
                   <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <div style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.06); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);">
-                      <input type="text" id="auto-chatgpt-email-input" class="form-control" placeholder="tygotr001+4@gmail.com" value="tygotr001+4@gmail.com" style="width: 210px; padding: 4px 8px; font-size: 13px; height: 34px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px;">
-                      <label style="display:flex; align-items:center; gap:6px; font-size: 12px; font-weight:600; cursor:pointer; color:#e2e8f0; margin:0; user-select:none;">
-                        <input type="checkbox" id="auto-chatgpt-loop-toggle" style="width:16px; height:16px; cursor:pointer; accent-color: #10a37f;">
-                        <span>Sonsuz Döngü Modu</span>
-                      </label>
-                      <button id="btn-start-auto-chatgpt-gen" class="action-btn primary-btn" style="background: linear-gradient(135deg, #10a37f, #059669); font-size:12px; padding: 6px 12px; height: 34px;" title="Belirtilen e-posta ile otomatik hesap oluşturmayı ve doğrulayıcıyı başlatır">
-                        <i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat
+
+
+                    <div style="display:flex; align-items:center; gap:5px; border:1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.2);">
+                      <label for="target-profile-input" style="color:#bbb; font-size:0.8rem; margin:0;">Hedef Profil:</label>
+                      <input type="number" id="target-profile-input" placeholder="Oto" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:70px; outline:none;" title="Hangi numaralı ChatGPT profilinin oluşturulacağını belirler. Boş bırakırsanız otomatik sıradaki numarayı alır." />
+                      
+                      <label for="gmail-no-input" style="color:#bbb; font-size:0.8rem; margin:0 0 0 5px;">Gmail No:</label>
+                      <input type="number" id="gmail-no-input" placeholder="Örn: 3" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="Kaç numaralı Gmail profilinin açılacağını belirtir." />
+                      
+                      <label for="alias-no-input" style="color:#bbb; font-size:0.8rem; margin:0 0 0 5px;">Alias No:</label>
+                      <input type="number" id="alias-no-input" placeholder="Örn: 5" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="E-postanın sonuna eklenecek +sayı değerini belirtir." />
+                      
+                      <button id="btn-add-chatgpt-gmail" class="action-btn primary-btn" style="background: linear-gradient(135deg, #10a37f, #0d8a6a); font-weight:700; padding: 4px 12px; margin-left:5px;" title="Belirtilen değerlerle otomatik ChatGPT hesabı oluşturur">
+                        <i class="fa-brands fa-google"></i> Oluştur
                       </button>
                     </div>
-
-                    <button id="btn-add-chatgpt-tempmail" class="action-btn primary-btn" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); font-weight:700; height: 34px; font-size:12px;" title="Temp-Mail.org açarak tek tıkla otomatik ChatGPT hesabı oluşturur ve bağlar">
-                      <i class="fa-solid fa-bolt"></i> ⚡ Temp-Mail ile Otomatik Hesap Oluştur
-                    </button>
-
                     <button id="btn-reset-chatgpt-accs" class="action-btn secondary-btn" title="Tüm ChatGPT hesaplarının pasifliğini sıfırla ve aktifleştir">
                       <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
                     </button>
                     <button id="btn-add-chatgpt-acc" class="action-btn primary-btn">
-                      <i class="fa-solid fa-plus"></i> Yeni Hesap
+                      <i class="fa-solid fa-plus"></i> Yeni Manuel Hesap
                     </button>
                   </div>
                 </div>

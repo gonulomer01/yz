@@ -1309,11 +1309,13 @@ function renderChatGptAccounts() {
       <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
       <div style="display:flex; gap: 6px; margin-top: auto;">
         <button data-login-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
+        <button data-tempmail-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;" title="Temp-Mail ile otomatik hesap oluştur"><i class="fa-solid fa-bolt"></i> Oto-Kayıt</button>
         <button data-edit-chatgpt="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
         <button data-del-chatgpt="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
       </div>
     `;
     card.querySelector('[data-login-chatgpt]').addEventListener('click', () => openChatGptLogin(a.id, a.accountLabel));
+    card.querySelector('[data-tempmail-chatgpt]').addEventListener('click', () => autoCreateChatGptWithTempMail(a.id, a.accountLabel));
     card.querySelector('[data-edit-chatgpt]').addEventListener('click', () => openChatGptEditModal(a.id, a.accountLabel, a.status));
     card.querySelector('[data-del-chatgpt]').addEventListener('click', () => deleteChatGptAccount(a.id));
     grid.appendChild(card);
@@ -1326,6 +1328,48 @@ async function openChatGptLogin(id, label) {
     const data = await res.json();
     if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
   } catch (err) { showToast('Hata: ' + err.message, 'error'); }
+}
+async function autoCreateChatGptWithTempMail(id, label) {
+  if (!confirm(`'${label}' profili için Temp-Mail ile otomatik ChatGPT hesabı oluşturulsun mu?`)) return;
+  showToast('Temp-Mail ile otomatik hesap oluşturma başlatılıyor…', 'info');
+  try {
+    const res = await fetch(`/api/chatgpt-accounts/auto-create-tempmail/${id}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) { showToast(data.message, 'success'); } else { showToast('Hata: ' + (data.message || 'Bilinmeyen hata'), 'error'); }
+  } catch (err) { showToast('Bağlantı hatası: ' + err.message, 'error'); }
+}
+const btnAddChatgptGmail = document.getElementById('btn-add-chatgpt-gmail');
+if (btnAddChatgptGmail) {
+  btnAddChatgptGmail.addEventListener('click', async () => {
+    const targetInput = document.getElementById('target-profile-input').value.trim();
+    const gmailNo = document.getElementById('gmail-no-input').value.trim();
+    const aliasNo = document.getElementById('alias-no-input').value.trim();
+    if (!gmailNo || !aliasNo) {
+      showToast('Lütfen Gmail No (örn: 3) ve Alias No (örn: 2) giriniz.', 'error');
+      return;
+    }
+    const targetProfileId = targetInput ? parseInt(targetInput) : null;
+    let msg = `Gmail #${gmailNo} ile +${aliasNo} hesabı otomatik oluşturuluyor...`;
+    if (targetProfileId) msg = `Hedef Profil ${targetProfileId} üzerinde ` + msg;
+
+    showToast(msg, 'info');
+    try {
+      const res = await fetch('/api/dashboard/create-chatgpt-gmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gmailNo: parseInt(gmailNo), aliasNo: parseInt(aliasNo), targetProfileId: targetProfileId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message, 'success');
+        await loadChatGptAccounts();
+      } else {
+        showToast('Hata: ' + (data.message || 'Oluşturulamadı'), 'error');
+      }
+    } catch (err) {
+      showToast('Bağlantı hatası: ' + err.message, 'error');
+    }
+  });
 }
 const chatgptEditModal = document.getElementById('chatgpt-edit-modal');
 const chatgptEditForm = document.getElementById('chatgpt-edit-form');
@@ -1477,33 +1521,7 @@ function stopAutoGeneratorUI() {
     btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
   }
 }
-const btnAddChatgptTempmail = document.getElementById('btn-add-chatgpt-tempmail');
-if (btnAddChatgptTempmail) {
-  btnAddChatgptTempmail.addEventListener('click', async () => {
-    btnAddChatgptTempmail.disabled = true;
-    btnAddChatgptTempmail.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Temp-Mail Başlatılıyor...';
-    showToast('⚡ Temp-Mail.org ile ChatGPT otomatik hesap üretimi başlatıldı...', 'info');
 
-    try {
-      const res = await fetch('/api/chatgpt-accounts/auto-create-tempmail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        showToast(`🎉 ${data.message}`, 'success');
-        setTimeout(() => { loadChatGptAccounts(); }, 2000);
-      } else {
-        showToast('Hata: ' + (data.error || 'Temp-Mail hesap oluşturulamadı'), 'error');
-      }
-    } catch (err) {
-      showToast('Bağlantı Hatası: ' + err.message, 'error');
-    } finally {
-      btnAddChatgptTempmail.disabled = false;
-      btnAddChatgptTempmail.innerHTML = '<i class="fa-solid fa-bolt"></i> ⚡ Temp-Mail ile Otomatik Hesap Oluştur';
-    }
-  });
-}
 async function deleteChatGptAccount(id) {
   if (!confirm('#' + id + ' ChatGPT profilini silmek istiyor musunuz?')) return;
   try {
