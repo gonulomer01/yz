@@ -597,6 +597,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                     });
                   }
                   succeededImages.push(item);
+                  if (typeof fetchImages === 'function') fetchImages();
                   showToast(`${item.site.toUpperCase()} görseli üretildi ve eklendi!`);
                 } else {
                   card.classList.add('failed');
