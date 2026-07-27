@@ -595,7 +595,7 @@ main {
   background: transparent;
   border: none;
   color: var(--text-main);
-  padding: 16px 18px 60px 18px;
+  padding: 16px 18px 85px 18px !important; word-wrap: break-word; overflow-wrap: break-word;
   padding-bottom: 54px;
   font-size: 0.95rem;
   font-family: inherit;

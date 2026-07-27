@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -116,7 +116,7 @@ namespace yz.Services
         {
             ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
-            foreach (var acc in creds.GeminiAccounts) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            foreach (var acc in creds.GeminiAccounts) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
             int currentIdx = 0;
@@ -164,7 +164,7 @@ namespace yz.Services
         {
             ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
-            foreach (var acc in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            foreach (var acc in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>()).OrderBy(a => a.Id).ToList();
             int currentIdx = 0;
@@ -212,7 +212,7 @@ namespace yz.Services
         {
             ResetCancelState();
             var creds = await _credentialsService.GetCredentialsAsync();
-            foreach (var acc in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            foreach (var acc in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = (creds.CopilotAccounts ?? new List<CopilotAccountItem>()).OrderBy(a => a.Id).ToList();
             int currentIdx = 0;
@@ -296,9 +296,9 @@ namespace yz.Services
             {
                 if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
                 var creds = await _credentialsService.GetCredentialsAsync();
-                foreach (var a in creds.GeminiAccounts) { if (a.Status == "Exhausted") a.Status = "Active"; }
-                foreach (var a in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (a.Status == "Exhausted") a.Status = "Active"; }
-                foreach (var a in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (a.Status == "Exhausted") a.Status = "Active"; }
+                foreach (var a in creds.GeminiAccounts) { if (a.Status == "Exhausted" && DateTime.TryParse(a.LastUsed, out var dt) && dt.Date < DateTime.Today) a.Status = "Active"; }
+                foreach (var a in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (a.Status == "Exhausted" && DateTime.TryParse(a.LastUsed, out var dt) && dt.Date < DateTime.Today) a.Status = "Active"; }
+                foreach (var a in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (a.Status == "Exhausted" && DateTime.TryParse(a.LastUsed, out var dt) && dt.Date < DateTime.Today) a.Status = "Active"; }
                 await _credentialsService.SaveCredentialsAsync(creds);
                 if (site == "gemini")
                 {
