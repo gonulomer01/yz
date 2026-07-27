@@ -1,0 +1,48 @@
+﻿## Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+bin/
+obj/
+
+## Visual Studio / VS Code / Rider / IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Runtime State and Local DB
+chrome_user_data/
+ai_credentials.json
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+
+## Temporary Archives
+*.zip
+*.7z
+*.rar
+scratch/
+
+## Ignore generated images inside wwwroot but keep directory structure
+wwwroot/generated/*
+!wwwroot/generated/.gitkeep
+wwwroot/generated-free/*
+!wwwroot/generated-free/.gitkeep
+wwwroot/generated-gemini/*
+!wwwroot/generated-gemini/.gitkeep
+wwwroot/generated-stability/*
+!wwwroot/generated-stability/.gitkeep
+wwwroot/generated-chatgpt/*
+!wwwroot/generated-chatgpt/.gitkeep
+wwwroot/generated-copilot/*
+!wwwroot/generated-copilot/.gitkeep

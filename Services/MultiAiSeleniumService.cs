@@ -1,0 +1,2918 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using yz.Data;
+using yz.Models;
+namespace yz.Services
+{
+    public class SiteGenerationResult
+    {
+        public bool Success { get; set; }
+        public string? ImagePath { get; set; }
+        public string? ModelUsed { get; set; }
+        public string? KeyUsedLabel { get; set; }
+        public int ImageId { get; set; }
+        public string SourceSite { get; set; } = "";
+        public string? Error { get; set; }
+    }
+    public class MultiAiSeleniumService
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly ImageSyncService _imageSyncService;
+        private readonly AiCredentialsService _credentialsService;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly Microsoft.Extensions.Configuration.IConfiguration? _configuration;
+
+        private static readonly List<IWebDriver> _activeDrivers = new();
+        private static readonly object _driverLock = new();
+        public static AsyncLocal<CancellationToken> CurrentCancellationToken { get; } = new AsyncLocal<CancellationToken>();
+        private static readonly SemaphoreSlim _concurrencySemaphore = new(3, 3);
+
+        public static bool IsCancelRequested => CurrentCancellationToken.Value.IsCancellationRequested;
+        public static int ActiveDriversCount
+        {
+            get
+            {
+                lock (_driverLock)
+                {
+                    return _activeDrivers.Count;
+                }
+            }
+        }
+
+        public static void ResetCancelState()
+        {
+            // _isCancelRequested = false;
+        }
+
+        public static void RegisterDriver(IWebDriver driver)
+        {
+            lock (_driverLock)
+            {
+                if (!_activeDrivers.Contains(driver))
+                    _activeDrivers.Add(driver);
+            }
+        }
+
+        public static void UnregisterDriver(IWebDriver? driver)
+        {
+            if (driver == null) return;
+            lock (_driverLock)
+            {
+                if (_activeDrivers.Remove(driver))
+                {
+                    try { _concurrencySemaphore.Release(); } catch { }
+                }
+            }
+        }
+
+        public void CancelAllSessions()
+        {
+            Console.WriteLine("[MultiAiSeleniumService] Tüm aktif tarayıcı oturumları ve işlemler iptal ediliyor...");
+            // _isCancelRequested = true;
+
+            List<IWebDriver> driversToClose;
+            lock (_driverLock)
+            {
+                driversToClose = _activeDrivers.ToList();
+                _activeDrivers.Clear();
+            }
+
+            foreach (var driver in driversToClose)
+            {
+                try
+                {
+                    driver.Quit();
+                    driver.Dispose();
+                    try { _concurrencySemaphore.Release(); } catch { }
+                }
+                catch { }
+            }
+
+            try
+            {
+                foreach (var proc in System.Diagnostics.Process.GetProcessesByName("chromedriver"))
+                {
+                    try { proc.Kill(); } catch { }
+                }
+            }
+            catch { }
+        }
+
+        public MultiAiSeleniumService(ApplicationDbContext context, ImageSyncService imageSyncService, AiCredentialsService credentialsService, IServiceScopeFactory scopeFactory, Microsoft.Extensions.Configuration.IConfiguration? configuration = null)
+        {
+            _context = context;
+            _imageSyncService = imageSyncService;
+            _credentialsService = credentialsService;
+            _scopeFactory = scopeFactory;
+            _configuration = configuration;
+        }
+        public async Task<(int StatusCode, object Response)> GenerateFromGeminiAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
+        {
+            ResetCancelState();
+            var creds = await _credentialsService.GetCredentialsAsync();
+            foreach (var acc in creds.GeminiAccounts) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            await _credentialsService.SaveCredentialsAsync(creds);
+            var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
+            int currentIdx = 0;
+            if (!profiles.Any())
+                return (400, new { error = "Panel'den en az bir Gemini hesap profili ekleyin." });
+            int totalProfiles = profiles.Count;
+            for (int attempt = 0; attempt < totalProfiles; attempt++)
+            {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
+                int evalIdx = (currentIdx + attempt) % totalProfiles;
+                var accountObj = profiles[evalIdx];
+                if (accountObj.Status == "Exhausted") continue;
+                var result = await RunGeminiSession(accountObj, prompt, aspectRatio, userId, isAdmin);
+                if (result.Success)
+                {
+                    accountObj.LastUsed = DateTime.Now.ToString("g");
+                    creds.CurrentGeminiProfileIndex = evalIdx;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                    return (200, new
+                    {
+                        success = true,
+                        image = result.ImagePath,
+                        modelUsed = result.ModelUsed,
+                        keyUsedId = 0,
+                        keyUsedLabel = result.KeyUsedLabel,
+                        imageId = result.ImageId,
+                        userId = userId,
+                        sourceSite = "gemini"
+                    });
+                }
+                if (result.Error == "login_required" && attempt == totalProfiles - 1)
+                {
+                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için Google giriş ekranı belirdi. Lütfen paneldeki Gemini hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
+                }
+                if (result.Error != "login_required")
+                {
+                    accountObj.Status = "Exhausted";
+                    creds.CurrentGeminiProfileIndex = (evalIdx + 1) % totalProfiles;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                }
+            }
+            return (503, new { error = "Tüm Google Gemini hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+        }
+        public async Task<(int StatusCode, object Response)> GenerateFromChatGptAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
+        {
+            ResetCancelState();
+            var creds = await _credentialsService.GetCredentialsAsync();
+            foreach (var acc in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            await _credentialsService.SaveCredentialsAsync(creds);
+            var profiles = (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>()).OrderBy(a => a.Id).ToList();
+            int currentIdx = 0;
+            if (!profiles.Any())
+                return (400, new { error = "Panel'den en az bir ChatGPT hesap profili ekleyin." });
+            int totalProfiles = profiles.Count;
+            for (int attempt = 0; attempt < totalProfiles; attempt++)
+            {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
+                int evalIdx = (currentIdx + attempt) % totalProfiles;
+                var accountObj = profiles[evalIdx];
+                if (accountObj.Status == "Exhausted") continue;
+                var result = await RunChatGptSession(accountObj, prompt, aspectRatio, userId, isAdmin);
+                if (result.Success)
+                {
+                    accountObj.LastUsed = DateTime.Now.ToString("g");
+                    creds.CurrentChatGptProfileIndex = evalIdx;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                    return (200, new
+                    {
+                        success = true,
+                        image = result.ImagePath,
+                        modelUsed = result.ModelUsed,
+                        keyUsedId = 0,
+                        keyUsedLabel = result.KeyUsedLabel,
+                        imageId = result.ImageId,
+                        userId = userId,
+                        sourceSite = "chatgpt"
+                    });
+                }
+                if (result.Error == "login_required" && attempt == totalProfiles - 1)
+                {
+                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için giriş ekranı belirdi. Lütfen paneldeki ChatGPT hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
+                }
+                if (result.Error == "exhausted" || result.Error == "generation_failed")
+                {
+                    accountObj.Status = "Exhausted";
+                    creds.CurrentChatGptProfileIndex = (evalIdx + 1) % totalProfiles;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                }
+            }
+            return (503, new { error = "Tüm ChatGPT hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+        }
+        public async Task<(int StatusCode, object Response)> GenerateFromCopilotAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
+        {
+            ResetCancelState();
+            var creds = await _credentialsService.GetCredentialsAsync();
+            foreach (var acc in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (acc.Status == "Exhausted") acc.Status = "Active"; }
+            await _credentialsService.SaveCredentialsAsync(creds);
+            var profiles = (creds.CopilotAccounts ?? new List<CopilotAccountItem>()).OrderBy(a => a.Id).ToList();
+            int currentIdx = 0;
+            if (!profiles.Any())
+                return (400, new { error = "Panel'den en az bir Copilot hesap profili ekleyin." });
+            int totalProfiles = profiles.Count;
+            for (int attempt = 0; attempt < totalProfiles; attempt++)
+            {
+                if (IsCancelRequested) return (400, new { error = "İşlem durduruldu." });
+                int evalIdx = (currentIdx + attempt) % totalProfiles;
+                var accountObj = profiles[evalIdx];
+                if (accountObj.Status == "Exhausted") continue;
+                var result = await RunCopilotSession(accountObj, prompt, aspectRatio, userId, isAdmin);
+                if (result.Success)
+                {
+                    accountObj.LastUsed = DateTime.Now.ToString("g");
+                    creds.CurrentCopilotProfileIndex = evalIdx;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                    return (200, new
+                    {
+                        success = true,
+                        image = result.ImagePath,
+                        modelUsed = result.ModelUsed,
+                        keyUsedId = 0,
+                        keyUsedLabel = result.KeyUsedLabel,
+                        imageId = result.ImageId,
+                        userId = userId,
+                        sourceSite = "copilot"
+                    });
+                }
+                if (result.Error == "login_required" && attempt == totalProfiles - 1)
+                {
+                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için Microsoft giriş ekranı belirdi. Lütfen paneldeki Copilot hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
+                }
+                if (result.Error != "login_required")
+                {
+                    accountObj.Status = "Exhausted";
+                    creds.CurrentCopilotProfileIndex = (evalIdx + 1) % totalProfiles;
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                }
+            }
+            return (503, new { error = "Tüm Copilot hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+        }
+        public async Task<(int StatusCode, object Response)> GenerateTripleAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
+        {
+            ResetCancelState();
+            string groupId = Guid.NewGuid().ToString("N")[..12];
+            var geminiTask = GenerateSiteForTripleAsync("gemini", prompt, aspectRatio, userId, isAdmin, groupId);
+            var chatgptTask = GenerateSiteForTripleAsync("chatgpt", prompt, aspectRatio, userId, isAdmin, groupId);
+            var copilotTask = GenerateSiteForTripleAsync("copilot", prompt, aspectRatio, userId, isAdmin, groupId);
+            var results = await Task.WhenAll(geminiTask, chatgptTask, copilotTask);
+            var successResults = results.Where(r => r.Success).ToList();
+            var failedResults = results.Where(r => !r.Success).ToList();
+            if (!successResults.Any())
+            {
+                return (503, new { error = "Hiçbir AI platformundan görsel üretilemedi. Hesap kotalarını ve oturumlarını kontrol edin.", details = failedResults.Select(f => new { site = f.SourceSite, error = f.Error }) });
+            }
+            return (200, new
+            {
+                success = true,
+                multiMode = true,
+                groupId = groupId,
+                results = successResults.Select(r => new
+                {
+                    image = r.ImagePath,
+                    modelUsed = r.ModelUsed,
+                    keyUsedLabel = r.KeyUsedLabel,
+                    imageId = r.ImageId,
+                    sourceSite = r.SourceSite
+                }).ToList(),
+                failures = failedResults.Select(f => new {
+                    sourceSite = f.SourceSite,
+                    error = f.Error
+                }).ToList(),
+                userId = userId
+            });
+        }
+        public async Task<SiteGenerationResult> GenerateSiteForTripleAsync(string site, string prompt, string aspectRatio, int userId, bool isAdmin, string groupId)
+        {
+            try
+            {
+                if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
+                var creds = await _credentialsService.GetCredentialsAsync();
+                foreach (var a in creds.GeminiAccounts) { if (a.Status == "Exhausted") a.Status = "Active"; }
+                foreach (var a in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (a.Status == "Exhausted") a.Status = "Active"; }
+                foreach (var a in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (a.Status == "Exhausted") a.Status = "Active"; }
+                await _credentialsService.SaveCredentialsAsync(creds);
+                if (site == "gemini")
+                {
+                    var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
+                    foreach (var acc in profiles)
+                    {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
+                        if (acc.Status == "Exhausted") continue;
+                        var result = await RunGeminiSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
+                        if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
+                        if (result.Error == "exhausted" || result.Error == "generation_failed") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
+                        else { return result; }
+                    }
+                }
+                else if (site == "chatgpt")
+                {
+                    var profiles = (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>()).OrderBy(a => a.Id).ToList();
+                    foreach (var acc in profiles)
+                    {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
+                        if (acc.Status == "Exhausted") continue;
+                        var result = await RunChatGptSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
+                        if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
+                        if (result.Error == "exhausted" || result.Error == "generation_failed") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
+                        else { return result; }
+                    }
+                }
+                else if (site == "copilot")
+                {
+                    var profiles = (creds.CopilotAccounts ?? new List<CopilotAccountItem>()).OrderBy(a => a.Id).ToList();
+                    foreach (var acc in profiles)
+                    {
+                        if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = site, Error = "cancelled" };
+                        if (acc.Status == "Exhausted") continue;
+                        var result = await RunCopilotSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
+                        if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
+                        if (result.Error != "login_required") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
+                        else { return result; }
+                    }
+                }
+                return new SiteGenerationResult { Success = false, SourceSite = site, Error = "all_exhausted" };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Triple Mode - {site}] Hata: {ex.Message}");
+                return new SiteGenerationResult { Success = false, SourceSite = site, Error = ex.Message };
+            }
+        }
+        private ChromeDriver CreateDriver(string profileName, bool isAdmin)
+        {
+            if (IsCancelRequested)
+                throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
+
+            bool acquired = _concurrencySemaphore.Wait(TimeSpan.FromSeconds(120));
+            if (!acquired)
+                throw new TimeoutException("Sunucu üzerindeki maksimum eşzamanlı Chrome kapasitesine ulaşıldı. Lütfen birkaç saniye sonra tekrar deneyin.");
+
+            try
+            {
+                var options = new ChromeOptions();
+                string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profileName);
+                Directory.CreateDirectory(profileDir);
+                options.AddArgument($"--user-data-dir={profileDir}");
+                options.AddArgument("--disable-blink-features=AutomationControlled");
+                options.AddExcludedArgument("enable-automation");
+                options.AddArgument("--no-sandbox");
+                options.AddArgument("--disable-dev-shm-usage");
+                options.AddArgument("--disable-gpu");
+                options.AddArgument("--remote-allow-origins=*");
+                options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+
+                bool isHeadless = _configuration?.GetValue<bool>("SeleniumSettings:HeadlessMode") ?? false;
+                if (isHeadless)
+                {
+                    options.AddArgument("--headless=new");
+                }
+
+                string downloadDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_downloads");
+                Directory.CreateDirectory(downloadDir);
+                options.AddUserProfilePreference("download.default_directory", downloadDir);
+                options.AddUserProfilePreference("download.prompt_for_download", false);
+                options.AddUserProfilePreference("download.directory_upgrade", true);
+                options.AddUserProfilePreference("safebrowsing.enabled", true);
+                if (!isAdmin && !isHeadless)
+                {
+                    // options.AddArgument("--window-position=-4000,-4000");
+                    options.AddArgument("--window-size=1400,900");
+                }
+                else
+                {
+                    options.AddArgument("--window-size=1400,900");
+                }
+
+                if (IsCancelRequested)
+                    throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
+
+                var driver = new ChromeDriver(options);
+                driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(60);
+                if (!isAdmin && !isHeadless)
+                {
+                    try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
+                }
+
+                if (IsCancelRequested)
+                {
+                    try { driver.Quit(); driver.Dispose(); } catch { }
+                    throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü kapatıldı.");
+                }
+
+                RegisterDriver(driver);
+                return driver;
+            }
+            catch
+            {
+                try { _concurrencySemaphore.Release(); } catch { }
+                throw;
+            }
+        }
+        private string BuildRatioInstruction(string aspectRatio)
+        {
+            if (string.IsNullOrEmpty(aspectRatio)) return "";
+            return aspectRatio switch
+            {
+                "1:1" => " The image MUST be strictly 1:1 square aspect ratio.",
+                "16:9" => " The image MUST be strictly 16:9 landscape widescreen aspect ratio.",
+                "9:16" => " The image MUST be strictly 9:16 portrait vertical aspect ratio.",
+                _ => $" The image MUST be in {aspectRatio} aspect ratio."
+            };
+        }
+        private async Task<byte[]?> ExtractImageViaCanvasAsync(IWebDriver driver, IWebElement imgElement)
+        {
+            try
+            {
+                var js = (IJavaScriptExecutor)driver;
+                for (int w = 0; w < 10; w++)
+                {
+                    var complete = (bool?)js.ExecuteScript("return arguments[0].complete && arguments[0].naturalWidth > 0;", imgElement) ?? false;
+                    if (complete) break;
+                    await Task.Delay(500);
+                }
+                string canvasScript = @"
+                    var img = arguments[0];
+                    try {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth || img.width;
+                        canvas.height = img.naturalHeight || img.height;
+                        var ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        return canvas.toDataURL('image/png');
+                    } catch(e) {
+                        return 'ERROR: ' + e.message;
+                    }
+                ";
+                var result = js.ExecuteScript(canvasScript, imgElement);
+                string dataUrl = result?.ToString() ?? "";
+                if (dataUrl.StartsWith("data:image"))
+                {
+                    string base64Data = dataUrl.Substring(dataUrl.IndexOf(',') + 1);
+                    var bytes = Convert.FromBase64String(base64Data);
+                    Console.WriteLine($"[Selenium] Canvas extraction başarılı. Boyut: {bytes.Length} byte.");
+                    return bytes;
+                }
+                Console.WriteLine($"[Selenium] Canvas extraction başarısız: {dataUrl}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Selenium] Canvas extraction failed: {ex.Message}");
+                return null;
+            }
+        }
+        private async Task<byte[]?> DownloadOriginalImageAsync(IWebDriver driver, string src)
+        {
+            try
+            {
+                if (src.Contains("googleusercontent.com") && src.Contains("="))
+                {
+                    int equalIndex = src.LastIndexOf('=');
+                    if (equalIndex > src.LastIndexOf('/'))
+                        src = src.Substring(0, equalIndex) + "=s0";
+                }
+                else if (src.Contains("googleusercontent.com") && !src.Contains("="))
+                {
+                    src += "=s0";
+                }
+                Console.WriteLine($"[Selenium] İndirilecek orijinal görsel URL'si: {src}");
+                if (src.StartsWith("blob:", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("[Selenium] blob: URL tespit edildi, canvas yöntemi kullanılacak (DownloadOriginalImageAsync'den null dönüyor).");
+                    return null; 
+                }
+                try
+                {
+                    Console.WriteLine($"[Selenium] HttpClient ile indirme deneniyor...");
+                    using var client = new System.Net.Http.HttpClient();
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                    var bytes = await client.GetByteArrayAsync(src);
+                    if (bytes.Length > 1000)
+                    {
+                        Console.WriteLine($"[Selenium] HttpClient ile görsel başarıyla indirildi. Boyut: {bytes.Length} byte.");
+                        return bytes;
+                    }
+                }
+                catch (Exception httpEx)
+                {
+                    Console.WriteLine($"[Selenium] HttpClient başarısız: {httpEx.Message}, JS fetch deneniyor...");
+                }
+                var js = (IJavaScriptExecutor)driver;
+                driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(30);
+                string script = @"
+                    var done = arguments[0];
+                    var src = arguments[1];
+                    fetch(src, {mode:'cors'})
+                        .then(response => response.blob())
+                        .then(blob => {
+                            var reader = new FileReader();
+                            reader.onloadend = function() { done(reader.result); };
+                            reader.readAsDataURL(blob);
+                        })
+                        .catch(err => {
+                            done('ERROR: ' + err.message);
+                        });
+                ";
+                var result = js.ExecuteAsyncScript(script, src);
+                string dataUrl = result?.ToString() ?? "";
+                if (dataUrl.StartsWith("data:image"))
+                {
+                    string base64Data = dataUrl.Substring(dataUrl.IndexOf(',') + 1);
+                    var fetchBytes = Convert.FromBase64String(base64Data);
+                    Console.WriteLine($"[Selenium] JS fetch ile görsel indirildi. Boyut: {fetchBytes.Length} byte.");
+                    return fetchBytes;
+                }
+                Console.WriteLine($"[Selenium] Tüm indirme yöntemleri başarısız: {dataUrl}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Selenium] Image download failed: {ex.Message}");
+                return null;
+            }
+        }
+        private string DetectFileExtension(string dataUrl)
+        {
+            if (dataUrl.StartsWith("data:image/jpeg")) return ".jpg";
+            if (dataUrl.StartsWith("data:image/webp")) return ".webp";
+            if (dataUrl.StartsWith("data:image/gif")) return ".gif";
+            return ".png";
+        }
+        private async Task<byte[]?> DownloadImageViaButtonAsync(IWebDriver driver, By downloadButtonSelector)
+        {
+            try
+            {
+                string downloadDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_downloads");
+                if (Directory.Exists(downloadDir))
+                {
+                    foreach (var file in Directory.GetFiles(downloadDir))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
+                }
+                else
+                {
+                    Directory.CreateDirectory(downloadDir);
+                }
+                var btn = driver.FindElement(downloadButtonSelector);
+                var js = (IJavaScriptExecutor)driver;
+                js.ExecuteScript("arguments[0].scrollIntoView(true);", btn);
+                await Task.Delay(500);
+                try { btn.Click(); }
+                catch { js.ExecuteScript("arguments[0].click();", btn); }
+                string? downloadedFile = null;
+                for (int i = 0; i < 30; i++)
+                {
+                    await Task.Delay(1000);
+                    var files = Directory.GetFiles(downloadDir);
+                    var file = files.FirstOrDefault(f => !f.EndsWith(".crdownload") && !f.EndsWith(".tmp"));
+                    if (file != null)
+                    {
+                        await Task.Delay(500);
+                        downloadedFile = file;
+                        break;
+                    }
+                }
+                if (downloadedFile != null)
+                {
+                    byte[] bytes = await File.ReadAllBytesAsync(downloadedFile);
+                    try { File.Delete(downloadedFile); } catch { }
+                    return bytes;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Selenium] Native download failed: {ex.Message}");
+                return null;
+            }
+        }
+        private async Task<int> SaveImageToDb(byte[] imageBytes, string fileName, string category, string prompt, string modelUsed, string keyLabel, int userId, string sourceSite = "gemini", string? groupId = null, bool isSelected = true)
+        {
+            await _imageSyncService.SaveImageToAllDirectoriesAsync(imageBytes, fileName, category);
+            string relPath = $"/generated-{category}/{fileName}";
+            var savedImage = new GeneratedImage
+            {
+                Prompt = prompt,
+                ImagePath = relPath,
+                ModelUsed = modelUsed,
+                KeyUsedLabel = keyLabel,
+                ApiKeyId = 0,
+                UserId = userId,
+                CreatedAt = DateTime.Now,
+                GroupId = groupId,
+                IsSelected = isSelected,
+                SourceSite = sourceSite
+            };
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.GeneratedImages.Add(savedImage);
+                await db.SaveChangesAsync();
+            }
+            catch (Exception dbEx)
+            {
+                Console.WriteLine($"[DB Save Warning] {dbEx.Message}");
+            }
+            return savedImage.Id;
+        }
+        private async Task<SiteGenerationResult> RunGeminiSession(GeminiAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
+        {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" };
+            IWebDriver? driver = null;
+            try
+            {
+                Console.WriteLine($"[Gemini] Denenen Profil: #{account.Id} - {account.AccountLabel}");
+                driver = await Task.Run(() => CreateDriver(account.ProfileName, isAdmin));
+                driver.Navigate().GoToUrl("https://gemini.google.com/app");
+                IWebElement? promptBox = null;
+                for (int i = 0; i < 12; i++)
+                {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" }; }
+                    await Task.Delay(1000);
+                    try
+                    {
+                        var elements = driver.FindElements(By.CssSelector("rich-textarea [contenteditable='true'], div[role='textbox'], textarea"));
+                        foreach (var el in elements)
+                        {
+                            if (el.Displayed && el.Enabled) { promptBox = el; break; }
+                        }
+                        if (promptBox != null) break;
+                    }
+                    catch { }
+                }
+                if (promptBox == null)
+                {
+                    string currentUrl = driver.Url;
+                    if (currentUrl.Contains("accounts.google.com") || currentUrl.Contains("signin"))
+                        return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "login_required" };
+                    return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "prompt_not_found" };
+                }
+                string ratioInstr = BuildRatioInstruction(aspectRatio);
+                string imagePrompt = $"Generate a high quality photo/image of: {prompt}.{ratioInstr} Do not write any text explanation, just output the generated image.";
+                promptBox.Click();
+                promptBox.SendKeys(imagePrompt);
+                await Task.Delay(500);
+                try
+                {
+                    var sendButtons = driver.FindElements(By.CssSelector("button[aria-label*='Send'], button[aria-label*='Gönder'], button.send-button, button[mattooltip*='Send']"));
+                    bool clicked = false;
+                    foreach (var btn in sendButtons)
+                    {
+                        if (btn.Displayed && btn.Enabled) { btn.Click(); clicked = true; break; }
+                    }
+                    if (!clicked) promptBox.SendKeys(Keys.Enter);
+                }
+                catch { promptBox.SendKeys(Keys.Enter); }
+                Console.WriteLine($"[Gemini] Prompt Gönderildi, görsel bekleniyor...");
+                IWebElement? generatedImg = null;
+                bool errorFound = false;
+                for (int i = 0; i < 45; i++)
+                {
+                    await Task.Delay(1000);
+                    try
+                    {
+                        var msgContents = driver.FindElements(By.CssSelector("message-content, model-response"));
+                        var lastMsg = msgContents.LastOrDefault();
+                        if (lastMsg != null)
+                        {
+                            string text = lastMsg.Text.ToLower();
+                            if (text.Contains("üretilemedi") || text.Contains("oluşturamıyorum") || text.Contains("can't generate") || text.Contains("cannot generate") || text.Contains("could not create"))
+                            {
+                                errorFound = true;
+                                Console.WriteLine("[Gemini] Hata metni algılandı: Görsel üretilemedi.");
+                                break;
+                            }
+                        }
+                        var imgs = driver.FindElements(By.CssSelector("model-response img, message-content img, .chat-window img, img[src*='googleusercontent.com'], img[src*='ggpht.com']"));
+                        foreach (var img in imgs.Reverse())
+                        {
+                            if (img.Displayed && img.Size.Width > 150 && img.Size.Height > 150) { generatedImg = img; break; }
+                        }
+                        if (generatedImg != null) break;
+                    }
+                    catch { }
+                }
+                if (errorFound)
+                    return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "generation_failed" };
+                if (generatedImg == null)
+                    return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "exhausted" };
+                byte[]? imageBytes = null;
+                Console.WriteLine("[Gemini] Canvas ile orijinal görsel çekiliyor...");
+                imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
+                if (imageBytes == null || imageBytes.Length < 1000)
+                {
+                    Console.WriteLine("[Gemini] Canvas başarısız. URL tabanlı indirme deneniyor...");
+                    string? src = generatedImg.GetAttribute("src");
+                    if (!string.IsNullOrEmpty(src))
+                    {
+                        imageBytes = await DownloadOriginalImageAsync(driver, src);
+                    }
+                }
+                if (imageBytes == null || imageBytes.Length < 1000)
+                {
+                    Console.WriteLine("[Gemini] Tüm yöntemler başarısız, screenshot fallback deneniyor...");
+                    for (int retry = 0; retry < 3; retry++)
+                    {
+                        try
+                        {
+                            IWebElement? freshImg = null;
+                            var imgs = driver.FindElements(By.CssSelector("model-response img, message-content img, .chat-window img, img[src*='googleusercontent.com'], img[src*='ggpht.com']"));
+                            foreach (var img in imgs.Reverse()) {
+                                try { if (img.Displayed && img.Size.Width > 150 && img.Size.Height > 150) { freshImg = img; break; } } catch {}
+                            }
+                            var elementToCapture = freshImg;
+                            if (elementToCapture == null) {
+                                var allImgs = driver.FindElements(By.TagName("img"));
+                                elementToCapture = allImgs.LastOrDefault(i => { try { return i.Displayed && i.Size.Width > 150; } catch { return false; } });
+                            }
+                            if (elementToCapture == null) throw new Exception("No image found for screenshot");
+                            var jsExecutor = (IJavaScriptExecutor)driver;
+                            jsExecutor.ExecuteScript("arguments[0].scrollIntoView(true);", elementToCapture);
+                            await Task.Delay(500);
+                            var screenshot = ((ITakesScreenshot)elementToCapture).GetScreenshot();
+                            imageBytes = screenshot.AsByteArray;
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Gemini] Screenshot fallback attempt {retry + 1} failed: {ex.Message}");
+                            await Task.Delay(1000);
+                        }
+                    }
+                }
+                if (imageBytes == null || imageBytes.Length < 1000)
+                    return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "download_failed" };
+                string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}gemini-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
+                int imageId = await SaveImageToDb(imageBytes, fileName, "gemini", prompt, "Google Gemini Web", keyLabel, userId, "gemini", groupId, true);
+                Console.WriteLine($"[Gemini] Başarılı! ImageId={imageId}");
+                return new SiteGenerationResult
+                {
+                    Success = true, SourceSite = "gemini",
+                    ImagePath = $"/generated-gemini/{fileName}",
+                    ModelUsed = "Google Gemini Web",
+                    KeyUsedLabel = keyLabel,
+                    ImageId = imageId
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Gemini Error] {ex.Message}");
+                return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = ex.Message };
+            }
+            finally
+            {
+                UnregisterDriver(driver);
+                if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
+            }
+        }
+        private bool CheckForChatGptWarningOrLimit(IWebDriver driver, out string warningMsg)
+        {
+            warningMsg = "";
+            try
+            {
+                var popups = driver.FindElements(By.CssSelector("[role='dialog'], [role='alert'], .modal, div[class*='dialog'], div[class*='modal'], div[class*='toast'], div[class*='banner'], [id*='radix']"));
+                foreach (var popup in popups)
+                {
+                    try
+                    {
+                        if (popup.Displayed)
+                        {
+                            string text = popup.Text.ToLowerInvariant();
+                            if (text.Contains("limit") || text.Contains("too many") || text.Contains("try again") ||
+                                text.Contains("rate") || text.Contains("upgrade") || text.Contains("bekleyin") ||
+                                text.Contains("ulaştınız") || text.Contains("error") || text.Contains("hata") ||
+                                text.Contains("cap") || text.Contains("quota") || text.Contains("exceeded") ||
+                                text.Contains("dall-e") || text.Contains("message limit"))
+                            {
+                                warningMsg = $"Açılır Pencere/Modal Uyarısı: {popup.Text.Trim().Replace("\n", " ")}";
+                                return true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                var messages = driver.FindElements(By.CssSelector("[data-message-author-role='assistant'], .markdown, .result-streaming, .text-message, div[class*='danger'], div[class*='error'], div[class*='warning']"));
+                foreach (var msg in messages.Reverse())
+                {
+                    try
+                    {
+                        if (msg.Displayed)
+                        {
+                            string text = msg.Text.ToLowerInvariant();
+                            if (text.Contains("can't generate") || text.Contains("cannot create") || text.Contains("unable to generate") ||
+                                text.Contains("i'm not able") || text.Contains("couldn't generate") || text.Contains("reached your limit") ||
+                                text.Contains("rate limit") || text.Contains("too many requests") || text.Contains("try again later") ||
+                                text.Contains("limitinize ulaştınız") || text.Contains("günlük limit") || text.Contains("saatlik limit") ||
+                                text.Contains("hızlı istek"))
+                            {
+                                warningMsg = $"Sayfa İçi Uyarı Metni: {msg.Text.Trim().Replace("\n", " ")}";
+                                return true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private async Task<SiteGenerationResult> RunChatGptSession(ChatGptAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
+        {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" };
+            IWebDriver? driver = null;
+            try
+            {
+                Console.WriteLine($"[ChatGPT] Denenen Profil: #{account.Id} - {account.AccountLabel}");
+                driver = await Task.Run(() => CreateDriver(account.ProfileName, isAdmin));
+                driver.Navigate().GoToUrl("https://chatgpt.com/");
+                IWebElement? promptBox = null;
+                for (int i = 0; i < 15; i++)
+                {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" }; }
+                    await Task.Delay(1000);
+                    if (CheckForChatGptWarningOrLimit(driver, out var initWarn))
+                    {
+                        Console.WriteLine($"[ChatGPT] Oturum açılışında limit/uyarı algılandı ({initWarn}). Pencere kapatılıp sıradaki hesaba geçiliyor...");
+                        return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
+                    }
+                    try
+                    {
+                        var elements = driver.FindElements(By.CssSelector("#prompt-textarea, div[contenteditable='true'][id='prompt-textarea'], textarea[placeholder], div[role='textbox']"));
+                        foreach (var el in elements)
+                        {
+                            if (el.Displayed && el.Enabled) { promptBox = el; break; }
+                        }
+                        if (promptBox != null) break;
+                    }
+                    catch { }
+                }
+                if (promptBox == null)
+                {
+                    string currentUrl = driver.Url;
+                    ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chatgpt_fail.png"));
+                    if (currentUrl.Contains("auth") || currentUrl.Contains("login") || currentUrl.Contains("session") || driver.PageSource.Contains("Log in") || driver.PageSource.Contains("Oturum"))
+                    {
+                        Console.WriteLine($"[ChatGPT] Oturumun sona erdiği tespit edildi ({account.AccountLabel}). Otomatik yeniden oturum açma deneniyor...");
+                        bool reLoggedIn = await TryAutoReLoginChatGptAsync(driver, account);
+                        if (reLoggedIn)
+                        {
+                            driver.Navigate().GoToUrl("https://chatgpt.com/");
+                            await Task.Delay(3000);
+                            var elements = driver.FindElements(By.CssSelector("#prompt-textarea, div[contenteditable='true'][id='prompt-textarea'], textarea[placeholder], div[role='textbox']"));
+                            foreach (var el in elements)
+                            {
+                                if (el.Displayed && el.Enabled) { promptBox = el; break; }
+                            }
+                        }
+                    }
+                }
+                if (promptBox == null)
+                {
+                    string currentUrl = driver.Url;
+                    if (currentUrl.Contains("auth") || currentUrl.Contains("login"))
+                        return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "login_required" };
+                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "prompt_not_found" };
+                }
+                string ratioInstr = BuildRatioInstruction(aspectRatio);
+                string imagePrompt = $"Generate a high quality image of: {prompt}.{ratioInstr} Just create and show the image, no text explanation.";
+                var js = (IJavaScriptExecutor)driver;
+                try { promptBox.Click(); } catch { js.ExecuteScript("arguments[0].click();", promptBox); }
+                try { promptBox.SendKeys(Keys.Control + "a"); promptBox.SendKeys(Keys.Delete); } catch { }
+                try { promptBox.SendKeys(imagePrompt); } 
+                catch { 
+                    js.ExecuteScript("arguments[0].innerText = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", promptBox, imagePrompt); 
+                }
+                await Task.Delay(1000);
+                try
+                {
+                    var sendButtons = driver.FindElements(By.CssSelector("button[data-testid='send-button'], button[aria-label='Send message'], button[aria-label='Send prompt'], button[aria-label*='Send'], button[aria-label*='Gönder']"));
+                    bool clicked = false;
+                    foreach (var btn in sendButtons)
+                    {
+                        if (btn.Displayed && btn.Enabled) 
+                        { 
+                            try { btn.Click(); } catch { js.ExecuteScript("arguments[0].click();", btn); }
+                            clicked = true; 
+                            break; 
+                        }
+                    }
+                    if (!clicked) {
+                        try { promptBox.SendKeys(Keys.Enter); } catch { }
+                    }
+                }
+                catch { try { promptBox.SendKeys(Keys.Enter); } catch { } }
+                Console.WriteLine("[ChatGPT] Prompt gönderildi, görsel bekleniyor...");
+                IWebElement? generatedImg = null;
+                bool errorFound = false;
+                for (int i = 0; i < 90; i++)
+                {
+                    await Task.Delay(1000);
+                    if (CheckForChatGptWarningOrLimit(driver, out var warnMsg))
+                    {
+                        Console.WriteLine($"[ChatGPT] Üretim beklemesinde limit/uyarı algılandı ({warnMsg}). Pencere derhal kapatılıp sonraki hesaba geçiliyor...");
+                        errorFound = true;
+                        break;
+                    }
+                    try
+                    {
+                        var isStreaming = driver.FindElements(By.CssSelector(".result-streaming")).Any();
+                        if (isStreaming)
+                        {
+                            continue; 
+                        }
+                        var imgs = driver.FindElements(By.CssSelector("[data-message-author-role='assistant'] img, .markdown img, img[src*='oaidalleapiprodscus'], img[src*='openai'], img[alt*='Generated'], article img, .agent-turn img"));
+                        foreach (var img in imgs.Reverse())
+                        {
+                            try { if (img.Displayed && img.Size.Width > 250 && img.Size.Height > 250) { generatedImg = img; break; } } catch {}
+                        }
+                        if (generatedImg != null)
+                        {
+                            Console.WriteLine($"[ChatGPT] Görsel bulundu! ({generatedImg.TagName})");
+                            await Task.Delay(3000); 
+                            break;
+                        }
+                    }
+                    catch { }
+                }
+                if (errorFound)
+                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
+                if (generatedImg == null)
+                {
+                    Console.WriteLine("[ChatGPT] Görsel 90 saniye içinde bulunamadı. Debug screenshot kaydediliyor...");
+                    try { ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chatgpt_exhausted_debug.png")); } catch { }
+                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
+                }
+                byte[]? imageBytes = null;
+                Console.WriteLine("[ChatGPT] Canvas ile orijinal görsel çekiliyor...");
+                imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
+                if (imageBytes == null || imageBytes.Length < 1000)
+                {
+                    Console.WriteLine("[ChatGPT] Canvas başarısız. URL tabanlı indirme deneniyor...");
+                    string? src = generatedImg.GetAttribute("src");
+                    if (!string.IsNullOrEmpty(src) && !src.StartsWith("blob:"))
+                    {
+                        try
+                        {
+                            using var client = new System.Net.Http.HttpClient();
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                            imageBytes = await client.GetByteArrayAsync(src);
+                            Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
+                        }
+                        catch (Exception httpEx)
+                        {
+                            Console.WriteLine($"[ChatGPT] HttpClient başarısız: {httpEx.Message}");
+                        }
+                    }
+                }
+                if (imageBytes == null || imageBytes.Length < 1000)
+                {
+                    Console.WriteLine("[ChatGPT] Tüm yöntemler başarısız, screenshot fallback deneniyor...");
+                    for (int retry = 0; retry < 3; retry++)
+                    {
+                        try
+                        {
+                            IWebElement? freshImg = null;
+                            var imgs = driver.FindElements(By.CssSelector("[data-message-author-role='assistant'] img, .markdown img, img[src*='oaidalleapiprodscus'], img[src*='openai'], img[alt*='Generated']"));
+                            foreach (var img in imgs.Reverse()) {
+                                try { if (img.Displayed && img.Size.Width > 100 && img.Size.Height > 100) { freshImg = img; break; } } catch {}
+                            }
+                            var elementToCapture = freshImg;
+                            if (elementToCapture == null) {
+                                var allImgs = driver.FindElements(By.TagName("img"));
+                                elementToCapture = allImgs.LastOrDefault(i => { try { return i.Displayed && i.Size.Width > 100; } catch { return false; } });
+                            }
+                            if (elementToCapture == null) throw new Exception("No image found for screenshot");
+                            var jsExecutor = (IJavaScriptExecutor)driver;
+                            jsExecutor.ExecuteScript("arguments[0].scrollIntoView(true);", elementToCapture);
+                            await Task.Delay(500);
+                            var screenshot = ((ITakesScreenshot)elementToCapture).GetScreenshot();
+                            imageBytes = screenshot.AsByteArray;
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[ChatGPT] Screenshot fallback attempt {retry + 1} failed: {ex.Message}");
+                            await Task.Delay(1000);
+                        }
+                    }
+                }
+                if (imageBytes == null || imageBytes.Length < 1000)
+                    return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "download_failed" };
+                string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}chatgpt-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
+                int imageId = await SaveImageToDb(imageBytes, fileName, "chatgpt", prompt, "ChatGPT Web (DALL-E)", keyLabel, userId, "chatgpt", groupId, true);
+                Console.WriteLine($"[ChatGPT] Başarılı! ImageId={imageId}");
+                return new SiteGenerationResult
+                {
+                    Success = true, SourceSite = "chatgpt",
+                    ImagePath = $"/generated-chatgpt/{fileName}",
+                    ModelUsed = "ChatGPT Web (DALL-E)",
+                    KeyUsedLabel = keyLabel,
+                    ImageId = imageId
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChatGPT Error] {ex.Message}");
+                return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = ex.Message };
+            }
+            finally
+            {
+                UnregisterDriver(driver);
+                if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
+            }
+        }
+        private async Task<SiteGenerationResult> RunCopilotSession(CopilotAccountItem account, string prompt, string aspectRatio, int userId, bool isAdmin, string? groupId = null)
+        {
+            if (IsCancelRequested) return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "cancelled" };
+            IWebDriver? driver = null;
+            try
+            {
+                Console.WriteLine($"[Copilot] Denenen Profil: #{account.Id} - {account.AccountLabel}");
+                driver = await Task.Run(() => CreateDriver(account.ProfileName, isAdmin));
+                driver.Navigate().GoToUrl("https://copilot.microsoft.com/images/create");
+                IWebElement? promptBox = null;
+                for (int i = 0; i < 15; i++)
+                {
+                    if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "cancelled" }; }
+                    await Task.Delay(1000);
+                    try
+                    {
+                        var elements = driver.FindElements(By.CssSelector("#sbox textarea, #sbox input, form textarea, form input[type='text'], textarea[id='userInput'], textarea[id='sb_form_q'], input[id='sb_form_q'], #searchbox, [data-testid='chat-input-textarea'], textarea"));
+                        foreach (var el in elements)
+                        {
+                            if (el.Displayed && el.Enabled) { promptBox = el; break; }
+                        }
+                        if (promptBox != null) break;
+                    }
+                    catch { }
+                }
+                if (promptBox == null)
+                {
+                    string currentUrl = driver.Url;
+                    Console.WriteLine($"[Copilot Error] Prompt kutusu bulunamadı. URL: {currentUrl}");
+                    try { ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "copilot_fail.png")); } catch { }
+                    if (currentUrl.Contains("login") || currentUrl.Contains("auth") || currentUrl.Contains("bing.com/images/create/ai-image-generator"))
+                        return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "login_required" };
+                    return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "prompt_not_found" };
+                }
+                string ratioInstr = BuildRatioInstruction(aspectRatio);
+                string imagePrompt = $"{prompt}{ratioInstr}";
+                var js = (IJavaScriptExecutor)driver;
+                try { promptBox.Click(); } catch { js.ExecuteScript("arguments[0].click();", promptBox); }
+                try { promptBox.SendKeys(Keys.Control + "a"); promptBox.SendKeys(Keys.Delete); } catch { }
+                try { promptBox.SendKeys(imagePrompt); } 
+                catch { 
+                    js.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", promptBox, imagePrompt); 
+                }
+                await Task.Delay(1500);
+                bool submitClicked = false;
+                try
+                {
+                    var createBtn = driver.FindElements(By.CssSelector("#create_btn_c, .create-btn, [data-testid='chat-send-button'], button[aria-label='Submit'], button[aria-label='Gönder']")).FirstOrDefault(b => { try { return b.Displayed && b.Enabled; } catch { return false; } });
+                    if (createBtn != null)
+                    {
+                        Console.WriteLine($"[Copilot] Gönder butonu bulundu: {createBtn.TagName}");
+                        try { createBtn.Click(); } catch { js.ExecuteScript("arguments[0].click();", createBtn); }
+                        submitClicked = true;
+                    }
+                }
+                catch { }
+                if (!submitClicked)
+                {
+                    Console.WriteLine("[Copilot] Buton bulunamadı veya tıklanamadı, Enter tuşu ile gönderiliyor...");
+                    try { promptBox.SendKeys(Keys.Enter); submitClicked = true; } catch { }
+                }
+                Console.WriteLine("[Copilot] Prompt gönderildi, görsel bekleniyor...");
+                string startUrl = driver.Url;
+                bool urlChanged = false;
+                for (int w = 0; w < 15; w++)
+                {
+                    await Task.Delay(1000);
+                    string currentUrl = driver.Url;
+                    if (currentUrl != startUrl)
+                    {
+                        Console.WriteLine($"[Copilot] URL değişti: {currentUrl}");
+                        urlChanged = true;
+                        break;
+                    }
+                }
+                if (!urlChanged)
+                {
+                    Console.WriteLine("[Copilot] URL değişmedi, güvenli buton tıklama ile tekrar deneniyor...");
+                    try
+                    {
+                        js.ExecuteScript(@"
+                            var btn = document.getElementById('create_btn_c') || document.querySelector('.create-btn');
+                            if (btn) btn.click();
+                        ");
+                        await Task.Delay(2000);
+                        var newPromptBox = driver.FindElements(By.CssSelector("textarea[id='userInput'], [data-testid='chat-input-textarea']")).FirstOrDefault(e => { try { return e.Displayed && e.Enabled; } catch { return false; } });
+                        if (newPromptBox != null)
+                        {
+                            newPromptBox.SendKeys(Keys.Enter);
+                            await Task.Delay(3000);
+                        }
+                    }
+                    catch { }
+                    for (int w = 0; w < 10; w++)
+                    {
+                        await Task.Delay(1000);
+                        if (driver.Url != startUrl)
+                        {
+                            Console.WriteLine($"[Copilot] URL sonunda değişti: {driver.Url}");
+                            break;
+                        }
+                    }
+                    if (driver.Url == startUrl)
+                    {
+                        Console.WriteLine("[Copilot] URL hala değişmedi! Screenshot kaydediliyor...");
+                        try { ((ITakesScreenshot)driver).GetScreenshot().SaveAsFile(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "copilot_submit_fail.png")); } catch { }
+                    }
+                }
+                byte[]? imageBytes = null;
+                bool errorFound = false;
+                for (int i = 0; i < 90; i++)
+                {
+                    await Task.Delay(1000);
+                    try
+                    {
+                        var errMsgs = driver.FindElements(By.CssSelector(".gil_err_mt, .text-danger, .error-message, #gilen_ban"));
+                        if (errMsgs.Any(e => { try { return e.Displayed; } catch { return false; } }))
+                        {
+                            errorFound = true;
+                            Console.WriteLine("[Copilot] Hata metni veya engellenmiş prompt algılandı.");
+                            break;
+                        }
+                        var loading = driver.FindElements(By.CssSelector(".gir_mmimg.lodcnt, .giloader, #gir_async, .loading"));
+                        bool stillLoading = loading.Any(l => { try { return l.Displayed; } catch { return false; } });
+                        if (stillLoading && i < 80)
+                        {
+                            if (i % 10 == 0) Console.WriteLine($"[Copilot] Hala üretiliyor... ({i}s)");
+                            continue;
+                        }
+                        var allImgs = driver.FindElements(By.TagName("img"));
+                        var firstImg = allImgs.FirstOrDefault(i => {
+                            try {
+                                return i.Displayed && i.Size.Width > 150 && i.Size.Height > 150 && 
+                                       ((i.GetAttribute("src") ?? "").Contains("OIG") || (i.GetAttribute("alt") ?? "").Contains("Image generated"));
+                            } catch { return false; }
+                        });
+                        if (firstImg == null) {
+                            firstImg = allImgs.FirstOrDefault(i => {
+                                try {
+                                    var src = i.GetAttribute("src") ?? "";
+                                    return i.Displayed && i.Size.Width > 250 && i.Size.Height > 250 && !src.Contains("logo") && !src.Contains("icon");
+                                } catch { return false; }
+                            });
+                        }
+                        if (firstImg != null)
+                        {
+                            Console.WriteLine($"[Copilot] Görsel bulundu! (Tag: {firstImg.TagName}, W: {firstImg.Size.Width}). Çekiliyor...");
+                            var downloadBtn = driver.FindElements(By.CssSelector("a#downl, a[download], [data-testid='download-button'], a[aria-label='Download'], a[aria-label='İndir']")).FirstOrDefault(b => { try { return b.Displayed && b.Enabled; } catch { return false; } });
+                            if (downloadBtn != null)
+                            {
+                                Console.WriteLine("[Copilot] İndir (Download) butonu bulundu. Dosya sistemine indiriliyor...");
+                                try { downloadBtn.Click(); } catch { js.ExecuteScript("arguments[0].click();", downloadBtn); }
+                                await Task.Delay(2000);
+                                imageBytes = await ExtractImageViaCanvasAsync(driver, firstImg); 
+                            }
+                            try { firstImg.Click(); } catch { js.ExecuteScript("arguments[0].click();", firstImg); }
+                            await Task.Delay(2000);
+                            var largeImg = driver.FindElements(By.TagName("img")).FirstOrDefault(i2 => { try { return i2.Displayed && i2.Size.Width > 300 && ((i2.GetAttribute("src") ?? "").Contains("OIG") || (i2.GetAttribute("alt") ?? "").Contains("Image generated")); } catch { return false; } });
+                            if (largeImg == null) largeImg = firstImg; 
+                            if (imageBytes == null || imageBytes.Length < 1000)
+                            {
+                                Console.WriteLine("[Copilot] Büyük resim bulundu, Canvas ile çekiliyor...");
+                                imageBytes = await ExtractImageViaCanvasAsync(driver, largeImg);
+                            }
+                            if (imageBytes == null || imageBytes.Length < 1000)
+                            {
+                                string? largeSrc = largeImg.GetAttribute("src");
+                                if (!string.IsNullOrEmpty(largeSrc))
+                                {
+                                    if (largeSrc.Contains("th?id=OIG"))
+                                    {
+                                        int qIndex = largeSrc.IndexOf('?');
+                                        if (qIndex > 0) largeSrc = largeSrc.Substring(0, qIndex); 
+                                    }
+                                    Console.WriteLine($"[Copilot] Canvas başarısız, orijinal URL indiriliyor: {largeSrc}");
+                                    imageBytes = await DownloadOriginalImageAsync(driver, largeSrc);
+                                }
+                            }
+                            if (imageBytes == null || imageBytes.Length < 1000)
+                            {
+                                Console.WriteLine("[Copilot] Tüm indirme yöntemleri başarısız, screenshot fallback deneniyor...");
+                                try
+                                {
+                                    var jsExecutor = (IJavaScriptExecutor)driver;
+                                    jsExecutor.ExecuteScript("arguments[0].scrollIntoView(true);", largeImg);
+                                    await Task.Delay(500);
+                                    var screenshot = ((ITakesScreenshot)largeImg).GetScreenshot();
+                                    imageBytes = screenshot.AsByteArray;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[Copilot] Screenshot fallback failed: {ex.Message}");
+                                }
+                            }
+                            if (imageBytes != null && imageBytes.Length > 1000) break;
+                        }
+                    }
+                    catch { }
+                }
+                if (errorFound)
+                    return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "generation_failed" };
+                if (imageBytes == null || imageBytes.Length < 1000)
+                    return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "download_failed_or_exhausted" };
+                string groupPrefix = !string.IsNullOrEmpty(groupId) ? $"triple_{groupId}_" : "";
+                string fileName = $"mega-image-studio-u{userId}-{groupPrefix}copilot-web-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString()[..6]}.png";
+                string keyLabel = $"{account.AccountLabel} ({account.ProfileName})";
+                int imageId = await SaveImageToDb(imageBytes, fileName, "copilot", prompt, "Microsoft Copilot (DALL-E 3)", keyLabel, userId, "copilot", groupId, true);
+                Console.WriteLine($"[Copilot] BaÅŸarÄ±lÄ±! ImageId={imageId}");
+                return new SiteGenerationResult
+                {
+                    Success = true, SourceSite = "copilot",
+                    ImagePath = $"/generated-copilot/{fileName}",
+                    ModelUsed = "Microsoft Copilot (DALL-E 3)",
+                    KeyUsedLabel = keyLabel,
+                    ImageId = imageId
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Copilot Error] {ex.Message}");
+                return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = ex.Message };
+            }
+            finally
+            {
+                UnregisterDriver(driver);
+                if (driver != null) { try { driver.Quit(); driver.Dispose(); } catch { } }
+            }
+        }
+        private static string ExtractEmailFromAccountLabel(string label)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(label)) return "";
+                if (label.Contains("(") && label.Contains(")"))
+                {
+                    int start = label.IndexOf("(") + 1;
+                    int end = label.IndexOf(")", start);
+                    if (end > start)
+                    {
+                        string candidate = label.Substring(start, end - start).Trim();
+                        if (candidate.Contains("@")) return candidate;
+                    }
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        public async Task<bool> OpenBrowserForLoginAsync(string site, int profileId = 1)
+        {
+            try
+            {
+                var creds = await _credentialsService.GetCredentialsAsync();
+                string profName;
+                string targetUrl;
+                string email = "";
+
+                if (site == "chatgpt")
+                {
+                    var acc = creds.ChatGptAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"ChatGptChromeProfile_{profileId}";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = "https://chatgpt.com/";
+                }
+                else if (site == "copilot")
+                {
+                    var acc = creds.CopilotAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"CopilotChromeProfile_{profileId}";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = !string.IsNullOrEmpty(email) 
+                        ? $"https://login.live.com/login.srf?username={Uri.EscapeDataString(email)}" 
+                        : "https://copilot.microsoft.com/images/create";
+                }
+                else 
+                {
+                    var acc = creds.GeminiAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
+                    email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
+                    targetUrl = !string.IsNullOrEmpty(email) 
+                        ? $"https://accounts.google.com/ServiceLogin?Email={Uri.EscapeDataString(email)}&continue=https%3A%2F%2Fgemini.google.com%2Fapp" 
+                        : "https://gemini.google.com/app";
+                }
+
+                string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
+                Directory.CreateDirectory(profileDir);
+
+                try
+                {
+                    string lock1 = Path.Combine(profileDir, "SingletonLock");
+                    if (File.Exists(lock1)) File.Delete(lock1);
+                    string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                    if (File.Exists(lock2)) File.Delete(lock2);
+                    string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                    if (File.Exists(lock3)) File.Delete(lock3);
+                }
+                catch { }
+
+                string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                if (!File.Exists(chromePath))
+                {
+                    chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                }
+
+                if (File.Exists(chromePath))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"{targetUrl}\" --user-data-dir=\"{profileDir}\" --start-maximized --disable-blink-features=AutomationControlled",
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[{site} Login] Process.Start ile Chrome doğrudan masaüstünde açıldı ({profName}).");
+                    return true;
+                }
+
+                var options = new ChromeOptions();
+                options.AddArgument($"--user-data-dir={profileDir}");
+                options.AddArgument("--disable-blink-features=AutomationControlled");
+                options.AddExcludedArgument("enable-automation");
+                options.AddArgument("--start-maximized");
+                options.AddArgument("--remote-allow-origins=*");
+
+                var driver = await Task.Run(() => new ChromeDriver(options));
+                RegisterDriver(driver);
+                driver.Navigate().GoToUrl(targetUrl);
+                Console.WriteLine($"[{site} Login] Chrome ekranda tam ekran açıldı ({profName}). Yönetici oturum açabilir.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{site} Login Error] {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> OpenBrowserForLoginUrlAsync(string site, int profileId, string customUrl)
+        {
+            try
+            {
+                var creds = await _credentialsService.GetCredentialsAsync();
+                string profName = $"ChatGptChromeProfile_{profileId}";
+                if (site == "gemini")
+                {
+                    var acc = creds.GeminiAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"GeminiChromeProfile_{profileId}";
+                }
+                else if (site == "chatgpt")
+                {
+                    var acc = creds.ChatGptAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"ChatGptChromeProfile_{profileId}";
+                }
+                else if (site == "copilot")
+                {
+                    var acc = creds.CopilotAccounts?.FirstOrDefault(a => a.Id == profileId);
+                    profName = acc?.ProfileName ?? $"CopilotChromeProfile_{profileId}";
+                }
+
+                string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profName);
+                Directory.CreateDirectory(profileDir);
+
+                try
+                {
+                    string lock1 = Path.Combine(profileDir, "SingletonLock");
+                    if (File.Exists(lock1)) File.Delete(lock1);
+                    string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                    if (File.Exists(lock2)) File.Delete(lock2);
+                    string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                    if (File.Exists(lock3)) File.Delete(lock3);
+                }
+                catch { }
+
+                string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                if (!File.Exists(chromePath))
+                {
+                    chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+                }
+
+                if (File.Exists(chromePath))
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"{customUrl}\" --user-data-dir=\"{profileDir}\" --start-maximized --disable-blink-features=AutomationControlled",
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[{site} Custom Login Url] Process.Start ile Chrome açıldı ({profName}) -> {customUrl}");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{site} Custom Login Url Error] {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task<bool> TryAutoReLoginChatGptAsync(IWebDriver driver, ChatGptAccountItem account)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    string targetEmail = ExtractEmailFromAccountLabel(account.AccountLabel);
+                    if (string.IsNullOrEmpty(targetEmail)) return false;
+
+                    Console.WriteLine($"[Auto Re-Login] {account.AccountLabel} için ({targetEmail}) otomatik oturum açma adımları başlatılıyor...");
+
+                    driver.Navigate().GoToUrl($"https://auth.openai.com/u/login/identifier?email_hint={Uri.EscapeDataString(targetEmail)}");
+                    Thread.Sleep(3000);
+
+                    // 1. E-Posta doldur
+                    var emailInput = FindVisibleElement(driver, By.CssSelector("input[type='email'], input#email-input, input[name='email']"), 6);
+                    if (emailInput != null)
+                    {
+                        if (string.IsNullOrEmpty(emailInput.GetAttribute("value")))
+                        {
+                            emailInput.Clear();
+                            emailInput.SendKeys(targetEmail);
+                            Thread.Sleep(500);
+                        }
+                        var submitBtn = FindVisibleElement(driver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                        submitBtn?.Click();
+                        Thread.Sleep(3000);
+                    }
+
+                    // 2. Şifre doldur
+                    var pwdInput = FindVisibleElement(driver, By.CssSelector("input[type='password'], input[name='password']"), 6);
+                    if (pwdInput != null)
+                    {
+                        string accountPwd = _configuration?["DefaultAccountPassword"] ?? "";
+                        pwdInput.Clear();
+                        pwdInput.SendKeys(accountPwd);
+                        Thread.Sleep(500);
+
+                        var pwdSubmit = FindVisibleElement(driver, By.CssSelector("button[type='submit'], button.btn-primary, button[name='action']"), 5);
+                        pwdSubmit?.Click();
+                        Thread.Sleep(4000);
+                    }
+
+                    return !driver.Url.Contains("login") && !driver.Url.Contains("auth");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Auto Re-Login Error] {ex.Message}");
+                    return false;
+                }
+            });
+        }
+
+        private static void CleanSingletonLocks(string profileDir)
+        {
+            try
+            {
+                string lock1 = Path.Combine(profileDir, "SingletonLock");
+                if (File.Exists(lock1)) File.Delete(lock1);
+                string lock2 = Path.Combine(profileDir, "SingletonSocket");
+                if (File.Exists(lock2)) File.Delete(lock2);
+                string lock3 = Path.Combine(profileDir, "SingletonCookie");
+                if (File.Exists(lock3)) File.Delete(lock3);
+            }
+            catch { }
+        }
+
+        private static IWebElement? FindVisibleElement(IWebDriver driver, By by, int timeoutSeconds = 5)
+        {
+            for (int i = 0; i < timeoutSeconds * 2; i++)
+            {
+                try
+                {
+                    var el = driver.FindElements(by).FirstOrDefault(e => e.Displayed && e.Enabled);
+                    if (el != null) return el;
+                }
+                catch { }
+                Thread.Sleep(500);
+            }
+            return null;
+        }
+
+        public async Task<(bool success, string message, string code)> AutoCreateAndVerifyChatGptAccountAsync(int newProfileId, string aliasEmail, int baseProfileId)
+        {
+            return await Task.Run(() =>
+            {
+                IWebDriver? newAccountDriver = null;
+                IWebDriver? baseGmailDriver = null;
+                string extractedCode = "";
+                try
+                {
+                    // Taban e-posta profil ID'sini dinamik hesapla (Örn: tygotr002+5 -> 2. Profil)
+                    if (aliasEmail.Contains("@"))
+                    {
+                        string userPart = aliasEmail.Split('@')[0];
+                        string baseUser = userPart.Split('+')[0];
+                        var digitsMatch = System.Text.RegularExpressions.Regex.Match(baseUser, @"\d+");
+                        if (digitsMatch.Success && int.TryParse(digitsMatch.Value, out int profileNum) && profileNum >= 1)
+                        {
+                            baseProfileId = profileNum;
+                        }
+                    }
+
+                    string newProfName = $"ChatGptChromeProfile_{newProfileId}";
+                    string newProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, newProfName);
+                    Directory.CreateDirectory(newProfileDir);
+                    CleanSingletonLocks(newProfileDir);
+
+                    var newOptions = new ChromeOptions();
+                    newOptions.AddArgument($"--user-data-dir={newProfileDir}");
+                    newOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                    newOptions.AddExcludedArgument("enable-automation");
+                    newOptions.AddArgument("--start-maximized");
+                    newOptions.AddArgument("--remote-allow-origins=*");
+
+                    newAccountDriver = new ChromeDriver(newOptions);
+                    RegisterDriver(newAccountDriver);
+
+                    var jsExec = (IJavaScriptExecutor)newAccountDriver;
+
+                    // 1. Düz chatgpt.com Adresine Git ve "Ücretsiz Kaydol" Butonuna Bas
+                    newAccountDriver.Navigate().GoToUrl("https://chatgpt.com/");
+                    Thread.Sleep(3500);
+
+                    for (int retry = 0; retry < 10; retry++)
+                    {
+                        try
+                        {
+                            var allBtns = newAccountDriver.FindElements(By.CssSelector("a, button, div[role='button']"));
+                            var signupBtn = allBtns.FirstOrDefault(e => e.Displayed && (
+                                e.Text.ToLower().Contains("kaydol") ||
+                                e.Text.ToLower().Contains("sign up") ||
+                                e.Text.ToLower().Contains("kayıt") ||
+                                (e.GetAttribute("href") != null && e.GetAttribute("href")!.Contains("signup"))
+                            ));
+
+                            if (signupBtn != null)
+                            {
+                                Console.WriteLine($"[Robot] 'Ücretsiz Kaydol' butonuna tıklanıyor: '{signupBtn.Text}'");
+                                try { signupBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupBtn); }
+                                Thread.Sleep(3000);
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(800);
+                    }
+
+                    // Eğer Login ekranı açıldıysa, alttaki "Kaydol" / "Sign up" bağlantısına tıkla
+                    try
+                    {
+                        var signupLink = newAccountDriver.FindElements(By.CssSelector("a[href*='signup'], a[href*='register']")).FirstOrDefault(e => e.Displayed);
+                        if (signupLink != null && (newAccountDriver.Url.Contains("login") || newAccountDriver.PageSource.Contains("Oturum aç") || newAccountDriver.PageSource.Contains("Welcome back")))
+                        {
+                            try { signupLink.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", signupLink); }
+                            Thread.Sleep(2500);
+                        }
+                    }
+                    catch { }
+
+                    // E-Posta doldurma & Devam Et tıklama
+                    for (int attempt = 0; attempt < 15; attempt++)
+                    {
+                        try
+                        {
+                            var emailInput = newAccountDriver.FindElements(By.CssSelector("input[type='email'], input#email-input, input[name='email'], input[id='email-input']")).FirstOrDefault(e => e.Displayed);
+                            if (emailInput != null)
+                            {
+                                try { emailInput.Clear(); } catch { }
+                                emailInput.SendKeys(aliasEmail);
+                                jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", emailInput, aliasEmail);
+                            }
+
+                            var submitBtn = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary, button[name='action'], button[value='default']")).FirstOrDefault(e => e.Displayed);
+                            if (submitBtn != null)
+                            {
+                                try { submitBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", submitBtn); }
+                            }
+
+                            var pwdCheck = newAccountDriver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                            if (pwdCheck != null) break;
+                        }
+                        catch { }
+                        Thread.Sleep(800);
+                    }
+
+                    Thread.Sleep(1500);
+
+                    string accountPassword = _configuration?["DefaultAccountPassword"] ?? "";
+
+                    // 2. Şifre doldurma & Devam Et tıklama
+                    for (int attempt = 0; attempt < 15; attempt++)
+                    {
+                        try
+                        {
+                            var pwdInput = newAccountDriver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                            if (pwdInput != null)
+                            {
+                                try { pwdInput.Clear(); } catch { }
+                                pwdInput.SendKeys(accountPassword);
+                                jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", pwdInput, accountPassword);
+
+                                var pwdSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary, button[name='action']")).FirstOrDefault(e => e.Displayed);
+                                if (pwdSubmit != null)
+                                {
+                                    try { pwdSubmit.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", pwdSubmit); }
+                                }
+                            }
+
+                            var codeOrName = newAccountDriver.FindElements(By.CssSelector("input[name='firstName'], input[name='code'], input[type='text']")).FirstOrDefault(e => e.Displayed);
+                            if (codeOrName != null) break;
+                        }
+                        catch { }
+                        Thread.Sleep(800);
+                    }
+
+                    Thread.Sleep(2500);
+
+                    // 2.5. Ad Soyad / Doğum Tarihi Ekranını Doldur
+                    try
+                    {
+                        var nameInput = newAccountDriver.FindElements(By.CssSelector("input[name='firstName'], input[name='given_name'], input#firstName, input[name='name']")).FirstOrDefault(e => e.Displayed);
+                        if (nameInput != null)
+                        {
+                            nameInput.Clear();
+                            nameInput.SendKeys("Ahmet");
+
+                            var lastNameInput = newAccountDriver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
+                            if (lastNameInput != null)
+                            {
+                                lastNameInput.Clear();
+                                lastNameInput.SendKeys("Yılmaz");
+                            }
+
+                            var dobInput = newAccountDriver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']")).FirstOrDefault(e => e.Displayed);
+                            if (dobInput != null)
+                            {
+                                dobInput.Clear();
+                                dobInput.SendKeys("01011995");
+                            }
+
+                            var infoSubmit = newAccountDriver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                            if (infoSubmit != null)
+                            {
+                                try { infoSubmit.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", infoSubmit); }
+                            }
+                            Thread.Sleep(2500);
+                        }
+                    }
+                    catch { }
+
+                    // 3. E-posta kutusundan doğrulama kodunu çek (Taban Profil: ChatGptChromeProfile_{baseProfileId})
+                    try
+                    {
+                        Console.WriteLine($"[Mail Fetch] Taban E-Posta Profili #{baseProfileId} açılıyor ({aliasEmail})...");
+                        string baseProfName = $"ChatGptChromeProfile_{baseProfileId}";
+                        string baseProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, baseProfName);
+                        CleanSingletonLocks(baseProfileDir);
+
+                        var baseOptions = new ChromeOptions();
+                        baseOptions.AddArgument($"--user-data-dir={baseProfileDir}");
+                        baseOptions.AddArgument("--disable-blink-features=AutomationControlled");
+                        baseOptions.AddExcludedArgument("enable-automation");
+                        baseOptions.AddArgument("--start-maximized");
+                        baseOptions.AddArgument("--remote-allow-origins=*");
+
+                        baseGmailDriver = new ChromeDriver(baseOptions);
+                        RegisterDriver(baseGmailDriver);
+
+                        if (aliasEmail.Contains("@apdtax.com") || aliasEmail.Contains("@temp-mail") || aliasEmail.Contains("tempmail"))
+                        {
+                            baseGmailDriver.Navigate().GoToUrl("https://temp-mail.org/");
+                        }
+                        else
+                        {
+                            baseGmailDriver.Navigate().GoToUrl("https://mail.google.com/mail/u/0/#inbox");
+                        }
+
+                        for (int attempt = 0; attempt < 10; attempt++)
+                        {
+                            Thread.Sleep(2500);
+                            try
+                            {
+                                string pageSource = baseGmailDriver.PageSource;
+                                var matches = System.Text.RegularExpressions.Regex.Matches(pageSource, @"\b\d{6}\b");
+                                foreach (System.Text.RegularExpressions.Match match in matches)
+                                {
+                                    string codeVal = match.Value;
+                                    int idx = pageSource.IndexOf(codeVal);
+                                    if (idx > -1)
+                                    {
+                                        int start = Math.Max(0, idx - 150);
+                                        int len = Math.Min(300, pageSource.Length - start);
+                                        string context = pageSource.Substring(start, len).ToLowerInvariant();
+                                        if (context.Contains("openai") || context.Contains("chatgpt") || context.Contains("verify") || context.Contains("code") || context.Contains("doğrulama") || context.Contains("parola"))
+                                        {
+                                            extractedCode = codeVal;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(extractedCode)) break;
+
+                                var firstMail = baseGmailDriver.FindElements(By.CssSelector("tr.zA, a.link-detail, div.inbox-dataList ul li, a[href*='temp-mail.org']")).FirstOrDefault(e => e.Text.ToLower().Contains("openai") || e.Text.ToLower().Contains("chatgpt"));
+                                if (firstMail != null)
+                                {
+                                    firstMail.Click();
+                                    Thread.Sleep(2000);
+                                    var codeMatch = System.Text.RegularExpressions.Regex.Match(baseGmailDriver.PageSource, @"\b\d{6}\b");
+                                    if (codeMatch.Success)
+                                    {
+                                        extractedCode = codeMatch.Value;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Mail Code Fetch Error] {ex.Message}");
+                    }
+
+                    // 4. Doğrulama kodunu yeni ChatGPT sayfasına gir
+                    if (!string.IsNullOrEmpty(extractedCode))
+                    {
+                        try
+                        {
+                            var codeInputs = newAccountDriver.FindElements(By.CssSelector("input[name='code'], input[type='text'], input.code-input"));
+                            if (codeInputs.Count > 0)
+                            {
+                                if (codeInputs.Count >= 6)
+                                {
+                                    for (int i = 0; i < 6 && i < extractedCode.Length; i++)
+                                    {
+                                        codeInputs[i].SendKeys(extractedCode[i].ToString());
+                                    }
+                                }
+                                else
+                                {
+                                    codeInputs[0].SendKeys(extractedCode);
+                                }
+                                Thread.Sleep(1000);
+                                var codeSubmit = FindVisibleElement(newAccountDriver, By.CssSelector("button[type='submit'], button.btn-primary"));
+                                codeSubmit?.Click();
+                                Thread.Sleep(3000);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // 5. Ana menüye (https://chatgpt.com/) ulaşana kadar bekle (kullanıcı elle tamamlarsa da otomatik algılar)
+                    for (int waitMenu = 0; waitMenu < 60; waitMenu++)
+                    {
+                        try
+                        {
+                            string currentUrl = newAccountDriver.Url.ToLowerInvariant();
+                            if (currentUrl.Contains("chatgpt.com") && !currentUrl.Contains("auth") && !currentUrl.Contains("login") && !currentUrl.Contains("signup"))
+                            {
+                                Console.WriteLine($"[Robot Success] ChatGPT ana menüsüne başarıyla ulaşıldı: {aliasEmail}");
+                                Thread.Sleep(2000);
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(1000);
+                    }
+
+                    return (true, $"Hesap {aliasEmail} robot ile başarıyla oluşturuldu ve doğrulandı.", extractedCode);
+                }
+                catch (Exception ex)
+                {
+                    return (false, "Robot İşlem Hatası: " + ex.Message, "");
+                }
+                finally
+                {
+                    UnregisterDriver(newAccountDriver);
+                    if (newAccountDriver != null) { try { newAccountDriver.Quit(); newAccountDriver.Dispose(); } catch { } }
+                    UnregisterDriver(baseGmailDriver);
+                    if (baseGmailDriver != null) { try { baseGmailDriver.Quit(); baseGmailDriver.Dispose(); } catch { } }
+                }
+            });
+        }
+
+        public async Task<(bool success, string message, string tempEmail)> AutoCreateChatGptWithTempMailAsync(int newProfileId)
+        {
+            return await Task.Run(() =>
+            {
+                IWebDriver? driver = null;
+                System.Diagnostics.Process? chromeProcess = null;
+                string tempEmail = "";
+                string extractedCode = "";
+                int debugPort = 19220 + newProfileId; // Her profil için benzersiz port
+                try
+                {
+                    string newProfName = $"ChatGptChromeProfile_{newProfileId}";
+                    string newProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, newProfName);
+                    Directory.CreateDirectory(newProfileDir);
+                    CleanSingletonLocks(newProfileDir);
+
+                    // Chrome'u normal tarayıcı olarak aç (Process.Start) - Cloudflare bunu bot olarak görmez!
+                    string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                    if (!File.Exists(chromePath))
+                        chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+
+                    if (!File.Exists(chromePath))
+                        return (false, "Chrome bulunamadı.", "");
+
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"about:blank\" --user-data-dir=\"{newProfileDir}\" --start-maximized --disable-blink-features=AutomationControlled --no-first-run --no-default-browser-check --remote-debugging-port={debugPort} --remote-allow-origins=*",
+                        UseShellExecute = true
+                    };
+                    chromeProcess = System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[Temp-Mail] Chrome normal mod başlatıldı (port:{debugPort}, profil:{newProfName})");
+                    Thread.Sleep(3000); // Chrome'un tam açılmasını bekle
+
+                    // Selenium'u açık Chrome'a bağla (bot olarak algılanmaz!)
+                    var options = new ChromeOptions();
+                    options.DebuggerAddress = $"127.0.0.1:{debugPort}";
+                    driver = new ChromeDriver(options);
+                    RegisterDriver(driver);
+
+                    var jsExec = (IJavaScriptExecutor)driver;
+
+                    // 1. Sekme 1: Temp-Mail Adresine Git ve E-posta Al
+                    Console.WriteLine("[Temp-Mail] Sekme 1: temp-mail.org açılıyor...");
+                    try
+                    {
+                        driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(10);
+                        driver.Navigate().GoToUrl("https://temp-mail.org/");
+                    }
+                    catch { Console.WriteLine("[Temp-Mail] Sayfa yükleme zaman aşımı (temp-mail.org), devam ediliyor..."); }
+
+                    string tempMailTab = driver.CurrentWindowHandle;
+
+                    for (int attempt = 0; attempt < 30; attempt++)
+                    {
+                        Thread.Sleep(1000);
+                        try
+                        {
+
+                            // JS ile DOM'dan oku (temp-mail.org ve tempail.com seçicileri)
+                            string jsVal = Convert.ToString(jsExec.ExecuteScript(@"
+                                var el = document.getElementById('eposta_adres') || 
+                                         document.getElementById('email-widget') || 
+                                         document.getElementById('mail') || 
+                                         document.querySelector('#email-widget input') || 
+                                         document.querySelector('input#mail') || 
+                                         document.querySelector('input#email') || 
+                                         document.querySelector('input.email-box') || 
+                                         document.querySelector('input[readonly]');
+                                if (el) {
+                                    return el.value || el.getAttribute('value') || el.innerText || el.textContent || '';
+                                }
+                                return '';
+                            ")) ?? "";
+
+                            if (!string.IsNullOrWhiteSpace(jsVal) && jsVal.Contains("@") && !jsVal.ToLower().Contains("loading") && !jsVal.ToLower().Contains("yükleniyor"))
+                            {
+                                tempEmail = jsVal.Trim();
+                                Console.WriteLine($"[Temp-Mail JS] Alınan E-Posta: {tempEmail}");
+                                break;
+                            }
+
+                            // Element seçicileri ile dene
+                            var mailInputs = driver.FindElements(By.CssSelector("input#eposta_adres, input#mail, input#email, #mail, input[readonly], .email-box, #email-widget"));
+                            foreach (var mailInput in mailInputs)
+                            {
+                                try
+                                {
+                                    string val = mailInput.GetAttribute("value") ?? mailInput.Text;
+                                    if (!string.IsNullOrWhiteSpace(val) && val.Contains("@") && !val.ToLower().Contains("loading"))
+                                    {
+                                        tempEmail = val.Trim();
+                                        Console.WriteLine($"[Temp-Mail Selector] Alınan E-Posta: {tempEmail}");
+                                        break;
+                                    }
+                                }
+                                catch { }
+                            }
+                            if (!string.IsNullOrWhiteSpace(tempEmail)) break;
+                        }
+                        catch { }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(tempEmail))
+                    {
+                        return (false, "Temp-Mail adres alınamadı.", "");
+                    }
+
+                    // 2. Sekme 2: ChatGPT Signup
+                    Console.WriteLine("[Temp-Mail] Sekme 2: ChatGPT signup sekmesi açılıyor...");
+                    driver.SwitchTo().NewWindow(WindowType.Tab);
+                    string chatGptTab = driver.CurrentWindowHandle;
+                    driver.Navigate().GoToUrl("https://chatgpt.com/auth/login?s=signup");
+                    Console.WriteLine($"[Temp-Mail] ChatGPT signup sekmesine geçildi ({chatGptTab}).");
+                    Thread.Sleep(4000);
+
+                    // Eğer Login ekranındaysa "Sign up" linkine tıkla
+                    try
+                    {
+                        bool emailReady = false;
+                        try {
+                            var directEmailInput = driver.FindElements(By.CssSelector("input[type='email'], input[name='email']")).FirstOrDefault(e => e.Displayed);
+                            if (directEmailInput != null) emailReady = true;
+                        } catch { }
+
+                        if (!emailReady) {
+                            var switchSignup = driver.FindElements(By.CssSelector("a[href*='/u/signup'], a[href*='signup']")).FirstOrDefault(e => e.Displayed);
+                            if (switchSignup != null)
+                            {
+                                Console.WriteLine("[Temp-Mail Robot] Signup sayfasına geçiliyor...");
+                                try { switchSignup.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", switchSignup); }
+                                Thread.Sleep(2500);
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // 3. E-posta Doldur
+                    Console.WriteLine($"[Temp-Mail Robot] E-posta alanı aranıyor ve '{tempEmail}' yazılacak...");
+                    bool emailSubmitted = false;
+                    for (int attempt = 0; attempt < 25; attempt++)
+                    {
+                        try
+                        {
+                            var emailInput = driver.FindElements(By.CssSelector("input#email-input, input[name='email'], input[type='email'], input#email, input[name='username'], input#username, input[autocomplete='email'], input[autocomplete='username']")).FirstOrDefault(e => e.Displayed);
+                            if (emailInput != null)
+                            {
+                                try { emailInput.Clear(); } catch { }
+                                emailInput.SendKeys(tempEmail);
+                                jsExec.ExecuteScript("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', { bubbles: true })); arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", emailInput, tempEmail);
+                                Thread.Sleep(800);
+
+                                try
+                                {
+                                    var submitBtns = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary, button[name='action'], button[data-action-button-primary='true']"));
+                                    var submitBtn = submitBtns.FirstOrDefault(e => {
+                                        if (!e.Displayed) return false;
+                                        string txt = (e.Text ?? "").ToLower();
+                                        if (txt.Contains("google") || txt.Contains("microsoft") || txt.Contains("apple")) return false;
+                                        if (!string.IsNullOrEmpty(e.GetAttribute("data-provider"))) return false;
+                                        string innerHtml = (e.GetAttribute("innerHTML") ?? "").ToLower();
+                                        if (innerHtml.Contains("google")) return false;
+                                        return true;
+                                    });
+                                    if (submitBtn != null)
+                                    {
+                                        Console.WriteLine($"[Temp-Mail Robot] 'Devam Et' butonuna tıklanıyor: '{submitBtn.Text}'");
+                                        try { submitBtn.Click(); } catch { jsExec.ExecuteScript("arguments[0].click();", submitBtn); }
+                                        emailSubmitted = true;
+                                    }
+                                }
+                                catch { }
+                            }
+
+                            var pwdCheck = driver.FindElements(By.CssSelector("input[type='password'], input[name='password'], input#password-input")).FirstOrDefault(e => e.Displayed);
+                            if (pwdCheck != null)
+                            {
+                                Console.WriteLine("[Temp-Mail Robot] Şifre alanına geçildi.");
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(1000);
+                    }
+
+                    Thread.Sleep(1500);
+                    string accountPassword = _configuration?["DefaultAccountPassword"] ?? "";
+
+                    // Ne ekranı geldi kontrol et (Şifre mi Kod mu?)
+                    bool isPasswordScreen = false;
+                    for (int w = 0; w < 10; w++) {
+                        if (driver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).Any(e => e.Displayed)) { isPasswordScreen = true; break; }
+                        if (driver.FindElements(By.CssSelector("input[name='code'], input[type='text'], input.code-input")).Any(e => e.Displayed)) { break; }
+                        Thread.Sleep(500);
+                    }
+
+                    if (isPasswordScreen)
+                    {
+                        // 4. Şifre Doldur
+                        var pwdInput = driver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                        if (pwdInput != null)
+                        {
+                            pwdInput.Clear();
+                            pwdInput.SendKeys(accountPassword);
+                            Thread.Sleep(500);
+                            var pwdSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                            pwdSubmit?.Click();
+                            Thread.Sleep(1500);
+                        }
+
+                        // 5. Ad / Doğum Tarihi
+                        try
+                        {
+                            var nameInput = driver.FindElements(By.CssSelector("input[name='firstName'], input[name='given_name'], input#firstName")).FirstOrDefault(e => e.Displayed);
+                            if (nameInput != null)
+                            {
+                                nameInput.Clear();
+                                nameInput.SendKeys("Ahmet");
+                                var lastNameInput = driver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
+                                lastNameInput?.SendKeys("Yılmaz");
+                                var dobInput = driver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob']")).FirstOrDefault(e => e.Displayed);
+                                dobInput?.SendKeys("01011995");
+
+                                Thread.Sleep(1000);
+                                var infoSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                infoSubmit?.Click();
+                                Thread.Sleep(1500);
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // 6. Kodu almak için Sekme 1'e (Temp-Mail) geç
+                    Console.WriteLine("[Temp-Mail] Sekme 1'e geçiliyor, doğrulama kodu bekleniyor...");
+                    driver.SwitchTo().Window(tempMailTab);
+                    try { jsExec.ExecuteScript("window.scrollTo(0, 450);"); } catch { }
+
+                    for (int attempt = 0; attempt < 35; attempt++)
+                    {
+                        Thread.Sleep(2000);
+                        try
+                        {
+                            // Mail listesindeki öğeyi bul ve kaydırarak tıkla
+                            var allMailElements = driver.FindElements(By.CssSelector("a.link-detail, div.inbox-dataList ul li, tr.zA, tbody#email_list tr.email_row, div.message_top, div.mail-item, ul li div.mail, ul li.mail, a[href*='email-verification'], a[href*='read'], .inbox-dataList a, li.mail-item"));
+                            var mailItem = allMailElements.FirstOrDefault(e => {
+                                string txt = (e.Text ?? "").ToLower();
+                                return txt.Contains("openai") || txt.Contains("chatgpt") || txt.Contains("verify") || txt.Contains("doğrula") || txt.Contains("code") || txt.Contains("kod");
+                            });
+
+                            if (mailItem != null)
+                            {
+                                string mailText = mailItem.Text ?? "";
+                                
+                                // Doğrudan konu kısmında kod varsa (ve openai/chatgpt ile ilgiliyse)
+                                var subjectCodeMatch = System.Text.RegularExpressions.Regex.Match(mailText, @"\b\d{6}\b");
+                                if (subjectCodeMatch.Success && (mailText.ToLower().Contains("openai") || mailText.ToLower().Contains("code") || mailText.ToLower().Contains("chatgpt")))
+                                {
+                                    extractedCode = subjectCodeMatch.Value;
+                                    Console.WriteLine($"[Temp-Mail Robot] Mail listesinde (konu kısmında) OpenAI kodu bulundu: {extractedCode}");
+                                    break;
+                                }
+
+                                Console.WriteLine($"[Temp-Mail Robot] Doğrulama maili bulundu, tıklanıyor: '{mailText}'");
+                                try {
+                                    if (mailItem.TagName.ToLower() == "li") {
+                                        var link = mailItem.FindElement(By.TagName("a"));
+                                        jsExec.ExecuteScript("arguments[0].scrollIntoView({behavior: 'instant', block: 'center'}); arguments[0].click();", link);
+                                    } else {
+                                        jsExec.ExecuteScript("arguments[0].scrollIntoView({behavior: 'instant', block: 'center'}); arguments[0].click();", mailItem);
+                                    }
+                                } catch { try { mailItem.Click(); } catch { } }
+                                Thread.Sleep(3000);
+                                // Kodu görmek için aşağı kaydır
+                                try { jsExec.ExecuteScript("window.scrollBy(0, 300);"); } catch { }
+
+                                // iframe varsa iframe içine girip bak
+                                try
+                                {
+                                    var iframes = driver.FindElements(By.TagName("iframe"));
+                                    foreach (var iframe in iframes)
+                                    {
+                                        try
+                                        {
+                                            driver.SwitchTo().Frame(iframe);
+                                            string frameText = driver.FindElement(By.TagName("body")).Text;
+                                            var frameCodeMatch = System.Text.RegularExpressions.Regex.Match(frameText, @"\b\d{6}\b");
+                                            if (frameCodeMatch.Success && (frameText.ToLower().Contains("openai") || frameText.ToLower().Contains("chatgpt") || frameText.ToLower().Contains("code") || frameText.ToLower().Contains("verify")))
+                                            {
+                                                extractedCode = frameCodeMatch.Value;
+                                                Console.WriteLine($"[Temp-Mail Robot] Iframe içinden OpenAI kodu çekildi: {extractedCode}");
+                                            }
+                                            driver.SwitchTo().DefaultContent();
+                                            if (!string.IsNullOrEmpty(extractedCode)) break;
+                                        }
+                                        catch { driver.SwitchTo().DefaultContent(); }
+                                    }
+                                }
+                                catch { }
+
+                                if (string.IsNullOrEmpty(extractedCode))
+                                {
+                                    string bodyText = driver.FindElement(By.TagName("body")).Text;
+                                    var codeMatch = System.Text.RegularExpressions.Regex.Match(bodyText, @"\b\d{6}\b");
+                                    if (codeMatch.Success && (bodyText.ToLower().Contains("openai") || bodyText.ToLower().Contains("chatgpt") || bodyText.ToLower().Contains("code") || bodyText.ToLower().Contains("verify")))
+                                    {
+                                        extractedCode = codeMatch.Value;
+                                        Console.WriteLine($"[Temp-Mail Robot] Ana sayfa metninden OpenAI kodu çekildi: {extractedCode}");
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+
+                                // Doğrulama linki varsa
+                                var verifyLink = driver.FindElements(By.CssSelector("a[href*='email-verification'], a[href*='auth.openai.com'], a[href*='verify']")).FirstOrDefault(e => (e.GetAttribute("href")?.Contains("ticket=") ?? false) || (e.GetAttribute("href")?.Contains("email-verification") ?? false));
+                                if (verifyLink != null)
+                                {
+                                    string linkHref = verifyLink.GetAttribute("href") ?? "";
+                                    Console.WriteLine($"[Temp-Mail] Doğrulama linki bulundu: {linkHref}");
+                                    jsExec.ExecuteScript($"window.open('{linkHref}', '_blank');");
+                                    Thread.Sleep(5000);
+                                    driver.SwitchTo().Window(driver.WindowHandles.Last());
+                                    Thread.Sleep(3000);
+                                    try { 
+                                        var verifyBtn = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                        verifyBtn?.Click();
+                                    } catch { }
+                                    extractedCode = "LINK_VERIFIED";
+                                    break;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // 7. Sekme 2'ye (ChatGPT) dön ve Kodu Yaz
+                    Console.WriteLine($"[Temp-Mail] Kodu yazmak için ChatGPT sekmesine dönülüyor. Kod: {extractedCode}");
+                    driver.SwitchTo().Window(chatGptTab);
+
+                    if (!string.IsNullOrEmpty(extractedCode) && extractedCode != "LINK_VERIFIED")
+                    {
+                        try
+                        {
+                            var codeInputs = driver.FindElements(By.CssSelector("input[name='code'], input[type='text'], input.code-input"));
+                            if (codeInputs.Count > 0)
+                            {
+                                if (codeInputs.Count >= 6)
+                                {
+                                    for (int i = 0; i < 6 && i < extractedCode.Length; i++)
+                                    {
+                                        codeInputs[i].SendKeys(extractedCode[i].ToString());
+                                        Thread.Sleep(new Random().Next(150, 400));
+                                    }
+                                }
+                                else
+                                {
+                                    foreach(char c in extractedCode)
+                                    {
+                                        codeInputs[0].SendKeys(c.ToString());
+                                        Thread.Sleep(new Random().Next(150, 400));
+                                    }
+                                }
+                                Thread.Sleep(1000);
+                                var codeSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                codeSubmit?.Click();
+                                Thread.Sleep(3000);
+                                for(int reTry = 0; reTry < 3; reTry++) {
+                                    try {
+                                        var retryBtn = driver.FindElements(By.CssSelector("button")).FirstOrDefault(e => e.Displayed && (e.Text.ToLower().Contains("tekrar dene") || e.Text.ToLower().Contains("try again")));
+                                        if (retryBtn != null) {
+                                            Console.WriteLine("[Temp-Mail Robot] Route Error tespit edildi, 'Tekrar dene' butonuna tıklanıyor...");
+                                            retryBtn.Click();
+                                            Thread.Sleep(3000);
+                                        } else {
+                                            break;
+                                        }
+                                    } catch { }
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                    // Post-Code Profil / Kurulum Ekranları (İsim, Yaş, Doğum Tarihi, Şifre)
+                    Console.WriteLine("[Temp-Mail Robot] Kod girildi, olası profil kurulum ekranları kontrol ediliyor...");
+                    for (int step = 0; step < 4; step++)
+                    {
+                        Thread.Sleep(2500);
+                        try
+                        {
+                            bool formHandled = false;
+                            
+                            // 1. İsim / Yaş veya Doğum Tarihi Ekranı
+                            var fullNameInput = driver.FindElements(By.CssSelector("input[name='fullName'], input[name='name'], input#fullName, input[placeholder*='isim'], input[placeholder*='name'], input[name='firstName'], input[name='given_name'], input#firstName")).FirstOrDefault(e => e.Displayed);
+                            if (fullNameInput != null)
+                            {
+                                fullNameInput.Clear();
+                                string nAttr = fullNameInput.GetAttribute("name") ?? "";
+                                fullNameInput.SendKeys(nAttr.ToLower().Contains("first") ? "Ahmet" : "Ahmet Yılmaz");
+                                
+                                var lastNameInput = driver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
+                                if (lastNameInput != null) { lastNameInput.Clear(); lastNameInput.SendKeys("Yılmaz"); }
+
+                                var ageInput = driver.FindElements(By.CssSelector("input[name='age'], input[placeholder*='Yaş'], input[placeholder*='age']")).FirstOrDefault(e => e.Displayed);
+                                if (ageInput != null) {
+                                    ageInput.Clear();
+                                    ageInput.SendKeys("28");
+                                } else {
+                                    var dobInput = driver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']")).FirstOrDefault(e => e.Displayed);
+                                    if (dobInput != null) {
+                                        try {
+                                            dobInput.Click();
+                                            Thread.Sleep(300);
+                                            
+                                            // Sağa 3 kere basarak kesinlikle "Yıl" (2026) kısmının mavi (seçili) olmasını sağla
+                                            dobInput.SendKeys(Keys.ArrowRight);
+                                            dobInput.SendKeys(Keys.ArrowRight);
+                                            dobInput.SendKeys(Keys.ArrowRight);
+                                            Thread.Sleep(100);
+                                            
+                                            // Mavi seçili olan yılın üzerine 2000 yazarak ez
+                                            dobInput.SendKeys("2000");
+                                        } catch {}
+                                    }
+                                }
+                                
+                                Thread.Sleep(1000);
+                                var infoSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                infoSubmit?.Click();
+                                Console.WriteLine("[Temp-Mail Robot] İsim/Yaş/Tarih ekranı dolduruldu ve geçildi.");
+                                formHandled = true;
+                            }
+
+                            // 2. Parola Belirleme Ekranı
+                            if (!formHandled)
+                            {
+                                var newPwdInput = driver.FindElements(By.CssSelector("input[type='password'], input[name='new-password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                                if (newPwdInput != null)
+                                {
+                                    newPwdInput.Clear();
+                                    string accPwd = _configuration?["DefaultAccountPassword"] ?? "OpenAI1234!!";
+                                    newPwdInput.SendKeys(accPwd);
+                                    Thread.Sleep(500);
+                                    var pwdSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                    pwdSubmit?.Click();
+                                    Console.WriteLine("[Temp-Mail Robot] Yeni şifre belirleme ekranı dolduruldu.");
+                                    formHandled = true;
+                                }
+                            }
+
+                            if (!formHandled) break; // Herhangi bir form yoksa döngüden çık
+                        }
+                        catch { }
+                    }
+
+                    // 8. Ana Menüyü Bekle (60s)
+                    for (int waitMenu = 0; waitMenu < 60; waitMenu++)
+                    {
+                        try
+                        {
+                            string currentUrl = driver.Url.ToLowerInvariant();
+                            if (currentUrl.Contains("chatgpt.com") && !currentUrl.Contains("auth") && !currentUrl.Contains("login") && !currentUrl.Contains("signup"))
+                            {
+                                Console.WriteLine($"[Temp-Mail Success] ChatGPT ana menüsüne ulaşıldı: {tempEmail}");
+                                Thread.Sleep(2000);
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(1000);
+                    }
+
+                    return (true, $"Hesap ({tempEmail}) Temp-Mail ile başarıyla oluşturuldu ve doğrulandı.", tempEmail);
+                }
+                catch (Exception ex)
+                {
+                    return (false, "Temp-Mail Robot İşlem Hatası: " + ex.Message, tempEmail);
+                }
+                finally
+                {
+                    // Kullanıcı sayfayı açık tutup kendi kullanmak istediği için tarayıcıyı ve process'i BİLEREK KAPATMIYORUZ.
+                    // try { driver?.Quit(); } catch { }
+                    // try { if (chromeProcess != null && !chromeProcess.HasExited) chromeProcess.Kill(); } catch { }
+                }
+            });
+        }
+
+        public async Task<(bool success, string message, string tempEmail)> CreateChatGptAccountWithGmailAsync(int aliasNo, int targetProfileId, int gmailProfileId)
+        {
+            return await Task.Run(() =>
+            {
+                IWebDriver? driver = null;
+                IWebDriver? gmailDriver = null;
+                System.Diagnostics.Process? chromeProcess = null;
+                System.Diagnostics.Process? gmailProcess = null;
+
+                int debugPort = 19220 + targetProfileId; 
+                int gmailDebugPort = 19220 + gmailProfileId + 1000; // Çakışmaması için +1000
+                string aliasEmail = "";
+
+                try
+                {
+                    string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+                    if (!File.Exists(chromePath)) chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+
+                    // 1. ÖNCE GMAIL PROFİLİNİ BAŞLATIP E-POSTAYI ÖĞRENİYORUZ
+                    Console.WriteLine($"[Gmail Robot] E-posta tespiti için Profil {gmailProfileId} (Gmail) başlatılıyor...");
+                    string gmailProfName = $"ChatGptChromeProfile_{gmailProfileId}";
+                    string gmailProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, gmailProfName);
+                    CleanSingletonLocks(gmailProfileDir);
+
+                    var psiGmail = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"https://mail.google.com\" --user-data-dir=\"{gmailProfileDir}\" --start-maximized --disable-blink-features=AutomationControlled --no-first-run --no-default-browser-check --remote-debugging-port={gmailDebugPort} --remote-allow-origins=*",
+                        UseShellExecute = true
+                    };
+                    gmailProcess = System.Diagnostics.Process.Start(psiGmail);
+                    Thread.Sleep(4000);
+
+                    ChromeOptions optionsGmail = new ChromeOptions();
+                    optionsGmail.DebuggerAddress = $"127.0.0.1:{gmailDebugPort}";
+                    var gmailService = ChromeDriverService.CreateDefaultService();
+                    gmailService.HideCommandPromptWindow = true;
+                    gmailDriver = new ChromeDriver(gmailService, optionsGmail);
+
+                    string baseEmail = "";
+                    for(int wait = 0; wait < 15; wait++)
+                    {
+                        string title = gmailDriver.Title;
+                        var match = System.Text.RegularExpressions.Regex.Match(title, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com");
+                        if(match.Success) {
+                            baseEmail = match.Value;
+                            break;
+                        }
+                        Thread.Sleep(1000);
+                    }
+                    
+                    if (string.IsNullOrEmpty(baseEmail))
+                    {
+                        try {
+                            var accountBtn = gmailDriver.FindElements(By.CssSelector("a[aria-label*='@']")).FirstOrDefault();
+                            if (accountBtn != null) {
+                                string aria = accountBtn.GetAttribute("aria-label");
+                                var match2 = System.Text.RegularExpressions.Regex.Match(aria ?? "", @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com");
+                                if (match2.Success) baseEmail = match2.Value;
+                            }
+                        } catch { }
+                    }
+
+                    if (string.IsNullOrEmpty(baseEmail))
+                    {
+                        // Gmail'i bulamazsak kapat
+                        try { gmailDriver?.Quit(); } catch { }
+                        try { if (gmailProcess != null && !gmailProcess.HasExited) gmailProcess.Kill(); } catch { }
+                        return (false, $"Gmail Profil {gmailProfileId} içinde oturum açılmış bir e-posta adresi bulunamadı!", "");
+                    }
+
+                    aliasEmail = baseEmail.Replace("@", $"+{aliasNo}@");
+                    Console.WriteLine($"[Gmail Robot] Tespit edilen e-posta: {baseEmail} -> Kullanılacak Alias: {aliasEmail}");
+
+                    HashSet<string> existingCodes = new HashSet<string>();
+                    try {
+                        var initialMails = gmailDriver.FindElements(By.CssSelector("tr.zA"));
+                        foreach (var m in initialMails.Take(10)) {
+                            var match = System.Text.RegularExpressions.Regex.Match(m.Text, @"\b\d{6}\b");
+                            if (match.Success) existingCodes.Add(match.Value);
+                        }
+                    } catch { }
+
+                    // 2. HEDEF CHROME'U BAŞLAT (ChatGPT için)
+                    string newProfName = $"ChatGptChromeProfile_{targetProfileId}";
+                    string newProfileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, newProfName);
+                    Directory.CreateDirectory(newProfileDir);
+                    CleanSingletonLocks(newProfileDir);
+
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = chromePath,
+                        Arguments = $"\"about:blank\" --user-data-dir=\"{newProfileDir}\" --start-maximized --disable-blink-features=AutomationControlled --no-first-run --no-default-browser-check --remote-debugging-port={debugPort} --remote-allow-origins=*",
+                        UseShellExecute = true
+                    };
+                    chromeProcess = System.Diagnostics.Process.Start(psi);
+                    Console.WriteLine($"[Gmail Robot] Hedef Chrome başlatıldı (port:{debugPort}, profil:{newProfName})");
+                    Thread.Sleep(3000); 
+
+                    ChromeOptions options = new ChromeOptions();
+                    options.DebuggerAddress = $"127.0.0.1:{debugPort}";
+                    options.AddArgument("--disable-blink-features=AutomationControlled");
+                    var chromeDriverService = ChromeDriverService.CreateDefaultService();
+                    chromeDriverService.HideCommandPromptWindow = true;
+                    driver = new ChromeDriver(chromeDriverService, options);
+
+                    IJavaScriptExecutor jsExec = (IJavaScriptExecutor)driver;
+
+                    // ChatGPT'ye Git
+                    Console.WriteLine($"[Gmail Robot] ChatGPT kayıt sekmesine gidiliyor: {aliasEmail}");
+                    driver.Navigate().GoToUrl("https://chatgpt.com/auth/login");
+                    Thread.Sleep(3000);
+
+                    // E-posta alanı doğrudan açıksa "Sign up" aramayı atla
+                    bool emailReady = false;
+                    try {
+                        var directEmailInput = driver.FindElements(By.CssSelector("input[type='email'], input[name='email']")).FirstOrDefault(e => e.Displayed);
+                        if (directEmailInput != null) emailReady = true;
+                    } catch { }
+
+                    if (!emailReady) {
+                        // Sign up butonunu bul ve tıkla
+                        for (int w = 0; w < 10; w++)
+                        {
+                            try
+                            {
+                                var signUpBtn = driver.FindElements(By.CssSelector("button[data-testid='login-button'], button[data-testid='signup-button']")).LastOrDefault(e => e.Displayed && (e.Text.ToLower().Contains("sign up") || e.Text.ToLower().Contains("kaydol")));
+                                if (signUpBtn != null) { signUpBtn.Click(); break; }
+                            }
+                            catch { }
+                            Thread.Sleep(1000);
+                        }
+                        Thread.Sleep(3000);
+                    }
+
+                    // E-posta girme adımı
+                    bool emailSubmitted = false;
+                    for (int waitEmail = 0; waitEmail < 20; waitEmail++)
+                    {
+                        HandleCloudflareTurnstile(driver);
+                        Thread.Sleep(1500);
+                        try
+                        {
+                            var emailInput = driver.FindElements(By.CssSelector("input[type='email'], input[name='email']")).FirstOrDefault(e => e.Displayed);
+                            if (emailInput != null && !emailSubmitted)
+                            {
+                                emailInput.Clear();
+                                emailInput.SendKeys(aliasEmail);
+                                Thread.Sleep(1000);
+                                var submitBtn = driver.FindElements(By.CssSelector("button[type='submit'], button[name='action']")).FirstOrDefault(e => e.Displayed && !string.IsNullOrEmpty(e.GetAttribute("innerHTML")) && !e.GetAttribute("innerHTML").ToLower().Contains("google"));
+                                if (submitBtn != null)
+                                {
+                                    submitBtn.Click();
+                                    emailSubmitted = true;
+                                    Thread.Sleep(2000);
+                                }
+                            }
+
+                            // Eğer "Bir parola oluştur" (Şifre) ekranı gelirse
+                            var pwdInput = driver.FindElements(By.CssSelector("input[type='password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                            if (pwdInput != null)
+                            {
+                                Console.WriteLine("[Gmail Robot] Parola ekranı tespit edildi, varsayılan şifre giriliyor...");
+                                pwdInput.Clear();
+                                pwdInput.SendKeys("jvnhaXXt0038");
+                                Thread.Sleep(1000);
+                                var pwdSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button[name='action']")).FirstOrDefault(e => e.Displayed);
+                                pwdSubmit?.Click();
+                                Thread.Sleep(3000);
+                            }
+
+                            // Kod ekranı geldi mi kontrol et
+                            var codeInput = driver.FindElements(By.CssSelector("input[name='code'], input[placeholder*='code']")).FirstOrDefault(e => e.Displayed);
+                            if (codeInput != null) { break; } // Kod sorma ekranına geldik
+                        }
+                        catch { }
+                    }
+
+                    // 3. GMAIL'DEN KODU AL (Gmail profili zaten açık)
+                    Console.WriteLine($"[Gmail Robot] ChatGPT kod gönderdi. Hazır bekleyen Gmail ({gmailProfName}) sayfasından kod çekiliyor...");
+                    
+                    string extractedCode = "";
+                    bool codeAccepted = false;
+                    
+                    for (int codeFetchAttempt = 0; codeFetchAttempt < 2; codeFetchAttempt++)
+                    {
+                        extractedCode = "";
+                        Console.WriteLine($"[Gmail Robot] Kod bekleniyor (Deneme {codeFetchAttempt + 1})...");
+                        for (int waitCode = 0; waitCode < 60; waitCode++)
+                        {
+                            Thread.Sleep(2000);
+                            try
+                            {
+                                gmailDriver.Navigate().Refresh();
+                                Thread.Sleep(3000);
+
+                                var mailItems = gmailDriver.FindElements(By.CssSelector("tr.zA"));
+                                foreach (var mail in mailItems)
+                                {
+                                    string mailText = mail.Text;
+                                    string lowerText = mailText.ToLowerInvariant();
+                                    
+                                    if (lowerText.Contains("openai") || lowerText.Contains("chatgpt"))
+                                    {
+                                        var matches = System.Text.RegularExpressions.Regex.Matches(mailText, @"\b\d{6}\b");
+                                        foreach (System.Text.RegularExpressions.Match m in matches)
+                                        {
+                                            if (!existingCodes.Contains(m.Value))
+                                            {
+                                                extractedCode = m.Value;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!string.IsNullOrEmpty(extractedCode)) break;
+
+                                        bool isUnread = (mail.GetAttribute("class") ?? "").Contains("zE");
+                                        if (isUnread)
+                                        {
+                                            try {
+                                                mail.Click();
+                                                Thread.Sleep(2000);
+                                                string bodyText = gmailDriver.FindElement(By.CssSelector("body")).Text;
+                                                var bodyMatches = System.Text.RegularExpressions.Regex.Matches(bodyText, @"\b\d{6}\b");
+                                                foreach (System.Text.RegularExpressions.Match m in bodyMatches)
+                                                {
+                                                    if (!existingCodes.Contains(m.Value))
+                                                    {
+                                                        extractedCode = m.Value;
+                                                        break;
+                                                    }
+                                                }
+                                                gmailDriver.Navigate().Back();
+                                                Thread.Sleep(1000);
+                                            } catch { }
+                                        }
+                                        if (!string.IsNullOrEmpty(extractedCode)) break;
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(extractedCode)) break;
+                            }
+                            catch { }
+                        }
+
+                        if (string.IsNullOrEmpty(extractedCode))
+                        {
+                            Console.WriteLine("[Gmail Robot] Yeni kod bulunamadı.");
+                            break; // Kodu hiç bulamadıysa çık
+                        }
+
+                        Console.WriteLine($"[Gmail Robot] Kod başarıyla çekildi: {extractedCode}");
+
+                        // 4. KODU CHATGPT'YE GİR
+                        var chatGptCodeInputs = driver.FindElements(By.CssSelector("input[name='code'], input[placeholder*='code']"));
+                        if (chatGptCodeInputs.Count > 0)
+                        {
+                            var codeInput = chatGptCodeInputs.First(e => e.Displayed);
+                            codeInput.Clear();
+                            foreach (char c in extractedCode)
+                            {
+                                codeInput.SendKeys(c.ToString());
+                                Thread.Sleep(new Random().Next(150, 400));
+                            }
+                            Thread.Sleep(1000);
+                            var codeSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                            codeSubmit?.Click();
+                            Thread.Sleep(3000);
+
+                            for(int reTry = 0; reTry < 3; reTry++) {
+                                HandleCloudflareTurnstile(driver);
+                                Thread.Sleep(2000);
+                                try {
+                                    var retryBtn = driver.FindElements(By.CssSelector("button")).FirstOrDefault(e => e.Displayed && (e.Text.ToLower().Contains("tekrar dene") || e.Text.ToLower().Contains("try again")));
+                                    if (retryBtn != null) {
+                                        Console.WriteLine("[Gmail Robot] Route Error tespit edildi, 'Tekrar dene' butonuna tıklanıyor...");
+                                        retryBtn.Click();
+                                        Thread.Sleep(5000); // Güvenlik kontrolünü geçmesi için bekle
+                                        HandleCloudflareTurnstile(driver);
+                                        Thread.Sleep(2000);
+                                        
+                                        // Kod ekranı tekrar gelirse aynı kodu dene
+                                        var reCodeInputs = driver.FindElements(By.CssSelector("input[name='code'], input[placeholder*='code']"));
+                                        if (reCodeInputs.Count > 0 && reCodeInputs[0].Displayed) {
+                                            Console.WriteLine("[Gmail Robot] Kod ekranı tekrar geldi, aynı kod deneniyor...");
+                                            var reCodeInput = reCodeInputs[0];
+                                            reCodeInput.Clear();
+                                            foreach (char c in extractedCode) {
+                                                reCodeInput.SendKeys(c.ToString());
+                                                Thread.Sleep(new Random().Next(150, 400));
+                                            }
+                                            Thread.Sleep(1000);
+                                            var reSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                            reSubmit?.Click();
+                                            Thread.Sleep(3000);
+                                        }
+                                    } else {
+                                        var stillCodeInputs = driver.FindElements(By.CssSelector("input[name='code'], input[placeholder*='code']"));
+                                        if (stillCodeInputs.Count == 0 || !stillCodeInputs[0].Displayed) {
+                                            codeAccepted = true; // Kod kabul edildi ve ekranı geçti
+                                            break;
+                                        }
+                                    }
+                                } catch { }
+                                if (codeAccepted) break;
+                            }
+                        }
+                        
+                        if (codeAccepted) {
+                            break; // Kod başarılı olduysa mail arama döngüsünden çık
+                        } else {
+                            Console.WriteLine("[Gmail Robot] Kod başarısız oldu, yeni kod için Gmail'e bakılacak...");
+                            existingCodes.Add(extractedCode); // Eski kodu listeye ekle ki tekrar almasın
+                            // Ekranda tekrar kod gönder butonu varsa basabiliriz (opsiyonel)
+                            try {
+                                var resendBtn = driver.FindElements(By.CssSelector("button")).FirstOrDefault(e => e.Displayed && (e.Text.ToLower().Contains("tekrar gönder") || e.Text.ToLower().Contains("resend")));
+                                resendBtn?.Click();
+                                Thread.Sleep(2000);
+                            } catch { }
+                        }
+                    }
+
+                    // Gmail artık kapatılıyor
+                    try { gmailDriver?.Quit(); } catch { }
+                    try { if (gmailProcess != null && !gmailProcess.HasExited) gmailProcess.Kill(); } catch { }
+
+                    if (!codeAccepted && string.IsNullOrEmpty(extractedCode))
+                    {
+                        return (false, "Gmail üzerinden kod bulunamadı veya kabul edilmedi.", aliasEmail);
+                    }
+
+                    // 5. POST-CODE FORMLAR (İSİM, YAŞ, ŞİFRE)
+                    Console.WriteLine("[Gmail Robot] Profil kurulum ekranları kontrol ediliyor...");
+                    for (int step = 0; step < 4; step++)
+                    {
+                        Thread.Sleep(2500);
+                        try
+                        {
+                            bool formHandled = false;
+                            var fullNameInput = driver.FindElements(By.CssSelector("input[name='fullName'], input[name='name'], input#fullName, input[placeholder*='isim'], input[placeholder*='name'], input[name='firstName'], input[name='given_name'], input#firstName")).FirstOrDefault(e => e.Displayed);
+                            if (fullNameInput != null)
+                            {
+                                fullNameInput.Clear();
+                                string nAttr = fullNameInput.GetAttribute("name") ?? "";
+                                fullNameInput.SendKeys(nAttr.ToLower().Contains("first") ? "Ahmet" : "Ahmet Yılmaz");
+                                
+                                var lastNameInput = driver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
+                                if (lastNameInput != null) { lastNameInput.Clear(); lastNameInput.SendKeys("Yılmaz"); }
+
+                                var ageInput = driver.FindElements(By.CssSelector("input[name='age'], input[placeholder*='Yaş'], input[placeholder*='age']")).FirstOrDefault(e => e.Displayed);
+                                if (ageInput != null) {
+                                    ageInput.Clear();
+                                    ageInput.SendKeys("28");
+                                } else {
+                                    var dobInput = driver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']")).FirstOrDefault(e => e.Displayed);
+                                    if (dobInput != null) {
+                                        dobInput.Click();
+                                        Thread.Sleep(300);
+                                        dobInput.SendKeys(Keys.ArrowRight);
+                                        dobInput.SendKeys(Keys.ArrowRight);
+                                        dobInput.SendKeys(Keys.ArrowRight);
+                                        Thread.Sleep(100);
+                                        dobInput.SendKeys("2000");
+                                    }
+                                }
+                                Thread.Sleep(1000);
+                                var infoSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                infoSubmit?.Click();
+                                formHandled = true;
+                            }
+
+                            if (!formHandled)
+                            {
+                                var newPwdInput = driver.FindElements(By.CssSelector("input[type='password'], input[name='new-password'], input[name='password']")).FirstOrDefault(e => e.Displayed);
+                                if (newPwdInput != null)
+                                {
+                                    newPwdInput.Clear();
+                                    string accPwd = _configuration?["DefaultAccountPassword"] ?? "OpenAI1234!!";
+                                    newPwdInput.SendKeys(accPwd);
+                                    Thread.Sleep(500);
+                                    var pwdSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button[data-action-button-primary='true'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                    pwdSubmit?.Click();
+                                    formHandled = true;
+                                }
+                            }
+                            if (!formHandled) break;
+                        }
+                        catch { }
+                    }
+
+                    // ANA MENÜYÜ BEKLE
+                    for (int waitMenu = 0; waitMenu < 60; waitMenu++)
+                    {
+                        try
+                        {
+                            string currentUrl = driver.Url.ToLowerInvariant();
+                            if (currentUrl.Contains("chatgpt.com") && !currentUrl.Contains("auth") && !currentUrl.Contains("login") && !currentUrl.Contains("signup"))
+                            {
+                                Console.WriteLine($"[Gmail Success] ChatGPT ana menüsüne ulaşıldı: {aliasEmail}");
+                                Thread.Sleep(2000);
+                                break;
+                            }
+                        }
+                        catch { }
+                        Thread.Sleep(1000);
+                    }
+
+                    return (true, $"Hesap ({aliasEmail}) Gmail ile başarıyla oluşturuldu.", aliasEmail);
+                }
+                catch (Exception ex)
+                {
+                    try { gmailDriver?.Quit(); } catch { }
+                    try { if (gmailProcess != null && !gmailProcess.HasExited) gmailProcess.Kill(); } catch { }
+                    return (false, "Gmail Robot İşlem Hatası: " + ex.Message, aliasEmail);
+                }
+            });
+        }
+
+        private void HandleCloudflareTurnstile(IWebDriver driver)
+        {
+            try
+            {
+                var iframes = driver.FindElements(By.CssSelector("iframe"));
+                foreach (var iframe in iframes)
+                {
+                    string src = iframe.GetAttribute("src") ?? "";
+                    if (src.Contains("challenges.cloudflare.com") || src.Contains("cdn-cgi/challenge-platform"))
+                    {
+                        driver.SwitchTo().Frame(iframe);
+                        var checkbox = driver.FindElements(By.CssSelector("input[type='checkbox'], label.ctp-checkbox-label, #challenge-stage")).FirstOrDefault(e => e.Displayed);
+                        if (checkbox != null)
+                        {
+                            Console.WriteLine("[Gmail Robot] Cloudflare güvenlik doğrulaması (Turnstile) tespit edildi, butona tıklanıyor...");
+                            checkbox.Click();
+                            Thread.Sleep(3000);
+                        }
+                        driver.SwitchTo().DefaultContent();
+                        break;
+                    }
+                }
+            }
+            catch 
+            { 
+                try { driver.SwitchTo().DefaultContent(); } catch { } 
+            }
+        }
+
+        private IWebElement WaitAndFindElement(IWebDriver driver, By by, int timeoutSeconds = 15)
+        {
+            for (int i = 0; i < timeoutSeconds * 2; i++)
+            {
+                try
+                {
+                    var elements = driver.FindElements(by);
+                    if (elements.Count > 0 && elements[0].Displayed && elements[0].Enabled)
+                    {
+                        return elements[0];
+                    }
+                }
+                catch { }
+                Thread.Sleep(500);
+            }
+            throw new Exception($"Element could not be found or not interactable: {by}");
+        }
+
+        public async Task StartBulkAutoLoginAsync(List<AccountBulkInfo> accounts)
+        {
+            Console.WriteLine($"[BulkLogin] Toplam {accounts.Count} hesap icin otomatik login baslatiliyor.");
+
+            foreach (var acc in accounts)
+            {
+                if (IsCancelRequested) break;
+
+                try
+                {
+                    Console.WriteLine($"[BulkLogin] {acc.ModelType} hesabi icin hazirlik yapiliyor: {acc.Email}");
+                    
+                    var options = new ChromeOptions();
+                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    string profileName = $"{acc.ModelType}ChromeProfile_{acc.ProfileIndex}";
+                    string profileDir = Path.Combine(appData, "MegaImageStudio_Profiles", profileName);
+
+                    options.AddArgument($"--user-data-dir={profileDir}");
+                    options.AddArgument("--profile-directory=Default");
+                    options.AddArgument("--disable-blink-features=AutomationControlled");
+                    options.AddExcludedArgument("enable-automation");
+                    options.AddAdditionalOption("useAutomationExtension", false);
+
+                    var driverService = ChromeDriverService.CreateDefaultService();
+                    driverService.HideCommandPromptWindow = true;
+
+                    IWebDriver driver = new ChromeDriver(driverService, options);
+                    RegisterDriver(driver);
+
+                    await Task.Delay(2000);
+
+                    if (acc.ModelType.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+                    {
+                        driver.Navigate().GoToUrl("https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fgemini.google.com%2Fapp");
+
+                        try
+                        {
+                            var emailInput = WaitAndFindElement(driver, By.XPath("//input[@type='email' or @id='identifierId']"));
+                            emailInput.Clear();
+                            emailInput.SendKeys(acc.Email);
+                            
+                            var nextBtn = WaitAndFindElement(driver, By.XPath("//div[@id='identifierNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
+                            nextBtn.Click();
+
+                            var passInput = WaitAndFindElement(driver, By.XPath("//input[@type='password' or @name='Passwd']"));
+                            passInput.Clear();
+                            passInput.SendKeys(acc.Password);
+                            
+                            var loginBtn = WaitAndFindElement(driver, By.XPath("//div[@id='passwordNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
+                            loginBtn.Click();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[BulkLogin] Gemini {acc.Email} giriş hatası: {ex.Message}. Manuel giriş bekleniyor.");
+                        }
+                    }
+                    else if (acc.ModelType.Equals("ChatGPT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        driver.Navigate().GoToUrl("https://chatgpt.com/auth/login");
+
+                        try
+                        {
+                            try
+                            {
+                                var loginLink = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Log in') or contains(., 'Log In')] | //div[contains(., 'Log in')] | //a[contains(., 'Log in')]"), 3);
+                                loginLink.Click();
+                                await Task.Delay(2000);
+                            }
+                            catch { } // Log in butonu yoksa direkt e-posta ekranındayız demektir.
+
+                            var emailInput = WaitAndFindElement(driver, By.CssSelector("input#username, input[type='email'], input#email-input, input[name='email']"));
+                            emailInput.Clear();
+                            emailInput.SendKeys(acc.Email);
+                            
+                            var nextBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Continue') or contains(., 'Devam') or @type='submit' or @name='action'] | //button[descendant::text()[contains(., 'Devam') or contains(., 'Continue')]]"));
+                            nextBtn.Click();
+                            await Task.Delay(4000);
+
+                            try {
+                                if (driver.Url.Contains("google.com")) {
+                                    var googleIdentifierNext = driver.FindElements(By.XPath("//div[@data-identifier] | //div[@id='identifierNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]")).FirstOrDefault(e => e.Displayed);
+                                    if (googleIdentifierNext != null) {
+                                        googleIdentifierNext.Click();
+                                        await Task.Delay(3000);
+                                    }
+                                }
+                            } catch { }
+
+                            var passInput = WaitAndFindElement(driver, By.CssSelector("input[type='password'], input#password, input[name='Passwd']"));
+                            passInput.Clear();
+                            passInput.SendKeys(acc.Password);
+
+                            var loginBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Continue') or contains(., 'Devam') or @type='submit' or @name='action'] | //button[descendant::text()[contains(., 'Devam') or contains(., 'Continue')]] | //div[@id='passwordNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
+                            loginBtn.Click();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[BulkLogin] ChatGPT {acc.Email} giriş hatası: {ex.Message}. Manuel giriş bekleniyor.");
+                        }
+                    }
+                    else if (acc.ModelType.Equals("Copilot", StringComparison.OrdinalIgnoreCase))
+                    {
+                        driver.Navigate().GoToUrl("https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&ct=1619890984&rver=7.0.6737.0&wp=MBI_SSL&wreply=https%3a%2f%2fcopilot.microsoft.com%2f");
+
+                        try
+                        {
+                            var emailInput = WaitAndFindElement(driver, By.XPath("//input[@type='email' or @name='loginfmt']"));
+                            emailInput.Clear();
+                            emailInput.SendKeys(acc.Email);
+
+                            var nextBtn = WaitAndFindElement(driver, By.XPath("//input[@id='idSIButton9' or @type='submit']"));
+                            nextBtn.Click();
+
+                            var passInput = WaitAndFindElement(driver, By.XPath("//input[@type='password' or @name='passwd']"));
+                            passInput.Clear();
+                            passInput.SendKeys(acc.Password);
+
+                            var loginBtn = WaitAndFindElement(driver, By.XPath("//input[@id='idSIButton9' or @type='submit']"));
+                            loginBtn.Click();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[BulkLogin] Copilot {acc.Email} giriş hatası: {ex.Message}. Manuel giriş bekleniyor.");
+                        }
+                    }
+
+                    // Bot testleri (Captcha) veya 2FA için açık bırak
+                    Console.WriteLine($"[BulkLogin] {acc.ModelType} - {acc.Email} penceresi doğrulama/kullanım için acik.");
+                    await Task.Delay(5000); 
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[BulkLogin] {acc.ModelType} profili ({acc.Email}) başlatılırken hata: {ex.Message}");
+                }
+            }
+
+            Console.WriteLine("[BulkLogin] Toplu giriş işlemi tamamlandı. Lütfen açık olan pencerelerde 2FA varsa onaylayın ve kapatın.");
+        }
+    }
+}

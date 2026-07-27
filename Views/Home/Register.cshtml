@@ -1,0 +1,146 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol — Mega Image Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Dancing+Script:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="~/images/logo.png" type="image/png">
+</head>
+<body class="auth-body">
+
+    <div class="ambient-bg">
+        <!-- Sol üstte küçük mavi logo (Masaüstü için) -->
+        <div style="position: fixed; top: 25px; left: 20px; z-index: 100;">
+            <img src="~/images/logo.png" style="width: 80px; height: 80px; object-fit: contain;" alt="Logo">
+        </div>
+
+
+        <div class="melikgazi-slogan">
+            <span>Mega Image Studio</span>
+        </div>
+
+        <!-- Yol Haritası (Roadmap) Akış Paneli -->
+        <div class="roadmap-container">
+            <!-- Adım 1: Sağda Başlar -->
+            <div class="roadmap-card step-1">
+                <div class="step-node-badge">1</div>
+                <div class="step-content">
+                    <h4 class="step-title">💭 Hayal Et</h4>
+                    <p class="step-desc">Zihnindeki dünyayı serbest bırak.</p>
+                </div>
+            </div>
+
+            <!-- Bağlantı Çizgisi 1 -->
+            <div class="roadmap-connector line-1">
+                <svg width="220" height="90" viewBox="0 0 220 90" fill="none">
+                    <defs>
+                        <linearGradient id="pathGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
+                            <stop offset="100%" stop-color="#c58af9" stop-opacity="0.9" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 120 4 C 135 48, 20 20, 25 86" stroke="url(#pathGrad1)" stroke-width="3" stroke-dasharray="8 7" stroke-linecap="round" class="curved-trail-path" />
+                </svg>
+            </div>
+
+            <!-- Adım 2: Solda Durur -->
+            <div class="roadmap-card step-2">
+                <div class="step-node-badge">2</div>
+                <div class="step-content">
+                    <h4 class="step-title">⌨️ Prompt Yaz</h4>
+                    <p class="step-desc">Kelimelerle detayları tarif et.</p>
+                </div>
+            </div>
+
+            <!-- Bağlantı Çizgisi 2 -->
+            <div class="roadmap-connector line-2">
+                <svg width="240" height="90" viewBox="0 0 240 90" fill="none">
+                    <defs>
+                        <linearGradient id="pathGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#c58af9" stop-opacity="0.9" />
+                            <stop offset="100%" stop-color="#fdd663" stop-opacity="0.9" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 100 4 C 85 48, 180 20, 165 86" stroke="url(#pathGrad2)" stroke-width="3" stroke-dasharray="8 7" stroke-linecap="round" class="curved-trail-path" />
+                </svg>
+            </div>
+
+            <!-- Adım 3: Orta-Alt Tarafta Durur -->
+            <div class="roadmap-card step-3">
+                <div class="step-node-badge">3</div>
+                <div class="step-content">
+                    <h4 class="step-title">✨ Görselini Oluştur</h4>
+                    <p class="step-desc">Saniyeler içinde sanat eserini gör.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-container" style="flex-direction: column; padding-bottom: 20px;">
+        <!-- Sadece mobilde görünecek üst logo -->
+        <img src="~/images/logo.png" class="mobile-only-logo" style="display: none;" alt="Mega Image Studio Logo" onerror="this.src='https://www.melikgazi.bel.tr/images/favicon.webp'">
+        
+        <div class="auth-card glass-card">
+            <div class="auth-header">
+                <h2 class="card-title-white">Standart Kullanıcı Kayıt Ekranı</h2>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="auth-alert error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i> @ViewBag.Error
+                </div>
+            }
+
+            <form asp-controller="Home" asp-action="Register" method="post" class="auth-form">
+                @Html.AntiForgeryToken()
+
+                <div class="field">
+                    <label for="username"><i class="fa-solid fa-user"></i> Kullanıcı Adı</label>
+                    <input type="text" id="username" name="username" placeholder="Örn: ahmet_yilmaz" required autocomplete="username" autofocus>
+                </div>
+
+                <div class="field">
+                    <label for="displayName"><i class="fa-solid fa-id-card"></i> Ad Soyad / Görünen Ad</label>
+                    <input type="text" id="displayName" name="displayName" placeholder="Örn: Ahmet Yılmaz" required>
+                </div>
+
+                <div class="field">
+                    <label for="password"><i class="fa-solid fa-lock"></i> Şifre</label>
+                    <input type="password" id="password" name="password" placeholder="En az 4 karakter" required autocomplete="new-password">
+                </div>
+
+                <div class="field">
+                    <label for="passwordConfirm"><i class="fa-solid fa-lock"></i> Şifre Tekrar</label>
+                    <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="Şifrenizi tekrar girin" required autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="action-btn primary-btn auth-btn">
+                    <i class="fa-solid fa-user-plus"></i> Kayıt Ol (Standart Kullanıcı)
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <span>Zaten hesabınız var mı?</span>
+                <a asp-controller="Home" asp-action="Login" class="auth-link"><i class="fa-solid fa-arrow-left"></i> Giriş Ekranına Dön</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sayfanın en altında ortalanmış telif hakkı metni -->
+    <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 0.75rem; color: var(--text-muted); width: 100%;">
+        © 2026 Melikgazi Municipality. All rights reserved.
+    </div>
+</body>
+</html>
+
+
+
