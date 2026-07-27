@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -956,7 +956,7 @@ namespace yz.Controllers
             bool acquired = false;
             while (!acquired)
             {
-                if (linkedCts.IsCancellationRequested) return;
+                if (linkedCts.IsCancellationRequested) { _jobQueueService.CancelJob(job.JobId); return; }
                 acquired = await _jobQueueService.TryWaitInQueueAsync(job.JobId, 2000);
                 if (!acquired)
                 {
