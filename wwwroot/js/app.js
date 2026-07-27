@@ -1,4 +1,28 @@
-﻿const navStudio = document.getElementById('nav-studio');
+﻿
+// Dropdown Toggle
+function toggleUserDropdown(e) {
+  e.stopPropagation();
+  const dropdown = document.getElementById('user-dropdown-menu');
+  if (dropdown) {
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+      dropdown.style.display = 'block';
+    } else {
+      dropdown.style.display = 'none';
+    }
+  }
+}
+
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('user-dropdown-menu');
+  if (dropdown && dropdown.style.display === 'block') {
+    const container = document.querySelector('.user-badge-container');
+    if (container && !container.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  }
+});
+
+const navStudio = document.getElementById('nav-studio');
 const navDashboard = document.getElementById('nav-dashboard');
 const sectionStudio = document.getElementById('section-studio');
 const sectionDashboard = document.getElementById('section-dashboard');
@@ -305,7 +329,7 @@ function resetToInitialState(isSuccess = false) {
     btnGenerate.disabled = false;
     btnGenerate.classList.remove('btn-cancel');
     if (btnLabel) {
-      btnLabel.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i>';
+      btnLabel.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i><span class="desktop-text"> Oluştur</span>';
       btnLabel.style.display = 'flex';
     }
     if (btnLoader) btnLoader.style.display = 'none';
@@ -364,7 +388,7 @@ async function handleGenerate(e) {
   btnGenerate.disabled = false;
   btnGenerate.classList.add('btn-cancel');
   if (btnLabel) {
-    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> İptal Et</span>';
     btnLabel.style.display = 'flex';
   }
   if (btnLoader) btnLoader.style.display = 'none';
@@ -443,7 +467,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
   btnGenerate.disabled = false;
   btnGenerate.classList.add('btn-cancel');
   if (btnLabel) {
-    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> İptal Et</span>';
     btnLabel.style.display = 'flex';
   }
   if (btnLoader) btnLoader.style.display = 'none';
@@ -2729,7 +2753,33 @@ window.switchPage = function(page) {
             if (btnProfile) btnProfile.classList.add('active');
             if (sectionProfile) sectionProfile.classList.add('active');
             if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-user"></i> <h2>Profilim</h2>';
+            if (typeof loadProfileData === 'function') loadProfileData();
         }
+    }
+    
+    // Update mobile bottom bar active state
+    document.querySelectorAll('.mobile-bottom-bar .bottom-nav-item').forEach(item => {
+      item.classList.remove('active-bottom');
+    });
+    
+    if (page === 'studio') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-studio"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'gallery') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="btn-gallery-toggle"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'collections') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-collections"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'favorites') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-favorites"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'dashboard') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-dashboard"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'profile') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="btn-profile"]');
+      if(btn) btn.classList.add('active-bottom');
     }
 };
 

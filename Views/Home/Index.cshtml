@@ -106,21 +106,30 @@
       <!-- Üst Bilgi Çubuğu (Top Bar) -->
       <header class="top-bar glass-card">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileSidebar(event)" title="Menüyü Aç/Kapat">
-            <i class="fa-solid fa-bars"></i>
-          </button>
           <div class="top-bar-title" id="page-title-heading">
             <i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Stüdyo</h2>
           </div>
         </div>
         <div class="top-bar-right">
-          <div class="user-badge-info">
+          <div class="user-badge-container" style="position: relative;">
+            <div class="user-badge-info" onclick="toggleUserDropdown(event)" style="cursor: pointer;" title="Menüyü Aç">
             <i class="fa-solid fa-user-shield"></i>
             <div class="user-info-text">
               <span class="user-name">@displayName</span>
               <span class="role-badge @(isAdmin ? "role-admin" : "role-user")">@(isAdmin ? "Yönetici" : "Kullanıcı")</span>
             </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px; opacity: 0.7;"></i>
           </div>
+          <!-- Dropdown Menu -->
+          <div id="user-dropdown-menu" class="user-dropdown-menu glass-card" style="display:none;">
+            <form asp-controller="Home" asp-action="Logout" method="post" style="margin:0;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="dropdown-item dropdown-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+                </button>
+            </form>
+          </div>
+          </div><!-- end user-badge-container -->
           <button id="btn-batch-download" class="chip-btn primary-chip" style="display:none;" title="Tüm Üretimleri Zip Olarak İndir (Resim + Prompt TXT)">
             <i class="fa-solid fa-file-zipper"></i> Toplu Ziple & İndir
           </button>
@@ -180,7 +189,7 @@
                 </button>
                 <div class="prompt-divider"></div>
                 <button type="submit" id="btn-generate" class="btn-generate">
-                  <span class="btn-label"><i class="fa-solid fa-bolt-lightning"></i></span>
+                  <span class="btn-label"><i class="fa-solid fa-bolt-lightning"></i><span class="desktop-text"> Oluştur</span></span>
                   <span class="btn-loader" style="display:none"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
                 </button>
               </div>
@@ -930,6 +939,36 @@
     </div>
   </div>
 
+    <!-- Mobile Bottom Bar -->
+    <nav class="mobile-bottom-bar" id="mobile-bottom-bar">
+      <button class="bottom-nav-item" onclick="document.getElementById('nav-favorites').click()" title="Favoriler">
+        <i class="fa-regular fa-heart"></i>
+        <span>Favoriler</span>
+      </button>
+      <button class="bottom-nav-item" onclick="document.getElementById('nav-collections').click()" title="Koleksiyonlar">
+        <i class="fa-solid fa-box-archive"></i>
+        <span>Koleksiyonlar</span>
+      </button>
+      <button class="bottom-nav-item active-bottom" onclick="document.getElementById('nav-studio').click()" title="Stüdyo">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Stüdyo</span>
+      </button>
+      <button class="bottom-nav-item" onclick="document.getElementById('btn-gallery-toggle').click()" title="Arşiv">
+        <i class="fa-solid fa-images"></i>
+        <span>Arşiv</span>
+      </button>
+      @if (isAdmin) {
+          <button class="bottom-nav-item" onclick="document.getElementById('nav-dashboard').click()" title="Yönetim">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Yönetim</span>
+          </button>
+      } else {
+          <button class="bottom-nav-item" onclick="document.getElementById('btn-profile').click()" title="Profil">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Profil</span>
+          </button>
+      }
+    </nav>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="~/js/app.js" asp-append-version="true"></script>
 </body>
