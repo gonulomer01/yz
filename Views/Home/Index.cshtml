@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -283,7 +283,7 @@
           </div>
 
           <div class="setting-chip glass-card">
-            <label><i class="fa-solid fa-expand"></i> Oran</label>
+            <label><i class="fa-solid fa-expand"></i> Boyut</label>
             <div class="ratio-group">
               <input type="radio" name="ratio" id="r1" value="1:1">
               <label for="r1" class="ratio-chip"><i class="fa-regular fa-square"></i> 1:1</label>
