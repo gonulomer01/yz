@@ -382,25 +382,14 @@ namespace yz.Services
                 options.AddUserProfilePreference("download.prompt_for_download", false);
                 options.AddUserProfilePreference("download.directory_upgrade", true);
                 options.AddUserProfilePreference("safebrowsing.enabled", true);
-                if (!isAdmin && !isHeadless)
-                {
-                    // options.AddArgument("--window-position=-4000,-4000");
-                    options.AddArgument("--window-size=1400,900");
-                }
-                else
-                {
-                    options.AddArgument("--window-size=1400,900");
-                }
+                options.AddArgument("--window-size=1400,900");
 
                 if (IsCancelRequested)
                     throw new OperationCanceledException("İptal isteği sebebiyle Chrome sürücüsü başlatılmadı.");
 
                 var driver = new ChromeDriver(options);
                 driver.Manage().Timeouts().AsynchronousJavaScript = TimeSpan.FromSeconds(60);
-                if (!isAdmin && !isHeadless)
-                {
-                    try { driver.Manage().Window.Position = new System.Drawing.Point(-4000, -4000); } catch { }
-                }
+
 
                 if (IsCancelRequested)
                 {
