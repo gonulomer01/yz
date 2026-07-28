@@ -435,37 +435,37 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
   if (targetSite === 'all' || targetSite === 'gemini') {
       cardsHtml += `
       <div class="triple-stream-card" id="card-site-gemini">
-        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+        <div style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i>
-          <span style="font-size:0.85rem; color:#aaa;">Google Gemini üretiliyor...</span>
+          <span style="font-size:0.85rem; color:var(--text-muted);">Google Gemini üretiliyor...</span>
         </div>
-        <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5>
+        <h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5>
       </div>`;
   }
   if (targetSite === 'all' || targetSite === 'chatgpt') {
       cardsHtml += `
       <div class="triple-stream-card" id="card-site-chatgpt">
-        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+        <div style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i>
-          <span style="font-size:0.85rem; color:#aaa;">ChatGPT (DALL-E) üretiliyor...</span>
+          <span style="font-size:0.85rem; color:var(--text-muted);">ChatGPT (DALL-E) üretiliyor...</span>
         </div>
-        <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT (DALL-E)</h5>
+        <h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT (DALL-E)</h5>
       </div>`;
   }
   if (targetSite === 'all' || targetSite === 'copilot') {
       cardsHtml += `
       <div class="triple-stream-card" id="card-site-copilot">
-        <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+        <div style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i>
-          <span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot üretiliyor...</span>
+          <span style="font-size:0.85rem; color:var(--text-muted);">Microsoft Copilot üretiliyor...</span>
         </div>
-        <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5>
+        <h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5>
       </div>`;
   }
 
   wrapper.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-      <h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4>
+      <h4 style="color: var(--text-main); margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4>
       <div id="triple-stream-actions"></div>
     </div>
     <div class="triple-stream-grid" id="triple-cards-grid">
@@ -518,8 +518,8 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                   const streamDownloadName = getFormattedDownloadFilename(item.image, item.modelUsed, item.site);
                   card.innerHTML = `
                     <img src="${item.image}" alt="${item.site}" class="triple-stream-img clickable-img" title="Tam ekran görüntülemek için tıklayın">
-                    <h5 style="margin-top:10px; color:#fff;">${item.modelUsed || item.site.toUpperCase()}</h5>
-                    <span style="font-size:0.78rem; color:#aaa; margin-bottom:8px;">${item.keyUsedLabel || ''}</span>
+                    <h5 style="margin-top:10px; color:var(--text-main);">${item.modelUsed || item.site.toUpperCase()}</h5>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px;">${item.keyUsedLabel || ''}</span>
                     <a href="${item.image}" download="${streamDownloadName}" class="action-btn" style="width:100%; text-align:center; padding:6px; font-size:0.82rem;">
                       <i class="fa-solid fa-download"></i> İndir
                     </a>
@@ -545,9 +545,9 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                     <div style="width:100%; height:240px; background: rgba(239,68,68,0.1); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:12px; text-align:center;">
                       <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--color-danger);"></i>
                       <span style="font-size:0.85rem; color:#ff8888; font-weight:600;">${item.site.toUpperCase()} Başarısız</span>
-                      <span style="font-size:0.75rem; color:#ccc;">${item.error === 'login_required' ? 'Oturum Açılmamış' : (item.error || 'Limit/Bağlantı hatası')}</span>
+                      <span style="font-size:0.75rem; color:var(--text-dark);">${item.error === 'login_required' ? 'Oturum Açılmamış' : (item.error || 'Limit/Bağlantı hatası')}</span>
                     </div>
-                    <h5 style="margin-top:10px; color:#aaa;">${item.site.toUpperCase()}</h5>
+                    <h5 style="margin-top:10px; color:var(--text-muted);">${item.site.toUpperCase()}</h5>
                   `;
                 }
               }
@@ -877,8 +877,8 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
              <i class="${favIcon}"></i>
           </button>` : ''}
         </div>
-        <h6 style="color: #fff; margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
-        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
+        <h6 style="color: var(--text-main); margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
         <a href="${res.image}" download="${downloadFilename}" class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
           <i class="fa-solid fa-download"></i> İndir
         </a>
@@ -957,8 +957,8 @@ function openSingleImageModal(item, canModify = true) {
     container.innerHTML = `
       <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%; position:relative;">
         <img src="${item.image}" alt="Generated" class="clickable-img" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
-        <h6 style="color: #fff; margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
-        ${canModify ? `<button class="${favActiveClass}" style="position:absolute; top: 15px; right: 15px; z-index:20; padding:10px; font-size:1.5rem; border:none; background:rgba(0,0,0,0.5); border-radius:50%; cursor:pointer; color:#fff;" title="Favori" onclick="toggleFavorite(event, ${item.id}); this.innerHTML = this.querySelector('.fa-solid') ? '<i class=\\'fa-regular fa-heart\\'></i>' : '<i class=\\'fa-solid fa-heart\\' style=\\'color:#f43f5e;\\'></i>'; this.classList.toggle('active');">
+        <h6 style="color: var(--text-main); margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
+        ${canModify ? `<button class="${favActiveClass}" style="position:absolute; top: 15px; right: 15px; z-index:20; padding:10px; font-size:1.5rem; border:none; background:rgba(0,0,0,0.5); border-radius:50%; cursor:pointer; color:var(--text-main);" title="Favori" onclick="toggleFavorite(event, ${item.id}); this.innerHTML = this.querySelector('.fa-solid') ? '<i class=\\'fa-regular fa-heart\\'></i>' : '<i class=\\'fa-solid fa-heart\\' style=\\'color:#f43f5e;\\'></i>'; this.classList.toggle('active');">
           <i class="${favIcon}" ${item.isFavorite ? 'style="color:#f43f5e;"' : ''}></i>
         </button>` : ''}
       </div>
@@ -2347,7 +2347,7 @@ function renderCollections() {
               <button class="action-btn secondary-btn" onclick="currentCollectionFolder = null; renderCollections();">
                   <i class="fa-solid fa-arrow-left"></i> Geri
               </button>
-              <h3 style="color:#fff; margin:0; flex:1;"><i class="fa-solid fa-folder-open" style="color:var(--color-primary);"></i> ${currentCollectionFolder}</h3>
+              <h3 style="color:var(--text-main); margin:0; flex:1;"><i class="fa-solid fa-folder-open" style="color:var(--color-primary);"></i> ${currentCollectionFolder}</h3>
               <button class="action-btn primary-btn" onclick="openAddImagesToCollectionModal('${currentCollectionFolder}')">
                   <i class="fa-solid fa-plus"></i> Görsel Ekle
               </button>
@@ -2568,7 +2568,7 @@ function openAddImagesToCollectionModal(folderName) {
     
     // Çoklu üretim gruplarını ayır, hepsini tekil olarak göster (kullanıcı tekil seçmek istedi)
     if (available.length === 0) {
-        container.innerHTML = '<p style="color:#aaa; text-align:center;">Eklenecek görsel bulunamadı.</p>';
+        container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Eklenecek görsel bulunamadı.</p>';
     } else {
         available.forEach(item => {
             const div = document.createElement('div');
@@ -3074,10 +3074,10 @@ window.renderTrash = async function() {
            </div>
            <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Üçlü Üretim</div>
            <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:center; align-items:center; padding: 10px; gap: 8px;">
-               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteGroup(event, '${groupOrItem.groupId}')" style="background: rgba(239, 68, 68, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteGroup(event, '${groupOrItem.groupId}')" style="background: rgba(239, 68, 68, 0.9); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%;">
                  <i class="fa-solid fa-trash-can"></i>
                </button>
-               <button class="action-btn" title="Geri Yükle" onclick="restoreGroup(event, '${groupOrItem.groupId}')" style="background: rgba(16, 185, 129, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+               <button class="action-btn" title="Geri Yükle" onclick="restoreGroup(event, '${groupOrItem.groupId}')" style="background: rgba(16, 185, 129, 0.9); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%;">
                  <i class="fa-solid fa-rotate-left"></i>
                </button>
            </div>
@@ -3094,10 +3094,10 @@ window.renderTrash = async function() {
            <img src="${item.image}" alt="Trash">
            <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
            <div class="gallery-overlay" style="z-index: 10; display:flex; justify-content:center; align-items:center; gap: 8px;">
-               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})" style="background: rgba(239, 68, 68, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})" style="background: rgba(239, 68, 68, 0.9); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%;">
                  <i class="fa-solid fa-trash-can"></i>
                </button>
-               <button class="action-btn" title="Geri Yükle" onclick="restoreImage(event, ${item.id})" style="background: rgba(16, 185, 129, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+               <button class="action-btn" title="Geri Yükle" onclick="restoreImage(event, ${item.id})" style="background: rgba(16, 185, 129, 0.9); color: var(--text-main); width: 40px; height: 40px; border-radius: 50%;">
                  <i class="fa-solid fa-rotate-left"></i>
                </button>
            </div>
@@ -3289,15 +3289,15 @@ function renderTripleCards(targetSite) {
   let headerTitle = 'Çoklu Üretim Akışı';
   let cardsHtml = '';
   if (targetSite === 'all' || targetSite === 'gemini') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'chatgpt') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'copilot') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: var(--bg-hover-light); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>`;
   }
-  wrapper.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;"><h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4><div id="triple-stream-actions"></div></div><div class="triple-stream-grid" id="triple-cards-grid">${cardsHtml}</div>`;
+  wrapper.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;"><h4 style="color: var(--text-main); margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4><div id="triple-stream-actions"></div></div><div class="triple-stream-grid" id="triple-cards-grid">${cardsHtml}</div>`;
   feedList.innerHTML = '';
   feedList.appendChild(wrapper);
 }
@@ -3363,7 +3363,7 @@ async function pollJob(jobId, type) {
                 if (card && card.querySelector('.card-loader')) {
                    card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick="openTripleGroupModal('${data.result.groupId}')" />
                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-                     <h5 style="color:#fff; margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> ${item.site}</h5>
+                     <h5 style="color:var(--text-main); margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> ${item.site}</h5>
                    </div>`;
                 }
              }
@@ -3372,9 +3372,9 @@ async function pollJob(jobId, type) {
                 if (card && card.querySelector('.card-loader')) {
                    card.innerHTML = `<div style="width:100%; height:240px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; text-align:center;">
                      <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--color-danger); margin-bottom:10px;"></i>
-                     <span style="font-size:0.85rem; color:#ccc;">${item.error}</span>
+                     <span style="font-size:0.85rem; color:var(--text-dark);">${item.error}</span>
                    </div>
-                   <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-xmark" style="color:var(--color-danger);"></i> ${item.site}</h5>`;
+                   <h5 style="margin-top:12px; color:var(--text-main);"><i class="fa-solid fa-xmark" style="color:var(--color-danger);"></i> ${item.site}</h5>`;
                 }
              }
              
@@ -3460,3 +3460,5 @@ async function checkActiveJobs() {
 
 // Ensure the onclick attribute matches the updated function
 window.readNotification = window.readNotification;
+
+

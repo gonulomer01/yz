@@ -529,7 +529,7 @@ main {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(19, 19, 20, 0.45);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 16px;
@@ -804,8 +804,8 @@ main {
 
 .select-wrap select option,
 .select-wrap select optgroup {
-  background: #1e1f20 !important;
-  color: #e8eaed !important;
+  background: var(--bg-page) !important;
+  color: var(--text-main) !important;
 }
 
 .select-wrap > i {
@@ -1057,14 +1057,14 @@ main {
   display: flex;
 }
 
-/* Hesap Y�netimi �� Model Alt Sekmeleri */
+/* Hesap Ynetimi  Model Alt Sekmeleri */
 .acc-model-tabs {
   display: flex;
   gap: 8px;
   padding: 6px;
   margin-bottom: 18px;
   border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--bg-hover-light);
   border: 1px solid var(--border-color);
 }
 
@@ -1167,7 +1167,7 @@ main {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 700;
   font-size: 0.76rem;
-  color: #fff;
+  color: var(--text-main);
   background: var(--bg-hover-light);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -1321,7 +1321,7 @@ main {
   max-width: 95vw;
   height: 100vh;
   z-index: 250;
-  background: rgba(24, 26, 30, 0.55);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-left: 1px solid var(--border-color);
@@ -1343,7 +1343,7 @@ main {
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  background: rgba(24, 26, 30, 0.60);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   z-index: 10;
 }
@@ -1379,7 +1379,7 @@ main {
   border: 1px solid var(--border-color);
   transition: var(--transition);
   position: relative;
-  background: #1e1f20;
+  background: var(--bg-surface);
 }
 
 .gallery-item:hover {
@@ -2826,7 +2826,7 @@ main {
   font-size: 0.9rem;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: var(--transition);
 }
 .dropdown-item:hover {
   background: var(--bg-hover-light);
@@ -2879,11 +2879,11 @@ main {
     gap: 4px;
     background: none;
     border: none;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-size: 0.7rem;
     font-family: inherit;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition);
     padding: 8px 0;
     flex: 1;
   }
@@ -2891,7 +2891,7 @@ main {
   .bottom-nav-item i {
     font-size: 1.2rem;
     margin-bottom: 2px;
-    transition: all var(--transition-fast);
+    transition: var(--transition);
   }
   
   
@@ -3155,7 +3155,7 @@ body.light-mode .melikgazi-slogan span {
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition);
 }
 .notification-item:hover {
     background: var(--bg-hover-light);
@@ -3283,4 +3283,90 @@ body:not(.light-mode) .action-btn.primary-btn {
         max-width: none !important;
         z-index: 9999 !important;
     }
+}
+
+/* --- LIGHT MODE: Triple Card & Card-Loader Fixes --- */
+body.light-mode .triple-stream-card {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+}
+body.light-mode .card-loader {
+    background: var(--bg-hover-light) !important;
+}
+body.light-mode .triple-stream-card h5 {
+    color: var(--text-main) !important;
+}
+
+/* --- LIGHT MODE: Notification Dropdown Fix --- */
+body.light-mode #notification-dropdown-menu {
+    background: var(--bg-surface) !important;
+}
+body.light-mode .notification-item {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+body.light-mode .notification-item:hover {
+    background: var(--bg-hover-light);
+}
+
+/* --- LIGHT MODE: Studio Feed Item Fix --- */
+body.light-mode .studio-feed-item {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+
+/* --- LIGHT MODE: User Dropdown Menu Fix --- */
+body.light-mode .user-dropdown-menu {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* --- LIGHT MODE: Gallery Panel Fix --- */
+body.light-mode .gallery-panel {
+    background: var(--bg-surface);
+}
+body.light-mode .gallery-panel-header {
+    background: var(--bg-surface);
+}
+
+/* --- LIGHT MODE: Key Masked Input Fix --- */
+body.light-mode .key-masked {
+    background: var(--bg-hover-light);
+    color: var(--text-muted);
+}
+
+/* --- LIGHT MODE: Fullscreen Lightbox Fix --- */
+body.light-mode .fullscreen-lightbox-overlay {
+    background: rgba(240, 240, 245, 0.95);
+}
+body.light-mode .fullscreen-lightbox-close {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
+/* --- LIGHT MODE: Mobile Bottom Bar Fix --- */
+body.light-mode .mobile-bottom-bar {
+    background: var(--bg-page);
+    border-top-color: var(--border-color);
+}
+
+/* --- LIGHT MODE: Toast Fix --- */
+body.light-mode .toast {
+    border-color: var(--border-color);
+}
+
+/* --- LIGHT MODE: Sidebar Fix --- */
+body.light-mode .app-sidebar {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+}
+
+/* --- GLOBAL: Ensure card-loader span text is theme-aware --- */
+.card-loader span {
+    color: var(--text-muted) !important;
+}
+
+/* --- GLOBAL: Fix triple card h5 text for theme compatibility --- */
+.triple-stream-card h5 {
+    color: var(--text-main) !important;
 }
