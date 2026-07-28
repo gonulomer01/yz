@@ -977,6 +977,10 @@ document.addEventListener('keydown', (e) => {
 function openTripleGroupModal(groupId, sourceImages = persistentImages, canModify = true) {
   const group = sourceImages.filter(i => i.groupId === groupId);
   if (!group || group.length === 0) return;
+  if (group.length === 1) {
+    openSingleImageModal(group[0], canModify);
+    return;
+  }
   const promptEl = document.getElementById('triple-group-prompt');
   if (promptEl) promptEl.textContent = "Prompt: " + group[0].prompt;
   const container = document.getElementById('triple-group-container');
@@ -1094,6 +1098,7 @@ function openSingleImageModal(item, canModify = true) {
   if (btnDownload) {
     btnDownload.href = item.image;
     btnDownload.download = getFormattedDownloadFilename(item.image, item.model, item.sourceSite);
+    btnDownload.style.display = canModify ? '' : 'none';
   }
   modal.style.display = 'flex';
 }
@@ -1111,7 +1116,7 @@ if (btnSingleImageOk) {
 }
 async function deleteImage(e, id) {
   e.stopPropagation();
-  if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
+  if (!confirm('Bu görseli çöp kutusuna taşımak istiyor musunuz?')) return;
   try {
     const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Silinemedi');
@@ -2153,6 +2158,12 @@ window.openUserImagesModal = function(userId, displayName) {
         groupedImages.push(item);
       }
     });
+    
+    for (let i = 0; i < groupedImages.length; i++) {
+      if (groupedImages[i].isGroup && groupedImages[i].items.length === 1) {
+        groupedImages[i] = groupedImages[i].items[0];
+      }
+    }
     groupedImages.forEach(groupOrItem => {
       const div = document.createElement('div');
       div.className = 'gallery-item';
@@ -2222,7 +2233,7 @@ window.deleteGroupFromUserModal = async function(e, groupId, userId) {
 };
 window.deleteImageFromUserModal = async function(e, imageId, userId) {
   e.stopPropagation();
-  if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
+  if (!confirm('Bu görseli çöp kutusuna taşımak istiyor musunuz?')) return;
   try {
     const res = await fetch(`/api/images/${imageId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Silinemedi');
@@ -3093,18 +3104,26 @@ window.renderTrash = async function() {
       grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;"><i class="fa-solid fa-trash-can" style="font-size: 2rem; margin-bottom:10px;"></i><br>Çöp kutusu boş.</div>';
       return;
     }
-    grid.innerHTML = data.map(item => `
-      <div class="gallery-card">
-         <img src="${item.image}" alt="Trash" onclick="window.open('${item.image}', '_blank')">
-         <div class="gallery-overlay">
-           <div class="gallery-info" style="font-size:0.75rem;">${item.prompt}</div>
-           <div class="gallery-actions" style="justify-content: flex-end; gap: 5px;">
-             <button class="action-btn-sm" style="background:var(--color-primary); color:white;" title="Geri Getir" onclick="restoreImage(event, ${item.id})"><i class="fa-solid fa-arrow-rotate-left"></i> Geri Getir</button>
-             <button class="action-btn-sm danger-btn-sm" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})"><i class="fa-solid fa-trash"></i> Sil</button>
-           </div>
-         </div>
-      </div>
-    `).join('');
+    grid.innerHTML = '';
+    data.forEach(item => {
+       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+       const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
+       
+       const div = document.createElement('div');
+       div.className = 'gallery-item';
+       div.innerHTML = `
+         <img src="${item.image}" alt="Trash">
+         <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
+         <button class="btn-del-img" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})">
+           <i class="fa-solid fa-trash-can"></i>
+         </button>
+       `;
+       div.addEventListener('click', (e) => {
+         if (e.target.closest('.btn-del-img')) return;
+         openSingleImageModal(item, false);
+       });
+       grid.appendChild(div);
+    });
   } catch(e) {
     console.error(e);
   }

@@ -1,4 +1,4 @@
-:root {
+ï»¿:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -44,7 +44,7 @@
 }
 
 body.light-mode {
-  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, böylece þeffaf beyaz kartlar belirgin olur */
+  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, bï¿½ylece ï¿½effaf beyaz kartlar belirgin olur */
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(26, 115, 232, 0.15), transparent 70%);
 
   --bg-sidebar: rgba(255, 255, 255, 0.75);
@@ -1007,7 +1007,7 @@ main {
   border-color: rgba(138, 180, 248, 0.3) !important;
 }
 
-/* 3 Parçalý Yönetim Paneli Sekme Stilleri */
+/* 3 Parï¿½alï¿½ Yï¿½netim Paneli Sekme Stilleri */
 .dash-subtabs {
   display: flex;
   gap: 10px;
@@ -1057,7 +1057,7 @@ main {
   display: flex;
 }
 
-/* Hesap Yönetimi Ýç Model Alt Sekmeleri */
+/* Hesap Yï¿½netimi ï¿½ï¿½ Model Alt Sekmeleri */
 .acc-model-tabs {
   display: flex;
   gap: 8px;
@@ -1604,7 +1604,7 @@ main {
   z-index: 1;
 }
 
-/* SOL INTRO LOGO VE ANÝMASYONU */
+/* SOL INTRO LOGO VE ANï¿½MASYONU */
 .auth-body .melikgazi-bg-watermark {
   position: fixed;
   top: 50vh;
@@ -1631,7 +1631,7 @@ main {
   transition: var(--transition);
 }
 
-/* LOGO ÜSTE ÇIKTIÐINDA YANINDA YAVAÞÇA BELÝREN YAZI */
+/* LOGO ï¿½STE ï¿½IKTIï¿½INDA YANINDA YAVAï¿½ï¿½A BELï¿½REN YAZI */
 .auth-body .melikgazi-slogan {
   position: fixed;
   top: 42px;
@@ -1653,7 +1653,7 @@ main {
   animation: sloganFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2.2s forwards;
 }
 
-/* LOGONUN ÝLK AÇILIÞTA ORTADA DURUP SONRA SOL ÜSTE ÞIK BÝR ÞEKÝLDE GÝTME ANÝMASYONU */
+/* LOGONUN ï¿½LK Aï¿½ILIï¿½TA ORTADA DURUP SONRA SOL ï¿½STE ï¿½IK Bï¿½R ï¿½EKï¿½LDE Gï¿½TME ANï¿½MASYONU */
 @keyframes logoToRedBox {
   0% {
     top: 50vh;
@@ -1684,7 +1684,7 @@ main {
   }
 }
 
-/* YOL HARÝTASI (ROADMAP ZIGZAG) AKIÞ PANELÝ STÝLLERÝ */
+/* YOL HARï¿½TASI (ROADMAP ZIGZAG) AKIï¿½ PANELï¿½ STï¿½LLERï¿½ */
 .auth-body .roadmap-container {
   position: fixed;
   top: 180px;
@@ -1730,7 +1730,7 @@ main {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
 }
 
-/* Adým 1: Orta-Sað Hizalama (80px) */
+/* Adï¿½m 1: Orta-Saï¿½ Hizalama (80px) */
 .roadmap-card.step-1 {
   position: absolute;
   top: 0;
@@ -1739,7 +1739,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 6.2s forwards;
 }
 
-/* Adým 2: Sol Hizalama (5px) */
+/* Adï¿½m 2: Sol Hizalama (5px) */
 .roadmap-card.step-2 {
   position: absolute;
   top: 155px;
@@ -1748,7 +1748,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 7.6s forwards;
 }
 
-/* Adým 3: En Sað Hizalama (140px - 1. Adýmdan Daha Saðda) */
+/* Adï¿½m 3: En Saï¿½ Hizalama (140px - 1. Adï¿½mdan Daha Saï¿½da) */
 .roadmap-card.step-3 {
   position: absolute;
   top: 310px;
@@ -1757,7 +1757,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 9.0s forwards;
 }
 
-/* Baðlantý Çizgisi 1: Step 1 Çerçevesinin Tam Dýþýndan/Altýndan Baþlar */
+/* Baï¿½lantï¿½ ï¿½izgisi 1: Step 1 ï¿½erï¿½evesinin Tam Dï¿½ï¿½ï¿½ndan/Altï¿½ndan Baï¿½lar */
 .roadmap-connector.line-1 {
   position: absolute;
   top: 58px;
@@ -1766,7 +1766,7 @@ main {
   animation: connectorFadeIn 0.7s ease 6.9s forwards;
 }
 
-/* Baðlantý Çizgisi 2: Step 2 Çerçevesinin Tam Dýþýndan/Altýndan Baþlar */
+/* Baï¿½lantï¿½ ï¿½izgisi 2: Step 2 ï¿½erï¿½evesinin Tam Dï¿½ï¿½ï¿½ndan/Altï¿½ndan Baï¿½lar */
 .roadmap-connector.line-2 {
   position: absolute;
   top: 213px;
@@ -1775,7 +1775,7 @@ main {
   animation: connectorFadeIn 0.7s ease 8.3s forwards;
 }
 
-/* KAVÝSLÝ PATÝKA ROTA ÇÝZGÝSÝ VE AKAN NOKTA ANÝMASYONU */
+/* KAVï¿½SLï¿½ PATï¿½KA ROTA ï¿½ï¿½ZGï¿½Sï¿½ VE AKAN NOKTA ANï¿½MASYONU */
 .curved-trail-path {
   animation: trailFlow 2.4s linear infinite;
   filter: drop-shadow(0 0 8px rgba(197, 138, 249, 0.35));
@@ -1790,7 +1790,7 @@ main {
   }
 }
 
-/* DÜZ YAZI BÝLGÝ VE BAÐLANTI METÝNLERÝ (TÜM SAYFANIN TAM ORTA ALT KISMI) */
+/* Dï¿½Z YAZI Bï¿½LGï¿½ VE BAï¿½LANTI METï¿½NLERï¿½ (Tï¿½M SAYFANIN TAM ORTA ALT KISMI) */
 .auth-body .hero-footer-info {
   position: fixed;
   bottom: 20px;
@@ -2341,7 +2341,7 @@ main {
 }
 
 /* ==========================================================================
-   MOBÝL VE TABLET TAM UYUMLULUK (RESPONSIVE MOBILE OVERHAUL)
+   MOBï¿½L VE TABLET TAM UYUMLULUK (RESPONSIVE MOBILE OVERHAUL)
    ========================================================================== */
 
 .mobile-menu-btn {
@@ -2417,7 +2417,7 @@ main {
     transform: translateX(0) !important;
   }
 
-  /* Mobil Menü Açýkken Tüm Metinleri Görünür Yap */
+  /* Mobil Menï¿½ Aï¿½ï¿½kken Tï¿½m Metinleri Gï¿½rï¿½nï¿½r Yap */
   .app-sidebar.mobile-open .nav-text,
   .app-sidebar.mobile-open .brand-text,
   .app-sidebar.mobile-open .user-info-text,
@@ -2562,7 +2562,7 @@ main {
     padding: 0 10px !important;
   }
 
-  /* Mobil Giriþ / Kayýt Sayfasý Ýyileþtirmeleri */
+  /* Mobil Giriï¿½ / Kayï¿½t Sayfasï¿½ ï¿½yileï¿½tirmeleri */
   .auth-card {
     padding: 26px 20px !important;
     border-radius: var(--radius-md) !important;
@@ -2784,13 +2784,13 @@ main {
     }
 }
 
-/* SABÝT GÝRÝÞ EKRANI ÝÇÝN ANÝMASYON ÝPTALÝ */
+/* SABï¿½T Gï¿½Rï¿½ï¿½ EKRANI ï¿½ï¿½ï¿½N ANï¿½MASYON ï¿½PTALï¿½ */
 .auth-body .melikgazi-bg-watermark { animation: none !important; top: 50vh !important; left: 28vw !important; transform: translate(-50%, -50%) !important; width: 320px !important; height: 320px !important; opacity: 0.1 !important; z-index: 1 !important; }
 .auth-body .melikgazi-slogan { animation: none !important; top: 42px !important; left: 120px !important; opacity: 1 !important; transform: none !important; }
 .auth-card, .auth-container, .ambient-bg { animation: none !important; opacity: 1 !important; transform: none !important; }
-/* SABÝT YOL HARÝTASI ÝÇÝN ANÝMASYON ÝPTALÝ */
+/* SABï¿½T YOL HARï¿½TASI ï¿½ï¿½ï¿½N ANï¿½MASYON ï¿½PTALï¿½ */
 .auth-body .roadmap-card, .auth-body .roadmap-connector { animation: none !important; opacity: 1 !important; transform: none !important; }
-/* OLUÞTUR BUTONU YUVARLAK */
+/* OLUï¿½TUR BUTONU YUVARLAK */
 .btn-generate { border-radius: 24px; padding: 0 24px; }
 
 .auth-body .roadmap-container { top: 50vh !important; left: 28vw !important; transform: translate(-50%, -50%) !important; }
