@@ -48,14 +48,6 @@
             <span class="nav-text">Stüdyo</span>
           </button>
 
-          @if (isAdmin)
-          {
-              <button id="nav-dashboard" class="sidebar-nav-item nav-pill" title="Yönetim Paneli">
-                <i class="fa-solid fa-sliders"></i>
-                <span class="nav-text">Yönetim Paneli</span>
-              </button>
-          }
-
           <button id="btn-gallery-toggle" class="sidebar-nav-item nav-pill gallery-pill" title="Görsel Arşivi">
             <i class="fa-solid fa-images"></i>
             <span class="nav-text">Görsel Arşivi</span>
@@ -79,11 +71,21 @@
             <span class="gallery-count fav-badge" id="fav-count">0</span>
           </button>
 
-          @if (!isAdmin)
+          <button id="nav-trash" class="sidebar-nav-item nav-pill" title="Çöp Kutusu" onclick="switchPage('trash')">
+            <i class="fa-solid fa-trash-can"></i>
+            <span class="nav-text">Çöp Kutusu</span>
+          </button>
+
+          <button id="btn-profile" class="sidebar-nav-item nav-pill" title="Profil Bilgilerimi Düzenle">
+            <i class="fa-solid fa-user-gear"></i>
+            <span class="nav-text">Bilgileri Güncelle</span>
+          </button>
+
+          @if (isAdmin)
           {
-              <button id="btn-profile" class="sidebar-nav-item nav-pill profile-pill" title="Profil Bilgilerimi Düzenle">
-                <i class="fa-solid fa-user-gear"></i>
-                <span class="nav-text">Bilgileri Güncelle</span>
+              <button id="nav-dashboard" class="sidebar-nav-item nav-pill" title="Yönetim Paneli">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="nav-text">Yönetim Paneli</span>
               </button>
           }
         </div>
@@ -140,16 +142,23 @@
           </div>
           <!-- Dropdown Menu -->
           <div id="user-dropdown-menu" class="user-dropdown-menu glass-card" style="display:none;">
-            @if (!isAdmin)
+            @if (isAdmin)
             {
-                <button type="button" class="dropdown-item" onclick="document.getElementById('btn-profile').click(); document.getElementById('user-dropdown-menu').style.display='none';">
-                    <i class="fa-solid fa-user-gear"></i> Bilgileri Güncelle
+                <button type="button" class="dropdown-item" onclick="document.getElementById('nav-dashboard').click(); document.getElementById('user-dropdown-menu').style.display='none';">
+                    <i class="fa-solid fa-sliders" style="width: 20px;"></i> Yönetim Paneli
                 </button>
             }
+            <button type="button" class="dropdown-item" onclick="document.getElementById('btn-profile').click(); document.getElementById('user-dropdown-menu').style.display='none';">
+                <i class="fa-solid fa-user-gear" style="width: 20px;"></i> Bilgileri Güncelle
+            </button>
+            <button type="button" class="dropdown-item" onclick="document.getElementById('nav-notifications').click(); document.getElementById('user-dropdown-menu').style.display='none';">
+                <i class="fa-solid fa-bell" style="width: 20px;"></i> Bildirimler
+                <span class="gallery-count notif-badge" id="dropdown-notif-count" style="display:none; background: var(--color-danger); color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-size: 0.75rem;">0</span>
+            </button>
             <form asp-controller="Home" asp-action="Logout" method="post" style="margin:0;">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="dropdown-item dropdown-logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap
+                    <i class="fa-solid fa-right-from-bracket" style="width: 20px;"></i> Çıkış Yap
                 </button>
             </form>
           </div>

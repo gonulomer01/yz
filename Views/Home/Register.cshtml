@@ -13,8 +13,32 @@
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="icon" href="~/images/logo.png" type="image/png">
+    <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.add('light-mode');
+            }
+        }
+        initTheme();
+    </script>
 </head>
 <body class="auth-body">
+    <script>
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+    </script>
+
+    <!-- Theme Toggle Switch -->
+    <div style="position: absolute; top: 25px; right: 25px; z-index: 100;">
+        <label class="theme-switch" title="Karanlık/Aydınlık Mod Değiştir">
+            <input type="checkbox" id="theme-toggle-btn" style="display:none;" />
+            <div class="theme-slider">
+                <i class="fa-solid fa-moon"></i>
+                <i class="fa-solid fa-sun"></i>
+                <div class="theme-slider-thumb"></div>
+            </div>
+        </label>
+    </div>
 
     <div class="ambient-bg">
         <!-- Sol üstte küçük mavi logo (Masaüstü için) -->
@@ -86,7 +110,10 @@
 
     <div class="auth-container" style="flex-direction: column; padding-bottom: 20px;">
         <!-- Sadece mobilde görünecek üst logo -->
-        <img src="~/images/logo.png" class="mobile-only-logo" style="display: none;" alt="Mega Image Studio Logo" onerror="this.src='https://www.melikgazi.bel.tr/images/favicon.webp'">
+        <div class="mobile-only-logo-container" style="display: none; text-align: center; margin-bottom: 20px;">
+            <img src="~/images/logo.png" class="mobile-only-logo" style="display: inline-block !important; margin: 0 auto 10px auto !important; position: static !important;" alt="Mega Image Studio Logo" onerror="this.src='https://www.melikgazi.bel.tr/images/favicon.webp'">
+            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.5rem; color: var(--text-color); margin: 0; font-weight: 700; letter-spacing: -0.5px;">Mega Image Studio</h2>
+        </div>
         
         <div class="auth-card glass-card">
             <div class="auth-header">
@@ -139,6 +166,23 @@
     <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 0.75rem; color: var(--text-muted); width: 100%;">
         © 2026 Melikgazi Municipality. All rights reserved.
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            if (themeToggleBtn) {
+                themeToggleBtn.checked = document.body.classList.contains('light-mode');
+                themeToggleBtn.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        document.body.classList.add('light-mode');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        document.body.classList.remove('light-mode');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 
