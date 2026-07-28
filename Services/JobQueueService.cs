@@ -13,6 +13,8 @@ namespace yz.Services
         public string Status { get; set; } = "Beklemede"; // "Beklemede", "Üretiliyor", "Tamamlandı", "İptal Edildi", "Hata"
         public int Position { get; set; }
         public object? Result { get; set; }
+        public int RequiredSlots { get; set; } = 1;
+        public int AcquiredSlots { get; set; } = 0;
         public CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
     }
 
@@ -25,21 +27,21 @@ namespace yz.Services
         private readonly int _maxConcurrent;
 
         // Sunucunun gücüne göre aynı anda çalışabilecek Max üretim sayısı.
-        // Chrome sekmeleri ağır olduğu için genelde 1-3 arası idealdir.
-        public JobQueueService(int maxConcurrent = 1)
+        public JobQueueService(int maxConcurrent = 6)
         {
             _maxConcurrent = maxConcurrent;
             _concurrencySemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
         }
 
-        public JobStatusInfo EnqueueJob(int userId)
+        public JobStatusInfo EnqueueJob(int userId, int requiredSlots = 1)
         {
             var jobId = Guid.NewGuid().ToString("N");
             var job = new JobStatusInfo
             {
                 JobId = jobId,
                 UserId = userId,
-                Status = "Beklemede"
+                Status = "Beklemede",
+                RequiredSlots = requiredSlots
             };
             
             _jobs[jobId] = job;
@@ -59,25 +61,37 @@ namespace yz.Services
             
             try
             {
-                bool acquired = await _concurrencySemaphore.WaitAsync(timeoutMs, job.Cts.Token);
-                if (acquired)
+                for (int i = 0; i < job.RequiredSlots; i++)
                 {
-                    lock (_queueLock)
+                    if (job.Cts.Token.IsCancellationRequested)
+                        throw new OperationCanceledException();
+
+                    bool acquired = await _concurrencySemaphore.WaitAsync(timeoutMs, job.Cts.Token);
+                    if (acquired)
                     {
-                        _waitingQueue.Remove(jobId);
-                        UpdatePositions();
-                    }
-                    
-                    if (job.Status != "İptal Edildi")
-                    {
-                        job.Status = "Üretiliyor";
+                        job.AcquiredSlots++;
                     }
                     else
                     {
-                        _concurrencySemaphore.Release(); // Zaten iptal edilmişse slotu geri bırak
+                        return false;
                     }
                 }
-                return acquired;
+
+                lock (_queueLock)
+                {
+                    _waitingQueue.Remove(jobId);
+                    UpdatePositions();
+                }
+                
+                if (job.Status != "İptal Edildi")
+                {
+                    job.Status = "Üretiliyor";
+                }
+                else
+                {
+                    ReleaseSlot(jobId);
+                }
+                return true;
             }
             catch (OperationCanceledException)
             {
@@ -87,6 +101,7 @@ namespace yz.Services
                     UpdatePositions();
                 }
                 job.Status = "İptal Edildi";
+                ReleaseSlot(jobId);
                 throw;
             }
         }
@@ -96,19 +111,27 @@ namespace yz.Services
             await TryWaitInQueueAsync(jobId, Timeout.Infinite);
         }
         
-        public void ReleaseSlot()
+        public void ReleaseSlot(string jobId)
         {
-            // Çift release koruması: currentCount >= maxConcurrent ise zaten dolu, release yapma
-            try
+            if (_jobs.TryGetValue(jobId, out var job))
             {
-                if (_concurrencySemaphore.CurrentCount < _maxConcurrent)
+                int slotsToRelease = job.AcquiredSlots;
+                job.AcquiredSlots = 0; // Prevent double release
+                
+                for (int i = 0; i < slotsToRelease; i++)
                 {
-                    _concurrencySemaphore.Release();
+                    try
+                    {
+                        if (_concurrencySemaphore.CurrentCount < _maxConcurrent)
+                        {
+                            _concurrencySemaphore.Release();
+                        }
+                    }
+                    catch (SemaphoreFullException)
+                    {
+                        // Zaten maksimum kapasitede, güvenle yoksay
+                    }
                 }
-            }
-            catch (SemaphoreFullException)
-            {
-                // Zaten maksimum kapasitede, güvenle yoksay
             }
         }
 

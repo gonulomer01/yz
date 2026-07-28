@@ -1,4 +1,4 @@
-
+﻿
 // Theme Toggle Logic
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
@@ -2980,14 +2980,21 @@ window.renderNotifications = function() {
 };
 
 window.toggleNotificationDropdown = function(e) {
-  if (e) e.stopPropagation();
-  const dropdown = document.getElementById('notification-dropdown-menu');
-  const userDropdown = document.getElementById('user-dropdown-menu');
-  if (userDropdown) userDropdown.style.display = 'none';
-  if (dropdown) {
-    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-  }
-};
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('notification-dropdown-menu');
+    const userDropdown = document.getElementById('user-dropdown-menu');
+    if (userDropdown) userDropdown.style.display = 'none';
+    if (dropdown) {
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+        notificationsArray = [];
+        saveNotifications();
+        renderNotifications();
+      } else {
+        dropdown.style.display = 'block';
+      }
+    }
+  };
 
 window.clearNotifications = function(e) {
   if (e) e.stopPropagation();
@@ -3000,7 +3007,7 @@ document.addEventListener('click', function(e) {
   const notifMenu = document.getElementById('notification-dropdown-menu');
   const notifBadge = document.querySelector('.notification-badge-container');
   if (notifMenu && notifBadge && !notifBadge.contains(e.target) && !notifMenu.contains(e.target)) {
-    notifMenu.style.display = 'none';
+    if (notifMenu.style.display === 'block') { notifMenu.style.display = 'none'; notificationsArray = []; saveNotifications(); renderNotifications(); }
   }
 });
 

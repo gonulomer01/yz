@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace yz.Services
         private static readonly List<IWebDriver> _activeDrivers = new();
         private static readonly object _driverLock = new();
         public static AsyncLocal<CancellationToken> CurrentCancellationToken { get; } = new AsyncLocal<CancellationToken>();
-        private static readonly SemaphoreSlim _concurrencySemaphore = new(3, 3);
+        private static readonly SemaphoreSlim _concurrencySemaphore = new(6, 6);
         // Socket exhaustion'ı önlemek için tek paylaşımlı HttpClient
         private static readonly System.Net.Http.HttpClient _sharedHttpClient = new()
         {

@@ -15,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ImageSyncService>();
-builder.Services.AddSingleton(new JobQueueService(maxConcurrent: 1)); // 1 concurrent generation max
+builder.Services.AddSingleton(new JobQueueService(maxConcurrent: 6)); // 6 concurrent tabs max
 builder.Services.AddScoped<AiCredentialsService>();
 builder.Services.AddScoped<AiGenerationService>();
 builder.Services.AddScoped<MultiAiSeleniumService>();

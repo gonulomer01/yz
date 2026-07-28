@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -965,7 +965,7 @@ namespace yz.Controllers
             int currentUserId = GetCurrentUserId();
             bool isAdmin = User.IsInRole("Yönetici");
             
-            var job = _jobQueueService.EnqueueJob(currentUserId);
+            var job = _jobQueueService.EnqueueJob(currentUserId, 1);
             job.Result = req; 
             
             _ = Task.Run(async () =>
@@ -1014,7 +1014,7 @@ namespace yz.Controllers
                 }
                 finally
                 {
-                    try { _jobQueueService.ReleaseSlot(); } catch { }
+                    try { _jobQueueService.ReleaseSlot(job.JobId); } catch { }
                 }
             });
 
@@ -1062,7 +1062,7 @@ namespace yz.Controllers
             string formattedPrompt = _aiGenerationService.FormatPrompt(req.Prompt, req.Style);
             string groupId = System.Guid.NewGuid().ToString("N").Substring(0, 12);
 
-            var job = _jobQueueService.EnqueueJob(currentUserId);
+            var job = _jobQueueService.EnqueueJob(currentUserId, req.TargetSite == "all" ? 3 : 1);
             var state = new TripleJobState { GroupId = groupId, Prompt = req.Prompt };
             job.Result = state;
 
@@ -1150,7 +1150,7 @@ namespace yz.Controllers
                 }
                 finally
                 {
-                    try { _jobQueueService.ReleaseSlot(); } catch { }
+                    try { _jobQueueService.ReleaseSlot(job.JobId); } catch { }
                 }
             });
 
