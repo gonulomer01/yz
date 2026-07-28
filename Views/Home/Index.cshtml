@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -111,6 +111,9 @@
           </div>
         </div>
         <div class="top-bar-right">
+          <button id="theme-toggle-btn" class="chip-btn" title="Karanlık/Aydınlık Mod Değiştir" style="padding: 8px 12px; margin-right: 15px; border-radius: 50%; font-size: 1.1rem;">
+            <i class="fa-solid fa-sun" id="theme-icon"></i>
+          </button>
           <div class="user-badge-container" style="position: relative;">
             <div class="user-badge-info" onclick="toggleUserDropdown(event)" style="cursor: pointer;" title="Menüyü Aç">
             <i class="fa-solid fa-user-shield"></i>

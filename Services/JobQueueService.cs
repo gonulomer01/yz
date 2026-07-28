@@ -22,11 +22,13 @@ namespace yz.Services
         private readonly ConcurrentDictionary<string, JobStatusInfo> _jobs = new();
         private readonly List<string> _waitingQueue = new();
         private readonly object _queueLock = new object();
+        private readonly int _maxConcurrent;
 
         // Sunucunun gücüne göre aynı anda çalışabilecek Max üretim sayısı.
         // Chrome sekmeleri ağır olduğu için genelde 1-3 arası idealdir.
         public JobQueueService(int maxConcurrent = 1)
         {
+            _maxConcurrent = maxConcurrent;
             _concurrencySemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
         }
 
@@ -96,7 +98,18 @@ namespace yz.Services
         
         public void ReleaseSlot()
         {
-            _concurrencySemaphore.Release();
+            // Çift release koruması: currentCount >= maxConcurrent ise zaten dolu, release yapma
+            try
+            {
+                if (_concurrencySemaphore.CurrentCount < _maxConcurrent)
+                {
+                    _concurrencySemaphore.Release();
+                }
+            }
+            catch (SemaphoreFullException)
+            {
+                // Zaten maksimum kapasitede, güvenle yoksay
+            }
         }
 
         public JobStatusInfo? GetStatus(string jobId)
@@ -122,6 +135,16 @@ namespace yz.Services
                     job.Status = "Tamamlandı";
                     job.Result = result;
                 }
+                
+                // 5 dakika sonra job'ı bellekten temizle
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5));
+                    if (_jobs.TryRemove(jobId, out var removedJob))
+                    {
+                        try { removedJob.Cts.Dispose(); } catch { }
+                    }
+                });
             }
         }
 
@@ -139,6 +162,23 @@ namespace yz.Services
                 {
                     job.Cts.Cancel();
                 }
+                
+                // İptal edilen job'ı bekleme kuyruğundan da kaldır
+                lock (_queueLock)
+                {
+                    _waitingQueue.Remove(jobId);
+                    UpdatePositions();
+                }
+                
+                // 5 dakika sonra job'ı bellekten temizle
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(5));
+                    if (_jobs.TryRemove(jobId, out var removedJob))
+                    {
+                        try { removedJob.Cts.Dispose(); } catch { }
+                    }
+                });
                 return true;
             }
             return false;

@@ -32,6 +32,12 @@ namespace yz.Services
         private static readonly object _driverLock = new();
         public static AsyncLocal<CancellationToken> CurrentCancellationToken { get; } = new AsyncLocal<CancellationToken>();
         private static readonly SemaphoreSlim _concurrencySemaphore = new(3, 3);
+        // Socket exhaustion'ı önlemek için tek paylaşımlı HttpClient
+        private static readonly System.Net.Http.HttpClient _sharedHttpClient = new()
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+            DefaultRequestHeaders = { { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" } }
+        };
 
         public static bool IsCancelRequested => CurrentCancellationToken.Value.IsCancellationRequested;
         public static int ActiveDriversCount
@@ -147,18 +153,47 @@ namespace yz.Services
                         sourceSite = "gemini"
                     });
                 }
-                if (result.Error == "login_required" && attempt == totalProfiles - 1)
-                {
-                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için Google giriş ekranı belirdi. Lütfen paneldeki Gemini hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
-                }
-                if (result.Error != "login_required")
+                // login_required ise hesabı Exhausted yapma, sadece sonraki hesaba geç
+                if (result.Error != "login_required" && result.Error != "cancelled")
                 {
                     accountObj.Status = "Exhausted";
+                    Console.WriteLine($"[Gemini] Hesap #{accountObj.Id} Exhausted olarak işaretlendi. Sebep: {result.Error}");
                     creds.CurrentGeminiProfileIndex = (evalIdx + 1) % totalProfiles;
                     await _credentialsService.SaveCredentialsAsync(creds);
                 }
             }
-            return (503, new { error = "Tüm Google Gemini hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+            // Tüm hesaplar tükendi - pasifleri sıfırlayıp bir kez daha dene
+            bool anyReset = false;
+            foreach (var acc in profiles) { if (acc.Status == "Exhausted") { acc.Status = "Active"; anyReset = true; } }
+            if (anyReset)
+            {
+                Console.WriteLine("[Gemini] Tüm hesaplar tükendi. Pasifleri sıfırlayıp ilk hesaptan tekrar deneniyor...");
+                creds.CurrentGeminiProfileIndex = 0;
+                await _credentialsService.SaveCredentialsAsync(creds);
+                // İlk aktif hesapla bir kez daha dene
+                var firstActive = profiles.FirstOrDefault(a => a.Status == "Active");
+                if (firstActive != null)
+                {
+                    var retryResult = await RunGeminiSession(firstActive, prompt, aspectRatio, userId, isAdmin);
+                    if (retryResult.Success)
+                    {
+                        firstActive.LastUsed = DateTime.Now.ToString("g");
+                        await _credentialsService.SaveCredentialsAsync(creds);
+                        return (200, new
+                        {
+                            success = true,
+                            image = retryResult.ImagePath,
+                            modelUsed = retryResult.ModelUsed,
+                            keyUsedId = 0,
+                            keyUsedLabel = retryResult.KeyUsedLabel,
+                            imageId = retryResult.ImageId,
+                            userId = userId,
+                            sourceSite = "gemini"
+                        });
+                    }
+                }
+            }
+            return (503, new { error = "Tüm Google Gemini hesap profillerinin kotası dolmuş veya oturumları açık değil. Hesaplar sıfırlandı, tekrar deneyin." });
         }
         public async Task<(int StatusCode, object Response)> GenerateFromChatGptAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
@@ -195,18 +230,46 @@ namespace yz.Services
                         sourceSite = "chatgpt"
                     });
                 }
-                if (result.Error == "login_required" && attempt == totalProfiles - 1)
-                {
-                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için giriş ekranı belirdi. Lütfen paneldeki ChatGPT hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
-                }
-                if (result.Error == "exhausted" || result.Error == "generation_failed")
+                // login_required ve cancelled dışındaki tüm hatalarda hesabı Exhausted yap
+                if (result.Error != "login_required" && result.Error != "cancelled")
                 {
                     accountObj.Status = "Exhausted";
+                    Console.WriteLine($"[ChatGPT] Hesap #{accountObj.Id} Exhausted olarak işaretlendi. Sebep: {result.Error}");
                     creds.CurrentChatGptProfileIndex = (evalIdx + 1) % totalProfiles;
                     await _credentialsService.SaveCredentialsAsync(creds);
                 }
             }
-            return (503, new { error = "Tüm ChatGPT hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+            // Tüm hesaplar tükendi - pasifleri sıfırlayıp bir kez daha dene
+            bool anyReset = false;
+            foreach (var acc in profiles) { if (acc.Status == "Exhausted") { acc.Status = "Active"; anyReset = true; } }
+            if (anyReset)
+            {
+                Console.WriteLine("[ChatGPT] Tüm hesaplar tükendi. Pasifleri sıfırlayıp ilk hesaptan tekrar deneniyor...");
+                creds.CurrentChatGptProfileIndex = 0;
+                await _credentialsService.SaveCredentialsAsync(creds);
+                var firstActive = profiles.FirstOrDefault(a => a.Status == "Active");
+                if (firstActive != null)
+                {
+                    var retryResult = await RunChatGptSession(firstActive, prompt, aspectRatio, userId, isAdmin);
+                    if (retryResult.Success)
+                    {
+                        firstActive.LastUsed = DateTime.Now.ToString("g");
+                        await _credentialsService.SaveCredentialsAsync(creds);
+                        return (200, new
+                        {
+                            success = true,
+                            image = retryResult.ImagePath,
+                            modelUsed = retryResult.ModelUsed,
+                            keyUsedId = 0,
+                            keyUsedLabel = retryResult.KeyUsedLabel,
+                            imageId = retryResult.ImageId,
+                            userId = userId,
+                            sourceSite = "chatgpt"
+                        });
+                    }
+                }
+            }
+            return (503, new { error = "Tüm ChatGPT hesap profillerinin kotası dolmuş veya oturumları açık değil. Hesaplar sıfırlandı, tekrar deneyin." });
         }
         public async Task<(int StatusCode, object Response)> GenerateFromCopilotAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
@@ -243,18 +306,46 @@ namespace yz.Services
                         sourceSite = "copilot"
                     });
                 }
-                if (result.Error == "login_required" && attempt == totalProfiles - 1)
-                {
-                    return (401, new { error = $"'{accountObj.AccountLabel}' profilinde oturum açılmadığı için Microsoft giriş ekranı belirdi. Lütfen paneldeki Copilot hesapları bölümünden 'Oturum Aç' butonuna basarak giriş yapın." });
-                }
-                if (result.Error != "login_required")
+                // login_required ve cancelled dışındaki tüm hatalarda hesabı Exhausted yap
+                if (result.Error != "login_required" && result.Error != "cancelled")
                 {
                     accountObj.Status = "Exhausted";
+                    Console.WriteLine($"[Copilot] Hesap #{accountObj.Id} Exhausted olarak işaretlendi. Sebep: {result.Error}");
                     creds.CurrentCopilotProfileIndex = (evalIdx + 1) % totalProfiles;
                     await _credentialsService.SaveCredentialsAsync(creds);
                 }
             }
-            return (503, new { error = "Tüm Copilot hesap profillerinin kotası dolmuş veya oturumları açık değil." });
+            // Tüm hesaplar tükendi - pasifleri sıfırlayıp bir kez daha dene
+            bool anyReset = false;
+            foreach (var acc in profiles) { if (acc.Status == "Exhausted") { acc.Status = "Active"; anyReset = true; } }
+            if (anyReset)
+            {
+                Console.WriteLine("[Copilot] Tüm hesaplar tükendi. Pasifleri sıfırlayıp ilk hesaptan tekrar deneniyor...");
+                creds.CurrentCopilotProfileIndex = 0;
+                await _credentialsService.SaveCredentialsAsync(creds);
+                var firstActive = profiles.FirstOrDefault(a => a.Status == "Active");
+                if (firstActive != null)
+                {
+                    var retryResult = await RunCopilotSession(firstActive, prompt, aspectRatio, userId, isAdmin);
+                    if (retryResult.Success)
+                    {
+                        firstActive.LastUsed = DateTime.Now.ToString("g");
+                        await _credentialsService.SaveCredentialsAsync(creds);
+                        return (200, new
+                        {
+                            success = true,
+                            image = retryResult.ImagePath,
+                            modelUsed = retryResult.ModelUsed,
+                            keyUsedId = 0,
+                            keyUsedLabel = retryResult.KeyUsedLabel,
+                            imageId = retryResult.ImageId,
+                            userId = userId,
+                            sourceSite = "copilot"
+                        });
+                    }
+                }
+            }
+            return (503, new { error = "Tüm Copilot hesap profillerinin kotası dolmuş veya oturumları açık değil. Hesaplar sıfırlandı, tekrar deneyin." });
         }
         public async Task<(int StatusCode, object Response)> GenerateTripleAsync(string prompt, string aspectRatio, int userId = 0, bool isAdmin = false)
         {
@@ -309,8 +400,15 @@ namespace yz.Services
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunGeminiSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
-                        if (result.Error == "exhausted" || result.Error == "generation_failed") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
-                        else { return result; }
+                        // login_required ve cancelled dışındaki tüm hatalarda (browser_closed dahil) Exhausted yap ve devam et
+                        if (result.Error != "login_required" && result.Error != "cancelled")
+                        {
+                            acc.Status = "Exhausted";
+                            Console.WriteLine($"[Triple-Gemini] Hesap #{acc.Id} Exhausted. Sebep: {result.Error}. Sonraki hesaba geçiliyor...");
+                            await _credentialsService.SaveCredentialsAsync(creds);
+                            continue; // Sonraki hesaba geç
+                        }
+                        if (result.Error == "login_required") continue; // login_required da sonraki hesaba geç
                     }
                 }
                 else if (site == "chatgpt")
@@ -322,8 +420,14 @@ namespace yz.Services
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunChatGptSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
-                        if (result.Error == "exhausted" || result.Error == "generation_failed") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
-                        else { return result; }
+                        if (result.Error != "login_required" && result.Error != "cancelled")
+                        {
+                            acc.Status = "Exhausted";
+                            Console.WriteLine($"[Triple-ChatGPT] Hesap #{acc.Id} Exhausted. Sebep: {result.Error}. Sonraki hesaba geçiliyor...");
+                            await _credentialsService.SaveCredentialsAsync(creds);
+                            continue;
+                        }
+                        if (result.Error == "login_required") continue;
                     }
                 }
                 else if (site == "copilot")
@@ -335,8 +439,14 @@ namespace yz.Services
                         if (acc.Status == "Exhausted") continue;
                         var result = await RunCopilotSession(acc, prompt, aspectRatio, userId, isAdmin, groupId);
                         if (result.Success) { acc.LastUsed = DateTime.Now.ToString("g"); await _credentialsService.SaveCredentialsAsync(creds); return result; }
-                        if (result.Error != "login_required") { acc.Status = "Exhausted"; await _credentialsService.SaveCredentialsAsync(creds); }
-                        else { return result; }
+                        if (result.Error != "login_required" && result.Error != "cancelled")
+                        {
+                            acc.Status = "Exhausted";
+                            Console.WriteLine($"[Triple-Copilot] Hesap #{acc.Id} Exhausted. Sebep: {result.Error}. Sonraki hesaba geçiliyor...");
+                            await _credentialsService.SaveCredentialsAsync(creds);
+                            continue;
+                        }
+                        if (result.Error == "login_required") continue;
                     }
                 }
                 return new SiteGenerationResult { Success = false, SourceSite = site, Error = "all_exhausted" };
@@ -368,7 +478,7 @@ namespace yz.Services
                 options.AddArgument("--disable-dev-shm-usage");
                 options.AddArgument("--disable-gpu");
                 options.AddArgument("--remote-allow-origins=*");
-                options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+                options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36");
 
                 bool isHeadless = _configuration?.GetValue<bool>("SeleniumSettings:HeadlessMode") ?? false;
                 if (isHeadless)
@@ -482,10 +592,7 @@ namespace yz.Services
                 try
                 {
                     Console.WriteLine($"[Selenium] HttpClient ile indirme deneniyor...");
-                    using var client = new System.Net.Http.HttpClient();
-                    client.Timeout = TimeSpan.FromSeconds(30);
-                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-                    var bytes = await client.GetByteArrayAsync(src);
+                    var bytes = await _sharedHttpClient.GetByteArrayAsync(src);
                     if (bytes.Length > 1000)
                     {
                         Console.WriteLine($"[Selenium] HttpClient ile görsel başarıyla indirildi. Boyut: {bytes.Length} byte.");
@@ -639,6 +746,11 @@ namespace yz.Services
                         }
                         if (promptBox != null) break;
                     }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[Gemini] Tarayıcı kapandı/çöktü (prompt arama): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "browser_closed" };
+                    }
                     catch { }
                 }
                 if (promptBox == null)
@@ -672,6 +784,29 @@ namespace yz.Services
                     await Task.Delay(1000);
                     try
                     {
+                        // Gemini popup/dialog limit kontrolü
+                        var popups = driver.FindElements(By.CssSelector("[role='dialog'], [role='alert'], [role='alertdialog'], .modal, div[class*='error'], div[class*='warning']"));
+                        foreach (var popup in popups)
+                        {
+                            try
+                            {
+                                if (popup.Displayed)
+                                {
+                                    string popupText = popup.Text.ToLowerInvariant();
+                                    if (popupText.Contains("limit") || popupText.Contains("quota") || popupText.Contains("rate") ||
+                                        popupText.Contains("too many") || popupText.Contains("try again") || popupText.Contains("exceeded") ||
+                                        popupText.Contains("kullanım") || popupText.Contains("sınır") || popupText.Contains("kota"))
+                                    {
+                                        errorFound = true;
+                                        Console.WriteLine($"[Gemini] Popup/Dialog limit algılandı: {popup.Text.Trim().Replace("\n", " ")}");
+                                        break;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                        if (errorFound) break;
+
                         var msgContents = driver.FindElements(By.CssSelector("message-content, model-response"));
                         var lastMsg = msgContents.LastOrDefault();
                         if (lastMsg != null)
@@ -690,6 +825,11 @@ namespace yz.Services
                             if (img.Displayed && img.Size.Width > 150 && img.Size.Height > 150) { generatedImg = img; break; }
                         }
                         if (generatedImg != null) break;
+                    }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[Gemini] Tarayıcı kapandı/çöktü (görsel bekleme): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "browser_closed" };
                     }
                     catch { }
                 }
@@ -817,6 +957,7 @@ namespace yz.Services
                     catch { }
                 }
             }
+            catch (WebDriverException) { throw; } // Tarayıcı kapandıysa üst katmana ilet
             catch { }
             return false;
         }
@@ -848,6 +989,11 @@ namespace yz.Services
                             if (el.Displayed && el.Enabled) { promptBox = el; break; }
                         }
                         if (promptBox != null) break;
+                    }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[ChatGPT] Tarayıcı kapandı/çöktü (prompt arama): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "browser_closed" };
                     }
                     catch { }
                 }
@@ -937,6 +1083,11 @@ namespace yz.Services
                             break;
                         }
                     }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[ChatGPT] Tarayıcı kapandı/çöktü (görsel bekleme): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "browser_closed" };
+                    }
                     catch { }
                 }
                 if (errorFound)
@@ -958,10 +1109,7 @@ namespace yz.Services
                     {
                         try
                         {
-                            using var client = new System.Net.Http.HttpClient();
-                            client.Timeout = TimeSpan.FromSeconds(30);
-                            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-                            imageBytes = await client.GetByteArrayAsync(src);
+                            imageBytes = await _sharedHttpClient.GetByteArrayAsync(src);
                             Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
                         }
                         catch (Exception httpEx)
@@ -1051,6 +1199,11 @@ namespace yz.Services
                             if (el.Displayed && el.Enabled) { promptBox = el; break; }
                         }
                         if (promptBox != null) break;
+                    }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[Copilot] Tarayıcı kapandı/çöktü (prompt arama): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "browser_closed" };
                     }
                     catch { }
                 }
@@ -1225,6 +1378,11 @@ namespace yz.Services
                             }
                             if (imageBytes != null && imageBytes.Length > 1000) break;
                         }
+                    }
+                    catch (WebDriverException wdEx)
+                    {
+                        Console.WriteLine($"[Copilot] Tarayıcı kapandı/çöktü (görsel bekleme): {wdEx.Message}");
+                        return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "browser_closed" };
                     }
                     catch { }
                 }

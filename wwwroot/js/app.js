@@ -1,4 +1,41 @@
-﻿
+
+// Theme Toggle Logic
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
+}
+initTheme();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const themeIcon = document.getElementById('theme-icon');
+  
+  function updateThemeIcon() {
+    if (document.body.classList.contains('light-mode')) {
+      themeIcon.classList.remove('fa-sun');
+      themeIcon.classList.add('fa-moon');
+    } else {
+      themeIcon.classList.remove('fa-moon');
+      themeIcon.classList.add('fa-sun');
+    }
+  }
+
+  if (themeToggleBtn && themeIcon) {
+    updateThemeIcon();
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      if (document.body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.setItem('theme', 'dark');
+      }
+      updateThemeIcon();
+    });
+  }
+});
+
 // Dropdown Toggle
 function toggleUserDropdown(e) {
   e.stopPropagation();
@@ -143,6 +180,7 @@ let geminiAccountsData = [];
 let currentGeminiProfileIndex = 0;
 let isGenerating = false;
 let currentAbortController = null;
+let currentJobId = null;
 const samplePrompts = [
   "Kayseri Erciyes Dağı'nın zirvesinde kar yağışı altında kuzey ışıkları, sinematik ultra detaylı manzara",
   "Melikgazi tarihi sokaklarında gün batımı, taş konaklar ve sıcak sarı sokak lambalarının dramatik ışığı",
@@ -324,6 +362,7 @@ if (btnRetry) {
 function resetToInitialState(isSuccess = false) {
   isGenerating = false;
   currentAbortController = null;
+  currentJobId = null;
 
   if (btnGenerate) {
     btnGenerate.disabled = false;
@@ -352,8 +391,13 @@ async function cancelGeneration() {
     currentAbortController = null;
   }
   try {
-    await fetch('/api/cancel', { method: 'POST' });
+    await fetch('/api/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: currentJobId })
+    });
   } catch {}
+  currentJobId = null;
   resetToInitialState(false);
   showToast('Üretim işlemi durduruldu ve başlangıç konumuna geçildi.', 'info');
 }
@@ -424,16 +468,37 @@ async function handleGenerate(e) {
     }
     const initialJobData = await res.json();
     let jobId = initialJobData.jobId;
+    currentJobId = jobId;
+    
+    let pollRetryCount = 0;
+    const maxPollRetries = 5;
     
     while (isGenerating) {
-      const statusRes = await fetch(`/api/job-status/${jobId}`);
-      if (!statusRes.ok) throw new Error('Durum kontrol edilemedi.');
-      const statusData = await statusRes.json();
+      let statusData;
+      try {
+        const statusRes = await fetch(`/api/job-status/${jobId}`);
+        if (!statusRes.ok) {
+          pollRetryCount++;
+          if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile bağlantı koptu. Lütfen sayfayı yenileyip tekrar deneyin.');
+          if (loadingStatus) loadingStatus.textContent = `Bağlantı yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        statusData = await statusRes.json();
+        pollRetryCount = 0; // Başarılı bağlantı, sayacı sıfırla
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') throw fetchErr;
+        pollRetryCount++;
+        if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile bağlantı koptu. Lütfen sayfayı yenileyip tekrar deneyin.');
+        if (loadingStatus) loadingStatus.textContent = `Bağlantı yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
       
-      if (statusData.status.startsWith('Beklemede')) {
-         loadingStatus.textContent = statusData.status;
-      } else if (statusData.status === 'İşleniyor') {
-         loadingStatus.textContent = 'Üretiliyor... Lütfen bekleyin.';
+      if (statusData.status && statusData.status.startsWith('Beklemede')) {
+         if (loadingStatus) loadingStatus.textContent = `⏳ Sırada bekleniyor... (Sıranız: ${statusData.position || '?'})`;
+      } else if (statusData.status === 'Üretiliyor') {
+         if (loadingStatus) loadingStatus.textContent = '🎨 Üretiliyor... Lütfen bekleyin.';
       } else if (statusData.status === 'Tamamlandı') {
          const resultData = statusData.result;
          isSuccess = true;
@@ -443,7 +508,13 @@ async function handleGenerate(e) {
          if (isAdmin) await fetchKeys();
          break;
       } else if (statusData.status === 'Hata' || statusData.status === 'İptal Edildi') {
-         throw new Error(statusData.result || statusData.status);
+         // Hata sonucu obje olabilir: { error: "mesaj" }
+         let errMsg = statusData.status;
+         if (statusData.result) {
+           if (typeof statusData.result === 'string') errMsg = statusData.result;
+           else if (statusData.result.error) errMsg = statusData.result.error;
+         }
+         throw new Error(errMsg);
       }
       await new Promise(r => setTimeout(r, 2000));
     }

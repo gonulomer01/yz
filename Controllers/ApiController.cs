@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using yz.Data;
 using yz.Models;
 using yz.Services;
@@ -22,8 +23,9 @@ namespace yz.Controllers
         private readonly MultiAiSeleniumService _multiAiSeleniumService;
         private readonly AiCredentialsService _credentialsService;
         private readonly JobQueueService _jobQueueService;
+        private readonly IServiceScopeFactory _scopeFactory;
         
-        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService, JobQueueService jobQueueService)
+        public ApiController(ApplicationDbContext context, AiGenerationService aiGenerationService, ImageSyncService imageSyncService, MultiAiSeleniumService multiAiSeleniumService, AiCredentialsService credentialsService, JobQueueService jobQueueService, IServiceScopeFactory scopeFactory)
         {
             _context = context;
             _aiGenerationService = aiGenerationService;
@@ -31,6 +33,7 @@ namespace yz.Controllers
             _multiAiSeleniumService = multiAiSeleniumService;
             _credentialsService = credentialsService;
             _jobQueueService = jobQueueService;
+            _scopeFactory = scopeFactory;
         }
         private int GetCurrentUserId()
         {
@@ -897,12 +900,36 @@ namespace yz.Controllers
 
                     MultiAiSeleniumService.CurrentCancellationToken.Value = job.Cts.Token;
                     
-                    var (statusCode, response) = await _aiGenerationService.GenerateAsync(req, currentUserId, isAdmin);
+                    // Scoped servisleri arka plan task'ında güvenle kullanmak için yeni scope oluştur
+                    using var scope = _scopeFactory.CreateScope();
+                    var scopedGenerationService = scope.ServiceProvider.GetRequiredService<AiGenerationService>();
+                    
+                    var (statusCode, response) = await scopedGenerationService.GenerateAsync(req, currentUserId, isAdmin);
                     
                     if (statusCode == 200)
+                    {
                         _jobQueueService.CompleteJob(job.JobId, response);
+                    }
                     else
-                        _jobQueueService.CompleteJob(job.JobId, error: "Hata: " + response?.ToString());
+                    {
+                        // Hata mesajını düzgün çıkar
+                        string errorMsg = "Bilinmeyen hata";
+                        try
+                        {
+                            var json = System.Text.Json.JsonSerializer.Serialize(response);
+                            var doc = System.Text.Json.JsonDocument.Parse(json);
+                            if (doc.RootElement.TryGetProperty("error", out var errProp))
+                                errorMsg = errProp.GetString() ?? errorMsg;
+                            else
+                                errorMsg = json;
+                        }
+                        catch { errorMsg = response?.ToString() ?? errorMsg; }
+                        _jobQueueService.CompleteJob(job.JobId, error: errorMsg);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _jobQueueService.CompleteJob(job.JobId, error: "İşlem kullanıcı tarafından iptal edildi.");
                 }
                 catch (Exception ex)
                 {
@@ -910,7 +937,7 @@ namespace yz.Controllers
                 }
                 finally
                 {
-                    _jobQueueService.ReleaseSlot();
+                    try { _jobQueueService.ReleaseSlot(); } catch { }
                 }
             });
 
@@ -950,106 +977,139 @@ namespace yz.Controllers
             await WriteSseEventAsync(Response, "start", new { groupId, prompt });
 
             var job = _jobQueueService.EnqueueJob(currentUserId);
-            var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, job.Cts.Token);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, job.Cts.Token);
             MultiAiSeleniumService.CurrentCancellationToken.Value = linkedCts.Token;
 
             bool acquired = false;
-            while (!acquired)
+            try
             {
-                if (linkedCts.IsCancellationRequested) { _jobQueueService.CancelJob(job.JobId); return; }
-                acquired = await _jobQueueService.TryWaitInQueueAsync(job.JobId, 2000);
-                if (!acquired)
+                while (!acquired)
                 {
-                    await WriteSseEventAsync(Response, "queue", new { position = job.Position, status = $"Beklemede (Sıranız: {job.Position})" });
+                    if (linkedCts.IsCancellationRequested) { _jobQueueService.CancelJob(job.JobId); return; }
+                    acquired = await _jobQueueService.TryWaitInQueueAsync(job.JobId, 2000);
+                    if (!acquired)
+                    {
+                        await WriteSseEventAsync(Response, "queue", new { position = job.Position, status = $"Beklemede (Sıranız: {job.Position})" });
+                    }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                _jobQueueService.CancelJob(job.JobId);
+                return;
+            }
 
-            if (linkedCts.IsCancellationRequested) { _jobQueueService.ReleaseSlot(); return; }
+            if (linkedCts.IsCancellationRequested) { try { _jobQueueService.ReleaseSlot(); } catch { } return; }
 
             try
             {
                 var pending = new List<Task<SiteGenerationResult>>();
 
+                // Her site task'ı için ayrı scope oluştur - paralel DbContext erişimini önle
                 if (targetSite == "all" || targetSite == "gemini")
-                    pending.Add(_multiAiSeleniumService.GenerateSiteForTripleAsync("gemini", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId));
+                {
+                    pending.Add(Task.Run(async () =>
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                        MultiAiSeleniumService.CurrentCancellationToken.Value = linkedCts.Token;
+                        return await svc.GenerateSiteForTripleAsync("gemini", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+                    }));
+                }
                 
                 if (targetSite == "all" || targetSite == "chatgpt")
-                    pending.Add(_multiAiSeleniumService.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId));
+                {
+                    pending.Add(Task.Run(async () =>
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                        MultiAiSeleniumService.CurrentCancellationToken.Value = linkedCts.Token;
+                        return await svc.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+                    }));
+                }
 
                 if (targetSite == "all" || targetSite == "copilot")
-                    pending.Add(_multiAiSeleniumService.GenerateSiteForTripleAsync("copilot", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId));
+                {
+                    pending.Add(Task.Run(async () =>
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                        MultiAiSeleniumService.CurrentCancellationToken.Value = linkedCts.Token;
+                        return await svc.GenerateSiteForTripleAsync("copilot", formattedPrompt, aspectRatio, currentUserId, isAdmin, groupId);
+                    }));
+                }
 
                 var successResults = new List<SiteGenerationResult>();
-            var failedResults = new List<SiteGenerationResult>();
+                var failedResults = new List<SiteGenerationResult>();
 
-            while (pending.Count > 0)
-            {
-                var completedTask = await Task.WhenAny(pending);
-                pending.Remove(completedTask);
+                while (pending.Count > 0)
+                {
+                    var completedTask = await Task.WhenAny(pending);
+                    pending.Remove(completedTask);
 
-                if (linkedCts.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                SiteGenerationResult result;
-                try
-                {
-                    result = await completedTask;
-                }
-                catch (Exception ex)
-                {
-                    result = new SiteGenerationResult { Success = false, Error = ex.Message };
-                }
-
-                if (result.Success)
-                {
-                    successResults.Add(result);
-                    await WriteSseEventAsync(Response, "progress", new
+                    if (linkedCts.IsCancellationRequested)
                     {
-                        site = result.SourceSite,
-                        status = "success",
-                        image = result.ImagePath,
-                        modelUsed = result.ModelUsed,
-                        keyUsedLabel = result.KeyUsedLabel,
-                        imageId = result.ImageId
-                    });
-                }
-                else
-                {
-                    failedResults.Add(result);
-                    await WriteSseEventAsync(Response, "progress", new
-                    {
-                        site = result.SourceSite,
-                        status = "failed",
-                        error = result.Error ?? "Üretim başarısız"
-                    });
-                }
-            }
+                        break;
+                    }
 
-            await WriteSseEventAsync(Response, "complete", new
-            {
-                groupId,
-                totalSuccess = successResults.Count,
-                totalFailed = failedResults.Count,
-                results = successResults.Select(r => new
+                    SiteGenerationResult result;
+                    try
+                    {
+                        result = await completedTask;
+                    }
+                    catch (Exception ex)
+                    {
+                        result = new SiteGenerationResult { Success = false, Error = ex.Message };
+                    }
+
+                    if (result.Success)
+                    {
+                        successResults.Add(result);
+                        await WriteSseEventAsync(Response, "progress", new
+                        {
+                            site = result.SourceSite,
+                            status = "success",
+                            image = result.ImagePath,
+                            modelUsed = result.ModelUsed,
+                            keyUsedLabel = result.KeyUsedLabel,
+                            imageId = result.ImageId
+                        });
+                    }
+                    else
+                    {
+                        failedResults.Add(result);
+                        await WriteSseEventAsync(Response, "progress", new
+                        {
+                            site = result.SourceSite,
+                            status = "failed",
+                            error = result.Error ?? "Üretim başarısız"
+                        });
+                    }
+                }
+
+                await WriteSseEventAsync(Response, "complete", new
                 {
-                    image = r.ImagePath,
-                    modelUsed = r.ModelUsed,
-                    keyUsedLabel = r.KeyUsedLabel,
-                    imageId = r.ImageId,
-                    sourceSite = r.SourceSite
-                }),
-                failures = failedResults.Select(f => new
-                {
-                    sourceSite = f.SourceSite,
-                    error = f.Error
-                })
-            });
+                    groupId,
+                    totalSuccess = successResults.Count,
+                    totalFailed = failedResults.Count,
+                    results = successResults.Select(r => new
+                    {
+                        image = r.ImagePath,
+                        modelUsed = r.ModelUsed,
+                        keyUsedLabel = r.KeyUsedLabel,
+                        imageId = r.ImageId,
+                        sourceSite = r.SourceSite
+                    }),
+                    failures = failedResults.Select(f => new
+                    {
+                        sourceSite = f.SourceSite,
+                        error = f.Error
+                    })
+                });
             }
             finally
             {
-                _jobQueueService.ReleaseSlot();
+                try { _jobQueueService.ReleaseSlot(); } catch { }
             }
         }
 
