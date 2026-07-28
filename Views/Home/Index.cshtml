@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -210,7 +210,7 @@
           <div id="canvas-error" class="canvas-state" style="display:none">
             <i class="fa-solid fa-circle-exclamation error-icon"></i>
             <p id="error-message" style="font-weight: 600; font-size: 1.05rem; margin-bottom: 6px;">İşlem sırasında bir hata oluştu.</p>
-            <button id="btn-retry" class="action-btn" style="background: var(--color-primary); color:#fff; border-color:var(--color-primary); margin-top: 14px;">
+            <button id="btn-retry" class="action-btn primary-btn" style="margin-top: 14px;">
               <i class="fa-solid fa-rotate-right"></i> Tekrar Dene
             </button>
           </div>
@@ -380,7 +380,7 @@
                   </button>
                 </div>
               </div>
-              <div id="bulk-import-status" style="display:none; margin-top: 10px; font-size: 0.9rem; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+              <div id="bulk-import-status" style="display:none; margin-top: 10px; font-size: 0.9rem; padding: 10px; background: var(--bg-hover-light); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main);">
                  <i class="fa-solid fa-circle-notch fa-spin"></i> İşlem arka planda devam ediyor...
               </div>
             </div>
@@ -430,15 +430,15 @@
                   <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
 
 
-                    <div style="display:flex; align-items:center; gap:5px; border:1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.2);">
-                      <label for="target-profile-input" style="color:#bbb; font-size:0.8rem; margin:0;">Hedef Profil:</label>
-                      <input type="number" id="target-profile-input" placeholder="Oto" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:70px; outline:none;" title="Hangi numaralı ChatGPT profilinin oluşturulacağını belirler. Boş bırakırsanız otomatik sıradaki numarayı alır." />
+                    <div style="display:flex; align-items:center; gap:5px; border:1px solid var(--border-color); padding: 4px 8px; border-radius: 8px; background: var(--bg-hover-light);">
+                      <label for="target-profile-input" style="color:var(--text-muted); font-size:0.8rem; margin:0;">Hedef Profil:</label>
+                      <input type="number" id="target-profile-input" placeholder="Oto" style="background:transparent; border:1px solid var(--border-color); color:var(--text-main); padding:4px 8px; border-radius:4px; font-size:0.85rem; width:70px; outline:none;" title="Hangi numaralı ChatGPT profilinin oluşturulacağını belirler. Boş bırakırsanız otomatik sıradaki numarayı alır." />
                       
-                      <label for="gmail-no-input" style="color:#bbb; font-size:0.8rem; margin:0 0 0 5px;">Gmail No:</label>
-                      <input type="number" id="gmail-no-input" placeholder="Örn: 3" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="Kaç numaralı Gmail profilinin açılacağını belirtir." />
+                      <label for="gmail-no-input" style="color:var(--text-muted); font-size:0.8rem; margin:0 0 0 5px;">Gmail No:</label>
+                      <input type="number" id="gmail-no-input" placeholder="Örn: 3" style="background:transparent; border:1px solid var(--border-color); color:var(--text-main); padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="Kaç numaralı Gmail profilinin açılacağını belirtir." />
                       
-                      <label for="alias-no-input" style="color:#bbb; font-size:0.8rem; margin:0 0 0 5px;">Alias No:</label>
-                      <input type="number" id="alias-no-input" placeholder="Örn: 5" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="E-postanın sonuna eklenecek +sayı değerini belirtir." />
+                      <label for="alias-no-input" style="color:var(--text-muted); font-size:0.8rem; margin:0 0 0 5px;">Alias No:</label>
+                      <input type="number" id="alias-no-input" placeholder="Örn: 5" style="background:transparent; border:1px solid var(--border-color); color:var(--text-main); padding:4px 8px; border-radius:4px; font-size:0.85rem; width:75px; outline:none;" title="E-postanın sonuna eklenecek +sayı değerini belirtir." />
                       
                       <button id="btn-add-chatgpt-gmail" class="action-btn primary-btn" style="background: linear-gradient(135deg, #10a37f, #0d8a6a); font-weight:700; padding: 4px 12px; margin-left:5px;" title="Belirtilen değerlerle otomatik ChatGPT hesabı oluşturur">
                         <i class="fa-brands fa-google"></i> Oluştur
@@ -824,7 +824,7 @@
           <button id="btn-triple-group-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div style="padding: 15px; flex: 1; overflow-y: auto;">
-          <p style="margin-bottom: 15px; color: var(--color-text-muted);" id="triple-group-prompt"></p>
+          <p style="margin-bottom: 15px; color: var(--text-muted);" id="triple-group-prompt"></p>
           <div id="triple-group-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; overflow-x: auto;">
           </div>
         </div>
@@ -842,8 +842,8 @@
           <button id="btn-single-image-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div style="padding: 15px; flex: 1; overflow-y: auto;">
-          <p style="margin-bottom: 15px; color: var(--color-text-muted);" id="single-image-prompt"></p>
-          <div id="single-image-container" style="display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+          <p style="margin-bottom: 15px; color: var(--text-muted);" id="single-image-prompt"></p>
+          <div id="single-image-container" style="display: flex; justify-content: center; align-items: center; background: var(--bg-hover-light); border-radius: 8px; padding: 10px;">
           </div>
         </div>
         <div class="modal-actions" style="margin-top: 0;">
@@ -977,13 +977,13 @@
   <div id="collectionAddModalOverlay" class="modal-overlay" style="display:none;">
     <div class="modal-content glass-card" style="width:90%; max-width:800px; max-height:90vh; display:flex; flex-direction:column;">
       <div class="modal-header">
-        <h3 style="color:#fff;"><i class="fa-solid fa-images"></i> Koleksiyona Görsel Seç</h3>
-        <button class="btn-close" onclick="closeCollectionAddModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="color:var(--text-main);"><i class="fa-solid fa-images"></i> Koleksiyona Görsel Seç</h3>
+        <button class="modal-close" onclick="closeCollectionAddModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body" style="overflow-y:auto; flex:1; padding:20px;">
         <div id="collectionAddGrid" class="gallery-grid-main"></div>
       </div>
-      <div class="modal-footer" style="padding:15px; border-top:1px solid rgba(255,255,255,0.1); text-align:right;">
+      <div class="modal-footer" style="padding:15px; border-top:1px solid var(--border-color); text-align:right;">
         <button class="btn btn-outline" onclick="closeCollectionAddModal()">İptal</button>
         <button id="btnConfirmCollectionAdd" class="btn btn-primary" style="margin-left:10px;">
             <i class="fa-solid fa-check"></i> Ekle
@@ -1020,5 +1020,6 @@
   <script src="~/js/app.js" asp-append-version="true"></script>
 </body>
 </html>
+
 
 
