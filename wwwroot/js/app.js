@@ -10,28 +10,19 @@ initTheme();
 
 document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
-  const themeIcon = document.getElementById('theme-icon');
   
-  function updateThemeIcon() {
-    if (document.body.classList.contains('light-mode')) {
-      themeIcon.classList.remove('fa-sun');
-      themeIcon.classList.add('fa-moon');
-    } else {
-      themeIcon.classList.remove('fa-moon');
-      themeIcon.classList.add('fa-sun');
-    }
-  }
+  if (themeToggleBtn) {
+    // Set initial checkbox state based on body class
+    themeToggleBtn.checked = document.body.classList.contains('light-mode');
 
-  if (themeToggleBtn && themeIcon) {
-    updateThemeIcon();
-    themeToggleBtn.addEventListener('click', () => {
-      document.body.classList.toggle('light-mode');
-      if (document.body.classList.contains('light-mode')) {
+    themeToggleBtn.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.body.classList.add('light-mode');
         localStorage.setItem('theme', 'light');
       } else {
+        document.body.classList.remove('light-mode');
         localStorage.setItem('theme', 'dark');
       }
-      updateThemeIcon();
     });
   }
 });
