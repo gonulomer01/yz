@@ -3249,4 +3249,7 @@ body:not(.light-mode) .action-btn.primary-btn {
     .modal-box, .fullscreen-lightbox-content {
         max-height: calc(100vh - 100px) !important; 
     }
+    .gallery-item .btn-del-img {
+        opacity: 1 !important;
+    }
 }

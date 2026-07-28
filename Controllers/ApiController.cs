@@ -748,7 +748,7 @@ namespace yz.Controllers
             _imageSyncService.SyncDatabaseWithFilesystem(_context);
             int currentUserId = GetCurrentUserId();
             var dbImages = await _context.GeneratedImages
-                .Where(img => img.UserId == currentUserId)
+                .Where(img => img.UserId == currentUserId && !img.IsDeleted)
                 .OrderByDescending(img => img.CreatedAt)
                 .ToListAsync();
             var images = dbImages.Select(img => new

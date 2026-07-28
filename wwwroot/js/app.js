@@ -2989,24 +2989,78 @@ window.renderTrash = async function() {
       return;
     }
     grid.innerHTML = '';
+    window.trashData = data;
+
+    const groupedImages = [];
+    const groupMap = new Map();
+  
     data.forEach(item => {
-       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
-       const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
-       
-       const div = document.createElement('div');
-       div.className = 'gallery-item';
-       div.innerHTML = `
-         <img src="${item.image}" alt="Trash">
-         <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
-         <button class="btn-del-img" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})">
-           <i class="fa-solid fa-trash-can"></i>
-         </button>
-       `;
-       div.addEventListener('click', (e) => {
-         if (e.target.closest('.btn-del-img')) return;
-         openSingleImageModal(item, false);
-       });
-       grid.appendChild(div);
+      if (item.groupId) {
+        if (!groupMap.has(item.groupId)) {
+          const groupObj = {
+            isGroup: true,
+            groupId: item.groupId,
+            prompt: item.prompt,
+            createdAt: item.createdAt,
+            items: []
+          };
+          groupMap.set(item.groupId, groupObj);
+          groupedImages.push(groupObj);
+        }
+        groupMap.get(item.groupId).items.push(item);
+      } else {
+        groupedImages.push(item);
+      }
+    });
+
+    groupedImages.forEach(groupOrItem => {
+      const div = document.createElement('div');
+      div.className = 'gallery-item';
+      if (groupOrItem.isGroup) {
+         div.style.aspectRatio = '1 / 1';
+         div.innerHTML = `
+           <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
+             ${groupOrItem.items.map((it, idx) => {
+                if (idx > 2) return '';
+                return '<img src="' + it.image + '" alt="Trash" style="width:100%; height:100%; object-fit:cover; opacity: 0.85;">';
+             }).join('')}
+           </div>
+           <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Üçlü Üretim</div>
+           <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:center; align-items:center; padding: 10px; gap: 8px;">
+               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteGroup(event, '${groupOrItem.groupId}')" style="background: rgba(239, 68, 68, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+                 <i class="fa-solid fa-trash-can"></i>
+               </button>
+               <button class="action-btn" title="Geri Yükle" onclick="restoreGroup(event, '${groupOrItem.groupId}')" style="background: rgba(16, 185, 129, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+                 <i class="fa-solid fa-rotate-left"></i>
+               </button>
+           </div>
+         `;
+         div.addEventListener('click', (e) => {
+           if (e.target.closest('.action-btn')) return;
+           openTripleGroupModal(groupOrItem.groupId, window.trashData, false);
+         });
+      } else {
+         const item = groupOrItem;
+         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+         const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
+         div.innerHTML = `
+           <img src="${item.image}" alt="Trash">
+           <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
+           <div class="gallery-overlay" style="z-index: 10; display:flex; justify-content:center; align-items:center; gap: 8px;">
+               <button class="action-btn" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})" style="background: rgba(239, 68, 68, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+                 <i class="fa-solid fa-trash-can"></i>
+               </button>
+               <button class="action-btn" title="Geri Yükle" onclick="restoreImage(event, ${item.id})" style="background: rgba(16, 185, 129, 0.9); color: #fff; width: 40px; height: 40px; border-radius: 50%;">
+                 <i class="fa-solid fa-rotate-left"></i>
+               </button>
+           </div>
+         `;
+         div.addEventListener('click', (e) => {
+           if (e.target.closest('.action-btn')) return;
+           openSingleImageModal(item, false);
+         });
+      }
+      grid.appendChild(div);
     });
   } catch(e) {
     console.error(e);
@@ -3038,6 +3092,36 @@ window.permanentDeleteImage = async function(e, id) {
     }
   } catch(err) {
     showToast('Hata oluştu.', 'error');
+  }
+};
+
+window.restoreGroup = async function(e, groupId) {
+  e.stopPropagation();
+  const groupItems = (window.trashData || []).filter(i => i.groupId === groupId);
+  try {
+    for (const item of groupItems) {
+      await fetch('/api/images/' + item.id + '/restore', { method: 'POST' });
+    }
+    showToast('Çoklu üretim geri getirildi!', 'success');
+    renderTrash();
+    fetchImages(); // refresh cache
+  } catch (err) {
+    showToast('Geri getirilirken hata oluştu.', 'error');
+  }
+};
+
+window.permanentDeleteGroup = async function(e, groupId) {
+  e.stopPropagation();
+  if(!confirm('Bu çoklu üretimi ve içindeki tüm görselleri kalıcı olarak silmek istediğinize emin misiniz?')) return;
+  const groupItems = (window.trashData || []).filter(i => i.groupId === groupId);
+  try {
+    for (const item of groupItems) {
+      await fetch('/api/images/' + item.id + '/permanent', { method: 'DELETE' });
+    }
+    showToast('Çoklu üretim kalıcı olarak silindi!', 'success');
+    renderTrash();
+  } catch (err) {
+    showToast('Silinirken hata oluştu.', 'error');
   }
 };
 
