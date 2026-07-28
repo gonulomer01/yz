@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -3119,11 +3119,22 @@ body.light-mode .melikgazi-slogan span {
 }
 
 /* --- STUDIO HEIGHT REDUCTION --- */
-.studio-feed-container {
-    max-height: 540px !important;
+@media (min-width: 769px) {
+    .studio-feed-container {
+        max-height: 380px !important;
+    }
+    .canvas-area {
+        min-height: 180px !important;
+    }
 }
-.canvas-area {
-    min-height: 320px !important;
+@media (max-width: 768px) {
+    .studio-feed-container {
+        max-height: 200px !important;
+        padding: 10px !important;
+    }
+    .canvas-area {
+        min-height: 80px !important;
+    }
 }
 
 /* --- THEME TOGGLE DARK MODE VISIBILITY --- */
