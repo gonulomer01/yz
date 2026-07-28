@@ -1116,7 +1116,12 @@ namespace yz.Controllers
                                 var res = await svc.GenerateSiteForTripleAsync("gemini", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
                                 _jobQueueService.CompleteJob(geminiJobId, res);
                                 return res;
-                            } catch { _jobQueueService.CompleteJob(geminiJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "Hata" }; }
+                            } catch { 
+                                _jobQueueService.CompleteJob(geminiJobId, error: "Hata"); 
+                                return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "Hata" }; 
+                            } finally {
+                                try { _jobQueueService.ReleaseSlot(geminiJobId); } catch { }
+                            }
                         }));
                     }
                     if (state.SubJobIds.TryGetValue("chatgpt", out var chatgptJobId))
@@ -1133,7 +1138,12 @@ namespace yz.Controllers
                                 var res = await svc.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
                                 _jobQueueService.CompleteJob(chatgptJobId, res);
                                 return res;
-                            } catch { _jobQueueService.CompleteJob(chatgptJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "Hata" }; }
+                            } catch { 
+                                _jobQueueService.CompleteJob(chatgptJobId, error: "Hata"); 
+                                return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "Hata" }; 
+                            } finally {
+                                try { _jobQueueService.ReleaseSlot(chatgptJobId); } catch { }
+                            }
                         }));
                     }
 
@@ -1151,7 +1161,12 @@ namespace yz.Controllers
                                 var res = await svc.GenerateSiteForTripleAsync("copilot", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
                                 _jobQueueService.CompleteJob(copilotJobId, res);
                                 return res;
-                            } catch { _jobQueueService.CompleteJob(copilotJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "Hata" }; }
+                            } catch { 
+                                _jobQueueService.CompleteJob(copilotJobId, error: "Hata"); 
+                                return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "Hata" }; 
+                            } finally {
+                                try { _jobQueueService.ReleaseSlot(copilotJobId); } catch { }
+                            }
                         }));
                     }
 

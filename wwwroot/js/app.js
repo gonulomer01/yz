@@ -1,4 +1,4 @@
-
+﻿
 // Theme Toggle Logic
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
@@ -3289,13 +3289,13 @@ function renderTripleCards(targetSite) {
   let headerTitle = 'Çoklu Üretim Akışı';
   let cardsHtml = '';
   if (targetSite === 'all' || targetSite === 'gemini') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem; color:#aaa;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'chatgpt') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem; color:#aaa;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'copilot') {
-      cardsHtml += `<div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>`;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>`;
   }
   wrapper.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;"><h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4><div id="triple-stream-actions"></div></div><div class="triple-stream-grid" id="triple-cards-grid">${cardsHtml}</div>`;
   feedList.innerHTML = '';
@@ -3443,7 +3443,7 @@ async function checkActiveJobs() {
               renderTripleCards(activeJob.targetSite);
           }
           
-          showToast('Arka planda devam eden üretiminiz yüklendi.', 'info');
+          
           pollJob(activeJob.id, activeJob.type).catch(err => {
               showToast(err.message, 'error');
               localStorage.removeItem('yz_active_job');
