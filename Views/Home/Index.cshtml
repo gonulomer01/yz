@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -1021,4 +1021,5 @@
   <script src="~/js/app.js" asp-append-version="true"></script>
 </body>
 </html>
+
 
