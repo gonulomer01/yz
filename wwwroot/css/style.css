@@ -3017,3 +3017,46 @@ input#theme-toggle-btn:checked + .theme-slider .theme-slider-thumb {
   .prompt-container { margin-top: 10px !important; }
   #canvas-loading { padding: 20px !important; }
 }
+
+/* Login Light Mode Overrides */
+.light-mode.auth-body {
+    background-color: var(--bg-main);
+    color: var(--text-color);
+}
+.light-mode .auth-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+.light-mode .card-title-white {
+    color: var(--text-color) !important;
+}
+.light-mode .roadmap-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    color: var(--text-color);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.light-mode .step-title {
+    color: var(--color-primary);
+}
+.light-mode .step-desc {
+    color: var(--text-muted);
+}
+.light-mode .melikgazi-slogan span {
+    color: var(--color-primary);
+    text-shadow: none;
+}
+.light-mode .step-node-badge {
+    background: var(--bg-card);
+    color: var(--color-primary);
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .mobile-only-logo-container {
+        display: block !important;
+    }
+    .mobile-only-logo-container .mobile-only-logo {
+        display: inline-block !important;
+    }
+}
