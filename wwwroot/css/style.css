@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -3208,4 +3208,30 @@ body.light-mode .u-step-text span {
 }
 .dropdown-item.dropdown-logout:hover {
     background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* --- MODAL Z-INDEX FIX (OVERLAPPING NAVBAR) --- */
+.modal-overlay, .fullscreen-lightbox-overlay {
+    z-index: 100000 !important;
+}
+
+/* --- MOBILE GALLERY GRID & TRIPLE MODAL OVERFLOW FIX --- */
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    .gallery-item-img {
+        height: 150px !important;
+    }
+    
+    #triple-group-container {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    #triple-group-container img {
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 12px !important;
+    }
 }
