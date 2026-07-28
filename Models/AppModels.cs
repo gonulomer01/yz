@@ -50,6 +50,7 @@ namespace yz.Models
         public string SourceSite { get; set; } = "gemini";
         public bool IsFavorite { get; set; } = false;
         public string? FolderName { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 
     public class User

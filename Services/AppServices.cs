@@ -122,6 +122,9 @@ namespace yz.Services
                 db.Database.ExecuteSqlRaw(@"
             IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'UserId')
                 ALTER TABLE GeneratedImages ADD UserId INT NOT NULL DEFAULT 0;");
+                db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'IsDeleted')
+                ALTER TABLE GeneratedImages ADD IsDeleted BIT NOT NULL DEFAULT 0;");
                 var adminExists = db.Users.Any(u => u.Username == "admin");
                 if (!adminExists)
                 {

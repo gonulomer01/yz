@@ -684,7 +684,15 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                 actionsContainer.appendChild(btnBulkDownload);
               }
               showToast(`Üçlü üretim tamamlandı! (${succeededImages.length}/${succeededImages.length + (payload.failures?.length || 0)} görsel başarılı)`);
-              if (succeededImages.length > 0) { lastGeneratedGroupId = groupId || 'multi'; updateNotificationBadge(unreadNotificationCount + 1); }
+              if (succeededImages.length > 0) { 
+                notificationsArray.unshift({
+                  id: Date.now(),
+                  groupId: groupId || 'multi',
+                  text: `${succeededImages.length} görsel üretildi.`,
+                  time: new Date().toLocaleTimeString()
+                });
+                updateNotificationBadge(notificationsArray.length);
+              }
               await fetchImages();
             }
           } catch (e) { console.error('SSE Error', e); }
@@ -2743,8 +2751,12 @@ if (btnConfirmCollectionAdd) {
 // ==========================================
 const navCollections = document.getElementById('nav-collections');
 const navFavorites = document.getElementById('nav-favorites');
+const navTrash = document.getElementById('nav-trash');
+const navNotifications = document.getElementById('nav-notifications');
 const sectionCollections = document.getElementById('section-collections');
 const sectionFavorites = document.getElementById('section-favorites');
+const sectionTrash = document.getElementById('section-trash');
+const sectionNotifications = document.getElementById('section-notifications');
 
 if (navCollections) {
     navCollections.addEventListener('click', () => {
@@ -2757,6 +2769,12 @@ if (navFavorites) {
         switchPage('favorites');
     });
 }
+if (navTrash) {
+    navTrash.addEventListener('click', () => {
+        switchPage('trash');
+    });
+}
+
 
 // Override switchPage to handle new pages
 const originalSwitchPage = window.switchPage;
@@ -2772,6 +2790,8 @@ window.switchPage = function(page) {
     if (btnProfile) btnProfile.classList.remove('active');
     if (navCollections) navCollections.classList.remove('active');
     if (navFavorites) navFavorites.classList.remove('active');
+    if (navTrash) navTrash.classList.remove('active');
+    if (navNotifications) navNotifications.classList.remove('active');
     
     // Reset all sections
     if (sectionStudio) sectionStudio.classList.remove('active');
@@ -2780,6 +2800,8 @@ window.switchPage = function(page) {
     if (sectionProfile) sectionProfile.classList.remove('active');
     if (sectionCollections) sectionCollections.classList.remove('active');
     if (sectionFavorites) sectionFavorites.classList.remove('active');
+    if (sectionTrash) sectionTrash.classList.remove('active');
+    if (sectionNotifications) sectionNotifications.classList.remove('active');
 
     if (page === 'collections') {
         if (navCollections) navCollections.classList.add('active');
@@ -2791,6 +2813,16 @@ window.switchPage = function(page) {
         if (sectionFavorites) sectionFavorites.classList.add('active');
         if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-heart"></i> <h2>Favoriler</h2>';
         renderFavorites();
+    } else if (page === 'trash') {
+        if (navTrash) navTrash.classList.add('active');
+        if (sectionTrash) sectionTrash.classList.add('active');
+        if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-trash-can"></i> <h2>Çöp Kutusu</h2>';
+        renderTrash();
+    } else if (page === 'notifications') {
+        if (navNotifications) navNotifications.classList.add('active');
+        if (sectionNotifications) sectionNotifications.classList.add('active');
+        if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-bell"></i> <h2>Bildirimler</h2>';
+        renderNotifications();
     } else {
         // Fallback to existing logic for other pages
         if (page === 'studio') {
@@ -2837,6 +2869,9 @@ window.switchPage = function(page) {
       if(btn) btn.classList.add('active-bottom');
     } else if (page === 'favorites') {
       let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-favorites"]');
+      if(btn) btn.classList.add('active-bottom');
+    } else if (page === 'trash') {
+      let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-trash"]');
       if(btn) btn.classList.add('active-bottom');
     } else if (page === 'dashboard') {
       let btn = document.querySelector('.mobile-bottom-bar .bottom-nav-item[onclick*="nav-dashboard"]');
@@ -3011,11 +3046,93 @@ function updateNotificationBadge(count) {
   }
 }
 
-window.handleNotificationClick = function() {
-  if (unreadNotificationCount > 0 && lastGeneratedGroupId) {
-    updateNotificationBadge(0);
-    openTripleGroupModal(lastGeneratedGroupId);
+
+
+
+// --- Notifications Array & Render ---
+let notificationsArray = [];
+window.renderNotifications = function() {
+  const list = document.getElementById('notifications-list');
+  const empty = document.getElementById('notifications-empty');
+  if (!list || !empty) return;
+  
+  if (notificationsArray.length === 0) {
+    empty.style.display = 'block';
+    list.innerHTML = '';
   } else {
-    showToast('Okunmamış yeni bildirim yok.', 'info');
+    empty.style.display = 'none';
+    list.innerHTML = notificationsArray.map(n => `
+      <div style="background:var(--bg-card); padding:15px; border-radius:12px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="readNotification(${n.id}, '${n.groupId}')">
+        <div>
+          <strong>${n.text}</strong>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">${n.time}</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);"></i>
+      </div>
+    `).join('');
   }
 };
+
+window.readNotification = function(id, groupId) {
+  notificationsArray = notificationsArray.filter(n => n.id !== id);
+  updateNotificationBadge(notificationsArray.length);
+  renderNotifications();
+  openTripleGroupModal(groupId);
+};
+
+// --- Trash Feature ---
+window.renderTrash = async function() {
+  try {
+    const res = await fetch('/api/images/trash');
+    const data = await res.json();
+    const grid = document.getElementById('trash-grid');
+    if(!grid) return;
+    if (data.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;"><i class="fa-solid fa-trash-can" style="font-size: 2rem; margin-bottom:10px;"></i><br>Çöp kutusu boş.</div>';
+      return;
+    }
+    grid.innerHTML = data.map(item => `
+      <div class="gallery-card">
+         <img src="${item.image}" alt="Trash" onclick="window.open('${item.image}', '_blank')">
+         <div class="gallery-overlay">
+           <div class="gallery-info" style="font-size:0.75rem;">${item.prompt}</div>
+           <div class="gallery-actions" style="justify-content: flex-end; gap: 5px;">
+             <button class="action-btn-sm" style="background:var(--color-primary); color:white;" title="Geri Getir" onclick="restoreImage(event, ${item.id})"><i class="fa-solid fa-arrow-rotate-left"></i> Geri Getir</button>
+             <button class="action-btn-sm danger-btn-sm" title="Kalıcı Sil" onclick="permanentDeleteImage(event, ${item.id})"><i class="fa-solid fa-trash"></i> Sil</button>
+           </div>
+         </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    console.error(e);
+  }
+};
+
+window.restoreImage = async function(e, id) {
+  e.stopPropagation();
+  try {
+    const res = await fetch('/api/images/' + id + '/restore', { method: 'POST' });
+    if (res.ok) {
+      showToast('Görsel geri getirildi.', 'success');
+      renderTrash();
+      fetchImages(); // refresh cache
+    }
+  } catch(err) {
+    showToast('Hata oluştu.', 'error');
+  }
+};
+
+window.permanentDeleteImage = async function(e, id) {
+  e.stopPropagation();
+  if(!confirm('Bu görsel kalıcı olarak silinecek. Emin misiniz?')) return;
+  try {
+    const res = await fetch('/api/images/' + id + '/permanent', { method: 'DELETE' });
+    if (res.ok) {
+      showToast('Kalıcı olarak silindi.', 'success');
+      renderTrash();
+    }
+  } catch(err) {
+    showToast('Hata oluştu.', 'error');
+  }
+};
+

@@ -1503,5 +1503,76 @@ namespace yz.Controllers
     public class MoveToFolderRequest
     {
         public string? FolderName { get; set; }
-    }
+    
+        [HttpGet("images/trash")]
+        public async Task<IActionResult> GetTrash()
+        {
+            int currentUserId = GetCurrentUserId();
+            var dbImages = await _context.GeneratedImages
+                .Where(img => img.UserId == currentUserId && img.IsDeleted)
+                .OrderByDescending(img => img.CreatedAt)
+                .ToListAsync();
+            var images = dbImages.Select(img => new
+            {
+                id = img.Id,
+                image = img.ImagePath,
+                prompt = img.Prompt,
+                model = img.ModelUsed != null && (img.ModelUsed.Contains("Kredi") || img.ModelUsed.Contains("Ücretsiz") || img.ModelUsed.Contains("Dışarıdan") || img.ModelUsed.Contains("Google") || img.ModelUsed.Contains("FLUX")) ? img.ModelUsed : (img.ModelUsed + " (" + (
+                    img.ModelUsed != null && img.ModelUsed.Contains("Ultra") ? "8 Kredi" :
+                    img.ModelUsed != null && img.ModelUsed.Contains("Core") ? "3 Kredi" :
+                    img.ModelUsed != null && img.ModelUsed.Contains("Turbo") ? "4 Kredi" :
+                    img.ModelUsed != null && img.ModelUsed.Contains("Large") ? "6.5 Kredi" :
+                    img.ModelUsed != null && img.ModelUsed.Contains("Medium") ? "3.5 Kredi" : "~1 Kredi"
+                ) + ")"),
+                key = img.KeyUsedLabel,
+                keyId = img.ApiKeyId,
+                createdAt = img.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                groupId = img.GroupId,
+                isSelected = img.IsSelected,
+                sourceSite = img.SourceSite,
+                isFavorite = img.IsFavorite,
+                folderName = img.FolderName
+            }).ToList();
+            return Ok(images);
+        }
+
+        [HttpPost("images/{id}/restore")]
+        public async Task<IActionResult> RestoreImage(int id)
+        {
+            int currentUserId = GetCurrentUserId();
+            bool isAdmin = User.IsInRole("Yönetici");
+            var img = await _context.GeneratedImages.FirstOrDefaultAsync(i => i.Id == id);
+            if (img == null) return NotFound(new { error = "Görsel bulunamadı." });
+            if (!isAdmin && img.UserId != currentUserId) return Forbid();
+            
+            img.IsDeleted = false;
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpDelete("images/{id}/permanent")]
+        public async Task<IActionResult> PermanentDeleteImage(int id)
+        {
+            int currentUserId = GetCurrentUserId();
+            bool isAdmin = User.IsInRole("Yönetici");
+            var img = await _context.GeneratedImages.FirstOrDefaultAsync(i => i.Id == id);
+            if (img == null) return NotFound(new { error = "Görsel bulunamadı." });
+            if (!isAdmin && img.UserId != currentUserId) return Forbid();
+            
+            _imageSyncService.DeleteImageFromAllDirectories(img.ImagePath);
+            if (img.ApiKeyId > 0)
+            {
+                var creds = await _credentialsService.GetCredentialsAsync();
+                var keyObj = creds.StabilityApiKeys.FirstOrDefault(k => k.Id == img.ApiKeyId);
+                if (keyObj != null)
+                {
+                    keyObj.TotalUsage = Math.Max(0, keyObj.TotalUsage - 1);
+                    await _credentialsService.SaveCredentialsAsync(creds);
+                }
+            }
+            _context.GeneratedImages.Remove(img);
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+}
 }
