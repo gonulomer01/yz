@@ -2931,6 +2931,27 @@ function updateNotificationBadge(count) {
 
 // --- Notifications Array & Render ---
 let notificationsArray = JSON.parse(localStorage.getItem('yz_notifications') || '[]');
+
+// Sync notifications across multiple tabs
+window.addEventListener('storage', function(e) {
+  if (e.key === 'yz_notifications') {
+    try {
+      notificationsArray = JSON.parse(e.newValue || '[]');
+      updateNotificationBadge(notificationsArray.length);
+      renderNotifications();
+    } catch(err) {}
+  }
+});
+window.addEventListener('focus', function() {
+  try {
+    const freshData = localStorage.getItem('yz_notifications');
+    if (freshData) {
+      notificationsArray = JSON.parse(freshData);
+      updateNotificationBadge(notificationsArray.length);
+      renderNotifications();
+    }
+  } catch(err) {}
+});
 window.saveNotifications = function() {
     localStorage.setItem('yz_notifications', JSON.stringify(notificationsArray));
     updateNotificationBadge(notificationsArray.length);
