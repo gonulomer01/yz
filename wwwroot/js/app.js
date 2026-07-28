@@ -2987,9 +2987,6 @@ window.toggleNotificationDropdown = function(e) {
     if (dropdown) {
       if (dropdown.style.display === 'block') {
         dropdown.style.display = 'none';
-        notificationsArray = [];
-        saveNotifications();
-        renderNotifications();
       } else {
         dropdown.style.display = 'block';
       }
@@ -3007,7 +3004,7 @@ document.addEventListener('click', function(e) {
   const notifMenu = document.getElementById('notification-dropdown-menu');
   const notifBadge = document.querySelector('.notification-badge-container');
   if (notifMenu && notifBadge && !notifBadge.contains(e.target) && !notifMenu.contains(e.target)) {
-    if (notifMenu.style.display === 'block') { notifMenu.style.display = 'none'; notificationsArray = []; saveNotifications(); renderNotifications(); }
+    if (notifMenu.style.display === 'block') { notifMenu.style.display = 'none'; }
   }
 });
 
