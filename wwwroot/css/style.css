@@ -3235,3 +3235,20 @@ body.light-mode .u-step-text span {
         border-radius: 12px !important;
     }
 }
+
+/* --- OVERRIDE PREVIOUS BUTTON TEXT COLOR RULE --- */
+body:not(.light-mode) .btn-generate,
+body:not(.light-mode) .btn-primary,
+body:not(.light-mode) .action-btn.primary-btn {
+    color: #131314 !important;
+}
+
+/* --- PREVENT MODALS FROM GOING UNDER BOTTOM BAR ON MOBILE --- */
+@media (max-width: 768px) {
+    .modal-overlay, .fullscreen-lightbox-overlay {
+        bottom: 70px !important;
+    }
+    .modal-box, .fullscreen-lightbox-content {
+        max-height: calc(100vh - 100px) !important; 
+    }
+}
