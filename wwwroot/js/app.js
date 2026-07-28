@@ -8,7 +8,9 @@ function initTheme() {
 }
 initTheme();
 
-document.addEventListener('DOMContentLoaded', () => {\n  updateNotificationBadge(notificationsArray.length);\n  checkActiveJobs();
+document.addEventListener('DOMContentLoaded', () => {
+  updateNotificationBadge(notificationsArray.length);
+  checkActiveJobs();
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   
   if (themeToggleBtn) {
@@ -2969,7 +2971,7 @@ window.readNotification = function(id, groupId, imageId) {
       openTripleGroupModal(groupId);
   } else if (imageId) {
       // Find the image in the grid and click it
-      const imgItem = document.querySelector(.gallery-item-img[data-id=""]);
+      const imgItem = document.querySelector(`.gallery-item-img[data-id="${imageId}"]`);
       if (imgItem) imgItem.click();
       else switchPage('studio');
   }
@@ -3039,7 +3041,8 @@ window.permanentDeleteImage = async function(e, id) {
   }
 };
 
-\n
+
+
 // --- Robust Background Generation Logic ---
 async function handleGenerate(e) {
   if (e) e.preventDefault();
@@ -3155,15 +3158,15 @@ function renderTripleCards(targetSite) {
   let headerTitle = 'Çoklu Üretim Akışı';
   let cardsHtml = '';
   if (targetSite === 'all' || targetSite === 'gemini') {
-      cardsHtml += <div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem; color:#aaa;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-gemini"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i><span style="font-size:0.85rem; color:#aaa;">Google Gemini üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'chatgpt') {
-      cardsHtml += <div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem; color:#aaa;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-chatgpt"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i><span style="font-size:0.85rem; color:#aaa;">ChatGPT üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT</h5></div>`;
   }
   if (targetSite === 'all' || targetSite === 'copilot') {
-      cardsHtml += <div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>;
+      cardsHtml += `<div class="triple-stream-card" id="card-site-copilot"><div class="card-loader" style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i><span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot üretiliyor...</span></div><h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5></div>`;
   }
-  wrapper.innerHTML = <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;"><h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> </h4><div id="triple-stream-actions"></div></div><div class="triple-stream-grid" id="triple-cards-grid"></div>;
+  wrapper.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;"><h4 style="color: #fff; margin: 0; font-size: 1rem;"><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> ${headerTitle}</h4><div id="triple-stream-actions"></div></div><div class="triple-stream-grid" id="triple-cards-grid">${cardsHtml}</div>`;
   feedList.innerHTML = '';
   feedList.appendChild(wrapper);
 }
@@ -3174,13 +3177,13 @@ async function pollJob(jobId, type) {
   
   while (isGenerating && currentJobId === jobId) {
     try {
-      const res = await fetch(/api/job-status/);
+      const res = await fetch(`/api/job-status/${jobId}`);
       if (!res.ok) { await new Promise(r => setTimeout(r, 3000)); continue; }
       const data = await res.json();
       
       if (type === 'single') {
           if (data.status.startsWith('Beklemede')) {
-             if (loadingStatus) loadingStatus.textContent = ⏳ Sırada bekleniyor... (Sıranız: );
+             if (loadingStatus) loadingStatus.textContent = `⏳ Sırada bekleniyor... (Sıranız: ${data.position || '?'})`;
           } else if (data.status === 'Üretiliyor') {
              if (loadingStatus) loadingStatus.textContent = '🎨 Üretiliyor... Lütfen bekleyin.';
           } else if (data.status === 'Tamamlandı') {
@@ -3191,7 +3194,7 @@ async function pollJob(jobId, type) {
              // Add notification
              notificationsArray.unshift({
                 id: Date.now(), groupId: 'single', imageId: data.result.imageId,
-                text: 1 görsel üretildi., time: new Date().toLocaleTimeString()
+                text: `1 görsel üretildi.`, time: new Date().toLocaleTimeString()
              });
              saveNotifications();
              await fetchImages();
@@ -3207,38 +3210,38 @@ async function pollJob(jobId, type) {
              const failures = data.result.failures || [];
              
              for (let item of successes) {
-                const card = document.getElementById(card-site-);
+                const card = document.getElementById(`card-site-${item.site}`);
                 if (card && card.querySelector('.card-loader')) {
-                   card.innerHTML = <img src="" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick="openTripleGroupModal('')" />
+                   card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick="openTripleGroupModal('${data.result.groupId}')" />
                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-                     <h5 style="color:#fff; margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> </h5>
-                   </div>;
+                     <h5 style="color:#fff; margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> ${item.site}</h5>
+                   </div>`;
                 }
              }
              for (let item of failures) {
-                const card = document.getElementById(card-site-);
+                const card = document.getElementById(`card-site-${item.site}`);
                 if (card && card.querySelector('.card-loader')) {
-                   card.innerHTML = <div style="width:100%; height:240px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; text-align:center;">
+                   card.innerHTML = `<div style="width:100%; height:240px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; text-align:center;">
                      <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--color-danger); margin-bottom:10px;"></i>
-                     <span style="font-size:0.85rem; color:#ccc;"></span>
+                     <span style="font-size:0.85rem; color:#ccc;">${item.error}</span>
                    </div>
-                   <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-xmark" style="color:var(--color-danger);"></i> </h5>;
+                   <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-xmark" style="color:var(--color-danger);"></i> ${item.site}</h5>`;
                 }
              }
              
              if (data.status === 'Tamamlandı' || data.result.isCompleted) {
                  isSuccess = true;
                  if (successes.length > 0) {
-                     showToast(Çoklu üretim tamamlandı! ( başarılı));
+                     showToast(`Çoklu üretim tamamlandı! (${successes.length} başarılı)`);
                      notificationsArray.unshift({
                         id: Date.now(), groupId: data.result.groupId,
-                        text: ${successes.length} görsel üretildi., time: new Date().toLocaleTimeString()
+                        text: `${successes.length} görsel üretildi.`, time: new Date().toLocaleTimeString()
                      });
                      saveNotifications();
                  }
                  const actions = document.getElementById('triple-stream-actions');
                  if(actions && successes.length > 0) {
-                     actions.innerHTML = <button class="action-btn primary-btn" onclick="openTripleGroupModal('')" style="padding: 6px 12px; font-size:0.85rem;"><i class="fa-solid fa-expand"></i> Sonuçları Büyüt</button>;
+                     actions.innerHTML = `<button class="action-btn primary-btn" onclick="openTripleGroupModal('${data.result.groupId}')" style="padding: 6px 12px; font-size:0.85rem;"><i class="fa-solid fa-expand"></i> Sonuçları Büyüt</button>`;
                  }
                  await fetchImages();
                  break;
@@ -3267,7 +3270,7 @@ async function checkActiveJobs() {
   
   try {
       const activeJob = JSON.parse(activeJobStr);
-      const res = await fetch(/api/job-status/);
+      const res = await fetch(`/api/job-status/${activeJob.id}`);
       if (!res.ok) { localStorage.removeItem('yz_active_job'); return; }
       
       const data = await res.json();
