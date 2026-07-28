@@ -3087,3 +3087,26 @@ body.light-mode .ambient-bg {
     border: 1px solid rgba(0,0,0,0.2) !important;
     box-shadow: none !important;
 }
+
+/* --- MOBILE LIGHT MODE FIX FOR AUTH BODY --- */
+@media (max-width: 900px) {
+    body.light-mode.auth-body {
+        background: var(--bg-page) !important;
+    }
+}
+
+/* --- FIX MEGA IMAGE STUDIO TEXT GRADIENT ON LIGHT MODE --- */
+body.light-mode.auth-body .melikgazi-slogan,
+body.light-mode .melikgazi-slogan {
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    color: var(--text-main) !important;
+    animation: none !important;
+    text-shadow: none !important;
+}
+
+body.light-mode .melikgazi-slogan span {
+    color: var(--text-main) !important;
+    text-shadow: none !important;
+}
