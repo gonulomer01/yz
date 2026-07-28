@@ -1,4 +1,4 @@
-ï»¿:root {
+:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -44,7 +44,7 @@
 }
 
 body.light-mode {
-  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, bÃ¶ylece ÅŸeffaf beyaz kartlar belirgin olur */
+  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, böylece þeffaf beyaz kartlar belirgin olur */
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(26, 115, 232, 0.15), transparent 70%);
 
   --bg-sidebar: rgba(255, 255, 255, 0.75);
@@ -936,7 +936,7 @@ main {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
   display: block;
   line-height: 1.1;
 }
@@ -1007,7 +1007,7 @@ main {
   border-color: rgba(138, 180, 248, 0.3) !important;
 }
 
-/* 3 ParÃ§alÄ± YÃ¶netim Paneli Sekme Stilleri */
+/* 3 Parçalý Yönetim Paneli Sekme Stilleri */
 .dash-subtabs {
   display: flex;
   gap: 10px;
@@ -1036,7 +1036,7 @@ main {
 }
 
 .dash-subtab-btn:hover {
-  color: #fff;
+  color: var(--text-main);
   background: var(--bg-hover-light);
 }
 
@@ -1057,7 +1057,7 @@ main {
   display: flex;
 }
 
-/* Hesap YÃ¶netimi Ä°Ã§ Model Alt Sekmeleri */
+/* Hesap Yönetimi Ýç Model Alt Sekmeleri */
 .acc-model-tabs {
   display: flex;
   gap: 8px;
@@ -1087,13 +1087,13 @@ main {
 }
 
 .acc-model-tab:hover {
-  color: #fff;
+  color: var(--text-main);
   background: var(--bg-hover-light);
 }
 
 .acc-model-tab.active {
   background: var(--bg-surface);
-  color: #fff;
+  color: var(--text-main);
   border-color: var(--border-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -1118,7 +1118,7 @@ main {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1281,7 +1281,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 .modal-close {
@@ -1355,7 +1355,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #fff;
+  color: var(--text-main);
 }
 
 .gallery-grid-main { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; width: 100%; }
@@ -1604,7 +1604,7 @@ main {
   z-index: 1;
 }
 
-/* SOL INTRO LOGO VE ANÄ°MASYONU */
+/* SOL INTRO LOGO VE ANÝMASYONU */
 .auth-body .melikgazi-bg-watermark {
   position: fixed;
   top: 50vh;
@@ -1631,7 +1631,7 @@ main {
   transition: var(--transition);
 }
 
-/* LOGO ÃœSTE Ã‡IKTIÄžINDA YANINDA YAVAÅžÃ‡A BELÄ°REN YAZI */
+/* LOGO ÜSTE ÇIKTIÐINDA YANINDA YAVAÞÇA BELÝREN YAZI */
 .auth-body .melikgazi-slogan {
   position: fixed;
   top: 42px;
@@ -1653,7 +1653,7 @@ main {
   animation: sloganFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 2.2s forwards;
 }
 
-/* LOGONUN Ä°LK AÃ‡ILIÅžTA ORTADA DURUP SONRA SOL ÃœSTE ÅžIK BÄ°R ÅžEKÄ°LDE GÄ°TME ANÄ°MASYONU */
+/* LOGONUN ÝLK AÇILIÞTA ORTADA DURUP SONRA SOL ÜSTE ÞIK BÝR ÞEKÝLDE GÝTME ANÝMASYONU */
 @keyframes logoToRedBox {
   0% {
     top: 50vh;
@@ -1684,7 +1684,7 @@ main {
   }
 }
 
-/* YOL HARÄ°TASI (ROADMAP ZIGZAG) AKIÅž PANELÄ° STÄ°LLERÄ° */
+/* YOL HARÝTASI (ROADMAP ZIGZAG) AKIÞ PANELÝ STÝLLERÝ */
 .auth-body .roadmap-container {
   position: fixed;
   top: 180px;
@@ -1730,7 +1730,7 @@ main {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
 }
 
-/* AdÄ±m 1: Orta-SaÄŸ Hizalama (80px) */
+/* Adým 1: Orta-Sað Hizalama (80px) */
 .roadmap-card.step-1 {
   position: absolute;
   top: 0;
@@ -1739,7 +1739,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 6.2s forwards;
 }
 
-/* AdÄ±m 2: Sol Hizalama (5px) */
+/* Adým 2: Sol Hizalama (5px) */
 .roadmap-card.step-2 {
   position: absolute;
   top: 155px;
@@ -1748,7 +1748,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 7.6s forwards;
 }
 
-/* AdÄ±m 3: En SaÄŸ Hizalama (140px - 1. AdÄ±mdan Daha SaÄŸda) */
+/* Adým 3: En Sað Hizalama (140px - 1. Adýmdan Daha Saðda) */
 .roadmap-card.step-3 {
   position: absolute;
   top: 310px;
@@ -1757,7 +1757,7 @@ main {
   animation: stepFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) 9.0s forwards;
 }
 
-/* BaÄŸlantÄ± Ã‡izgisi 1: Step 1 Ã‡erÃ§evesinin Tam DÄ±ÅŸÄ±ndan/AltÄ±ndan BaÅŸlar */
+/* Baðlantý Çizgisi 1: Step 1 Çerçevesinin Tam Dýþýndan/Altýndan Baþlar */
 .roadmap-connector.line-1 {
   position: absolute;
   top: 58px;
@@ -1766,7 +1766,7 @@ main {
   animation: connectorFadeIn 0.7s ease 6.9s forwards;
 }
 
-/* BaÄŸlantÄ± Ã‡izgisi 2: Step 2 Ã‡erÃ§evesinin Tam DÄ±ÅŸÄ±ndan/AltÄ±ndan BaÅŸlar */
+/* Baðlantý Çizgisi 2: Step 2 Çerçevesinin Tam Dýþýndan/Altýndan Baþlar */
 .roadmap-connector.line-2 {
   position: absolute;
   top: 213px;
@@ -1775,7 +1775,7 @@ main {
   animation: connectorFadeIn 0.7s ease 8.3s forwards;
 }
 
-/* KAVÄ°SLÄ° PATÄ°KA ROTA Ã‡Ä°ZGÄ°SÄ° VE AKAN NOKTA ANÄ°MASYONU */
+/* KAVÝSLÝ PATÝKA ROTA ÇÝZGÝSÝ VE AKAN NOKTA ANÝMASYONU */
 .curved-trail-path {
   animation: trailFlow 2.4s linear infinite;
   filter: drop-shadow(0 0 8px rgba(197, 138, 249, 0.35));
@@ -1790,7 +1790,7 @@ main {
   }
 }
 
-/* DÃœZ YAZI BÄ°LGÄ° VE BAÄžLANTI METÄ°NLERÄ° (TÃœM SAYFANIN TAM ORTA ALT KISMI) */
+/* DÜZ YAZI BÝLGÝ VE BAÐLANTI METÝNLERÝ (TÜM SAYFANIN TAM ORTA ALT KISMI) */
 .auth-body .hero-footer-info {
   position: fixed;
   bottom: 20px;
@@ -2341,7 +2341,7 @@ main {
 }
 
 /* ==========================================================================
-   MOBÄ°L VE TABLET TAM UYUMLULUK (RESPONSIVE MOBILE OVERHAUL)
+   MOBÝL VE TABLET TAM UYUMLULUK (RESPONSIVE MOBILE OVERHAUL)
    ========================================================================== */
 
 .mobile-menu-btn {
@@ -2417,7 +2417,7 @@ main {
     transform: translateX(0) !important;
   }
 
-  /* Mobil MenÃ¼ AÃ§Ä±kken TÃ¼m Metinleri GÃ¶rÃ¼nÃ¼r Yap */
+  /* Mobil Menü Açýkken Tüm Metinleri Görünür Yap */
   .app-sidebar.mobile-open .nav-text,
   .app-sidebar.mobile-open .brand-text,
   .app-sidebar.mobile-open .user-info-text,
@@ -2562,7 +2562,7 @@ main {
     padding: 0 10px !important;
   }
 
-  /* Mobil GiriÅŸ / KayÄ±t SayfasÄ± Ä°yileÅŸtirmeleri */
+  /* Mobil Giriþ / Kayýt Sayfasý Ýyileþtirmeleri */
   .auth-card {
     padding: 26px 20px !important;
     border-radius: var(--radius-md) !important;
@@ -2721,7 +2721,7 @@ main {
 .btn-fav-bottom-right.active i {
     color: #f43f5e !important;
 }
-/* === Mobil Auth Ekranï¿½ Sabitleme === */
+/* === Mobil Auth Ekran? Sabitleme === */
 @media (max-width: 900px) {
     .auth-body .melikgazi-bg-watermark,
     .auth-body .roadmap-container,
@@ -2784,13 +2784,13 @@ main {
     }
 }
 
-/* SABÄ°T GÄ°RÄ°Åž EKRANI Ä°Ã‡Ä°N ANÄ°MASYON Ä°PTALÄ° */
+/* SABÝT GÝRÝÞ EKRANI ÝÇÝN ANÝMASYON ÝPTALÝ */
 .auth-body .melikgazi-bg-watermark { animation: none !important; top: 50vh !important; left: 28vw !important; transform: translate(-50%, -50%) !important; width: 320px !important; height: 320px !important; opacity: 0.1 !important; z-index: 1 !important; }
 .auth-body .melikgazi-slogan { animation: none !important; top: 42px !important; left: 120px !important; opacity: 1 !important; transform: none !important; }
 .auth-card, .auth-container, .ambient-bg { animation: none !important; opacity: 1 !important; transform: none !important; }
-/* SABÄ°T YOL HARÄ°TASI Ä°Ã‡Ä°N ANÄ°MASYON Ä°PTALÄ° */
+/* SABÝT YOL HARÝTASI ÝÇÝN ANÝMASYON ÝPTALÝ */
 .auth-body .roadmap-card, .auth-body .roadmap-connector { animation: none !important; opacity: 1 !important; transform: none !important; }
-/* OLUÅžTUR BUTONU YUVARLAK */
+/* OLUÞTUR BUTONU YUVARLAK */
 .btn-generate { border-radius: 24px; padding: 0 24px; }
 
 .auth-body .roadmap-container { top: 50vh !important; left: 28vw !important; transform: translate(-50%, -50%) !important; }
@@ -2863,7 +2863,7 @@ main {
     left: 0;
     width: 100%;
     height: 70px;
-    background: rgba(20, 20, 25, 0.85);
+    background: var(--bg-sidebar);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--bg-hover-light);
@@ -2971,3 +2971,5 @@ main {
 input#theme-toggle-btn:checked + .theme-slider .theme-slider-thumb {
   transform: translateX(24px);
 }
+
+@media (max-width: 768px) { .user-info-text { display: none !important; } }
