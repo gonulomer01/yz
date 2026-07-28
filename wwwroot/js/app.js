@@ -10,6 +10,7 @@ initTheme();
 
 document.addEventListener('DOMContentLoaded', () => {
   updateNotificationBadge(notificationsArray.length);
+  renderNotifications();
   checkActiveJobs();
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   
@@ -35,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function toggleUserDropdown(e) {
   e.stopPropagation();
   const dropdown = document.getElementById('user-dropdown-menu');
+  const notifDropdown = document.getElementById('notification-dropdown-menu');
+  if (notifDropdown) notifDropdown.style.display = 'none';
   if (dropdown) {
     if (dropdown.style.display === 'none' || dropdown.style.display === '') {
       dropdown.style.display = 'block';
@@ -2677,7 +2680,6 @@ window.switchPage = function(page) {
     if (navCollections) navCollections.classList.remove('active');
     if (navFavorites) navFavorites.classList.remove('active');
     if (navTrash) navTrash.classList.remove('active');
-    if (navNotifications) navNotifications.classList.remove('active');
     
     // Reset all sections
     if (sectionStudio) sectionStudio.classList.remove('active');
@@ -2687,7 +2689,6 @@ window.switchPage = function(page) {
     if (sectionCollections) sectionCollections.classList.remove('active');
     if (sectionFavorites) sectionFavorites.classList.remove('active');
     if (sectionTrash) sectionTrash.classList.remove('active');
-    if (sectionNotifications) sectionNotifications.classList.remove('active');
 
     if (page === 'collections') {
         if (navCollections) navCollections.classList.add('active');
@@ -2704,11 +2705,7 @@ window.switchPage = function(page) {
         if (sectionTrash) sectionTrash.classList.add('active');
         if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-trash-can"></i> <h2>Çöp Kutusu</h2>';
         renderTrash();
-    } else if (page === 'notifications') {
-        if (navNotifications) navNotifications.classList.add('active');
-        if (sectionNotifications) sectionNotifications.classList.add('active');
-        if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-bell"></i> <h2>Bildirimler</h2>';
-        renderNotifications();
+
     } else {
         // Fallback to existing logic for other pages
         if (page === 'studio') {
@@ -2921,14 +2918,11 @@ let lastGeneratedGroupId = null;
 
 function updateNotificationBadge(count) {
   unreadNotificationCount = count;
-  const badgeDesktop = document.getElementById('notif-count');
-  const badgeMobile = document.getElementById('notif-count-mobile');
+  const badgeTop = document.getElementById('top-notif-count');
   if (unreadNotificationCount > 0) {
-    if (badgeDesktop) { badgeDesktop.style.display = 'flex'; badgeDesktop.textContent = unreadNotificationCount; }
-    if (badgeMobile) { badgeMobile.style.display = 'flex'; badgeMobile.textContent = unreadNotificationCount; }
+    if (badgeTop) { badgeTop.style.display = 'inline-block'; badgeTop.textContent = unreadNotificationCount; }
   } else {
-    if (badgeDesktop) badgeDesktop.style.display = 'none';
-    if (badgeMobile) badgeMobile.style.display = 'none';
+    if (badgeTop) badgeTop.style.display = 'none';
   }
 }
 
@@ -2942,26 +2936,52 @@ window.saveNotifications = function() {
     updateNotificationBadge(notificationsArray.length);
 };
 window.renderNotifications = function() {
-  const list = document.getElementById('notifications-list');
-  const empty = document.getElementById('notifications-empty');
+  const list = document.getElementById('top-notifications-list');
+  const empty = document.getElementById('top-notifications-empty');
   if (!list || !empty) return;
   
   if (notificationsArray.length === 0) {
     empty.style.display = 'block';
     list.innerHTML = '';
+    list.appendChild(empty);
   } else {
     empty.style.display = 'none';
     list.innerHTML = notificationsArray.map(n => `
-      <div class="notification-item" onclick="readNotification(${n.id}, '${n.groupId}', ${n.imageId || 'null'})">
+      <div class="notification-item" onclick="readNotification(${n.id}, '${n.groupId}', ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
         <div>
-          <strong style="color:var(--text-main); font-weight:700;">${n.text}</strong>
-          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
+          <strong style="color:var(--text-main); font-weight:700; font-size: 0.9rem;">${n.text}</strong>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
         </div>
-        <i class="fa-solid fa-chevron-right" style="color:var(--color-primary); opacity:0.7;"></i>
+        <i class="fa-solid fa-chevron-right" style="color:var(--color-primary); opacity:0.7; font-size: 0.8rem;"></i>
       </div>
     `).join('');
   }
 };
+
+window.toggleNotificationDropdown = function(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('notification-dropdown-menu');
+  const userDropdown = document.getElementById('user-dropdown-menu');
+  if (userDropdown) userDropdown.style.display = 'none';
+  if (dropdown) {
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  }
+};
+
+window.clearNotifications = function(e) {
+  if (e) e.stopPropagation();
+  notificationsArray = [];
+  saveNotifications();
+  renderNotifications();
+};
+
+document.addEventListener('click', function(e) {
+  const notifMenu = document.getElementById('notification-dropdown-menu');
+  const notifBadge = document.querySelector('.notification-badge-container');
+  if (notifMenu && notifBadge && !notifBadge.contains(e.target) && !notifMenu.contains(e.target)) {
+    notifMenu.style.display = 'none';
+  }
+});
 
 window.readNotification = function(id, groupId, imageId) {
   notificationsArray = notificationsArray.filter(n => n.id !== id);

@@ -54,11 +54,7 @@
             <span class="gallery-count" id="gallery-count">0</span>
           </button>
 
-          <button id="nav-notifications" class="sidebar-nav-item nav-pill" title="Bildirimler" onclick="switchPage('notifications')">
-            <i class="fa-solid fa-bell"></i>
-            <span class="nav-text">Bildirimler</span>
-            <span class="gallery-count notif-badge" id="notif-count" style="display:none; background: var(--color-danger); color: white;">0</span>
-          </button>
+
 
           <button id="nav-collections" class="sidebar-nav-item nav-pill" title="Koleksiyonlar">
             <i class="fa-solid fa-box-archive"></i>
@@ -123,6 +119,24 @@
           </div>
         </div>
         <div class="top-bar-right">
+          <div class="notification-badge-container" style="position: relative; margin-right: 15px; display: flex; align-items: center;">
+            <div class="notification-icon" onclick="toggleNotificationDropdown(event)" style="cursor: pointer; position: relative;" title="Bildirimler">
+              <i class="fa-solid fa-bell" style="font-size: 1.2rem; color: var(--text-muted); transition: color 0.2s;"></i>
+              <span class="notif-badge" id="top-notif-count" style="display:none; position: absolute; top: -5px; right: -8px; background: var(--color-danger); color: white; font-size: 0.65rem; font-weight: bold; padding: 2px 5px; border-radius: 10px; border: 2px solid var(--bg-card);">0</span>
+            </div>
+            <!-- Notification Dropdown Menu -->
+            <div id="notification-dropdown-menu" class="glass-card" style="display:none; position: absolute; top: 40px; right: -10px; width: 320px; padding: 0; z-index: 1000; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-surface);">
+                <div style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.05); font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Bildirimler</span>
+                </div>
+                <div id="top-notifications-list" style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 0;">
+                    <div id="top-notifications-empty" style="padding: 30px 20px; text-align: center; color: var(--text-muted);">
+                      <i class="fa-regular fa-bell-slash" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                      <p style="font-size: 0.9rem; margin: 0;">Henüz bildiriminiz yok.</p>
+                    </div>
+                </div>
+            </div>
+          </div>
           <label class="theme-switch" title="Karanlık/Aydınlık Mod Değiştir" style="margin-right: 15px;">
             <input type="checkbox" id="theme-toggle-btn" style="display:none;" />
             <div class="theme-slider">
@@ -151,10 +165,7 @@
             <button type="button" class="dropdown-item" onclick="document.getElementById('btn-profile').click(); document.getElementById('user-dropdown-menu').style.display='none';">
                 <i class="fa-solid fa-user-gear" style="width: 20px;"></i> Bilgileri Güncelle
             </button>
-            <button type="button" class="dropdown-item" onclick="document.getElementById('nav-notifications').click(); document.getElementById('user-dropdown-menu').style.display='none';">
-                <i class="fa-solid fa-bell" style="width: 20px;"></i> Bildirimler
-                <span class="gallery-count notif-badge" id="dropdown-notif-count" style="display:none; background: var(--color-danger); color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-size: 0.75rem;">0</span>
-            </button>
+
             <form asp-controller="Home" asp-action="Logout" method="post" style="margin:0;">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="dropdown-item dropdown-logout">
@@ -906,19 +917,7 @@
     </section>
 
 
-    <!-- === BİLDİRİMLER EKRANI === -->
-    <section id="section-notifications" class="page">
-      <div class="glass-card dash-section-card">
-        <div class="dash-section-header" style="display:none;">
-        </div>
-        <div id="notifications-empty" style="padding: 40px 20px; text-align: center; color: var(--text-muted);">
-          <i class="fa-regular fa-bell-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
-          <p>Henüz bildiriminiz yok.</p>
-        </div>
-        <div id="notifications-list" style="display:flex; flex-direction:column; gap:10px;">
-        </div>
-      </div>
-    </section>
+
 
     <!-- === ÇÖP KUTUSU EKRANI === -->
     <section id="section-trash" class="page">
