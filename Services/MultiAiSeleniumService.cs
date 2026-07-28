@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -838,16 +838,16 @@ namespace yz.Services
                 if (generatedImg == null)
                     return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "exhausted" };
                 byte[]? imageBytes = null;
-                Console.WriteLine("[Gemini] Canvas ile orijinal görsel çekiliyor...");
-                imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
+                Console.WriteLine("[Gemini] URL tabanlı indirme (Yüksek Çözünürlük) deneniyor...");
+                string? src = generatedImg.GetAttribute("src");
+                if (!string.IsNullOrEmpty(src))
+                {
+                    imageBytes = await DownloadOriginalImageAsync(driver, src);
+                }
                 if (imageBytes == null || imageBytes.Length < 1000)
                 {
-                    Console.WriteLine("[Gemini] Canvas başarısız. URL tabanlı indirme deneniyor...");
-                    string? src = generatedImg.GetAttribute("src");
-                    if (!string.IsNullOrEmpty(src))
-                    {
-                        imageBytes = await DownloadOriginalImageAsync(driver, src);
-                    }
+                    Console.WriteLine("[Gemini] URL başarısız. Canvas ile görsel çekiliyor...");
+                    imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
                 }
                 if (imageBytes == null || imageBytes.Length < 1000)
                 {
@@ -1099,24 +1099,24 @@ namespace yz.Services
                     return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
                 }
                 byte[]? imageBytes = null;
-                Console.WriteLine("[ChatGPT] Canvas ile orijinal görsel çekiliyor...");
-                imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
+                Console.WriteLine("[ChatGPT] URL tabanlı indirme (Yüksek Çözünürlük) deneniyor...");
+                string? src = generatedImg.GetAttribute("src");
+                if (!string.IsNullOrEmpty(src) && !src.StartsWith("blob:"))
+                {
+                    try
+                    {
+                        imageBytes = await _sharedHttpClient.GetByteArrayAsync(src);
+                        Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
+                    }
+                    catch (Exception httpEx)
+                    {
+                        Console.WriteLine($"[ChatGPT] HttpClient başarısız: {httpEx.Message}");
+                    }
+                }
                 if (imageBytes == null || imageBytes.Length < 1000)
                 {
-                    Console.WriteLine("[ChatGPT] Canvas başarısız. URL tabanlı indirme deneniyor...");
-                    string? src = generatedImg.GetAttribute("src");
-                    if (!string.IsNullOrEmpty(src) && !src.StartsWith("blob:"))
-                    {
-                        try
-                        {
-                            imageBytes = await _sharedHttpClient.GetByteArrayAsync(src);
-                            Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
-                        }
-                        catch (Exception httpEx)
-                        {
-                            Console.WriteLine($"[ChatGPT] HttpClient başarısız: {httpEx.Message}");
-                        }
-                    }
+                    Console.WriteLine("[ChatGPT] URL başarısız. Canvas ile görsel çekiliyor...");
+                    imageBytes = await ExtractImageViaCanvasAsync(driver, generatedImg);
                 }
                 if (imageBytes == null || imageBytes.Length < 1000)
                 {
@@ -1343,11 +1343,6 @@ namespace yz.Services
                             if (largeImg == null) largeImg = firstImg; 
                             if (imageBytes == null || imageBytes.Length < 1000)
                             {
-                                Console.WriteLine("[Copilot] Büyük resim bulundu, Canvas ile çekiliyor...");
-                                imageBytes = await ExtractImageViaCanvasAsync(driver, largeImg);
-                            }
-                            if (imageBytes == null || imageBytes.Length < 1000)
-                            {
                                 string? largeSrc = largeImg.GetAttribute("src");
                                 if (!string.IsNullOrEmpty(largeSrc))
                                 {
@@ -1356,9 +1351,14 @@ namespace yz.Services
                                         int qIndex = largeSrc.IndexOf('?');
                                         if (qIndex > 0) largeSrc = largeSrc.Substring(0, qIndex); 
                                     }
-                                    Console.WriteLine($"[Copilot] Canvas başarısız, orijinal URL indiriliyor: {largeSrc}");
+                                    Console.WriteLine($"[Copilot] Orijinal URL üzerinden yüksek çözünürlüklü indiriliyor: {largeSrc}");
                                     imageBytes = await DownloadOriginalImageAsync(driver, largeSrc);
                                 }
+                            }
+                            if (imageBytes == null || imageBytes.Length < 1000)
+                            {
+                                Console.WriteLine("[Copilot] URL üzerinden indirme başarısız, Canvas ile çekiliyor...");
+                                imageBytes = await ExtractImageViaCanvasAsync(driver, largeImg);
                             }
                             if (imageBytes == null || imageBytes.Length < 1000)
                             {
