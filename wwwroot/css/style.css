@@ -3060,3 +3060,30 @@ input#theme-toggle-btn:checked + .theme-slider .theme-slider-thumb {
         display: inline-block !important;
     }
 }
+
+/* --- NEW UI FIXES --- */
+body.light-mode .ambient-bg {
+    background: var(--bg-page) !important;
+}
+
+.light-mode .melikgazi-slogan span {
+    color: #111 !important;
+    text-shadow: none !important;
+}
+
+.light-mode .step-node-badge {
+    background: #fff !important;
+    color: var(--color-primary) !important;
+    border: 2px solid var(--color-primary) !important;
+}
+
+/* Fix theme slider visibility on dark auth body */
+.auth-body .theme-slider {
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.light-mode.auth-body .theme-slider {
+    border: 1px solid rgba(0,0,0,0.2) !important;
+    box-shadow: none !important;
+}

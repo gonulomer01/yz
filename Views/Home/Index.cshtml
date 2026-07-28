@@ -864,8 +864,7 @@
       <div class="glass-card dash-section-card">
         <div class="dash-section-header">
           <div>
-            <h3><i class="fa-solid fa-images" style="color: var(--color-primary);"></i> Görsel Arşivi (@displayName)</h3>
-            <p>Üretilen tüm görselleri inceleyebilir, filtreleyebilir veya indirebilirsiniz.</p>
+            <p style="margin: 0; padding-top: 5px;">Üretilen tüm görselleri inceleyebilir, filtreleyebilir veya indirebilirsiniz.</p>
           </div>
           <div class="gallery-header-actions">
             <button id="btn-sync-images" class="action-btn primary-btn" title="Klasörleri Tara & Senkronize Et">
@@ -926,8 +925,7 @@
     <!-- === ÇÖP KUTUSU EKRANI === -->
     <section id="section-trash" class="page">
       <div class="glass-card dash-section-card">
-        <div class="dash-section-header">
-          <h3><i class="fa-solid fa-trash-can" style="color: var(--color-danger);"></i> Çöp Kutusu</h3>
+        <div class="dash-section-header" style="display:none;">
         </div>
         <div id="trash-grid" class="gallery-grid-main"></div>
       </div>
@@ -1015,12 +1013,7 @@
         <i class="fa-solid fa-images"></i>
         <span>Arşiv</span>
       </button>
-      @if (isAdmin) {
-          <button class="bottom-nav-item" onclick="document.getElementById('nav-dashboard').click()" title="Yönetim">
-            <i class="fa-solid fa-sliders"></i>
-            <span>Yönetim</span>
-          </button>
-      }
+
       <button class="bottom-nav-item" onclick="document.getElementById('nav-trash').click()" title="Çöp Kutusu">
         <i class="fa-solid fa-trash-can"></i>
         <span>Çöp Kutusu</span>
