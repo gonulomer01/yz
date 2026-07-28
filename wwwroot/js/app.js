@@ -3064,12 +3064,12 @@ window.renderNotifications = function() {
   } else {
     empty.style.display = 'none';
     list.innerHTML = notificationsArray.map(n => `
-      <div style="background:var(--bg-card); padding:15px; border-radius:12px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="readNotification(${n.id}, '${n.groupId}')">
+      <div class="notification-item" onclick="readNotification(${n.id}, '${n.groupId}')">
         <div>
-          <strong>${n.text}</strong>
-          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">${n.time}</div>
+          <strong style="color:var(--text-main); font-weight:700;">${n.text}</strong>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
         </div>
-        <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);"></i>
+        <i class="fa-solid fa-chevron-right" style="color:var(--color-primary); opacity:0.7;"></i>
       </div>
     `).join('');
   }
