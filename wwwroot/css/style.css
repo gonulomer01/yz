@@ -3171,3 +3171,41 @@ body.light-mode .melikgazi-slogan {
     -webkit-text-fill-color: var(--text-main) !important;
     color: var(--text-main) !important;
 }
+
+/* --- GLOBAL LIGHT MODE TEXT FIXES --- */
+body.light-mode .stat-num,
+body.light-mode .dash-section-header h3,
+body.light-mode .modal-heading,
+body.light-mode .key-stat strong,
+body.light-mode .u-step-text strong,
+body.light-mode .u-step-text span {
+    color: var(--text-main) !important;
+}
+
+/* --- BLUE SECTIONS (BUTTONS) WHITE TEXT FIX --- */
+.btn-generate,
+.btn-primary,
+.action-btn.primary-btn {
+    color: #ffffff !important;
+}
+
+/* --- DROPDOWN (ONLY LOGOUT IS RED) FIX --- */
+.dropdown-item {
+    color: var(--text-main) !important;
+}
+.dropdown-item i {
+    color: var(--text-muted) !important;
+}
+.dropdown-item:hover {
+    background: var(--bg-hover-light) !important;
+    color: var(--text-main) !important;
+}
+.dropdown-item.dropdown-logout {
+    color: var(--color-danger) !important;
+}
+.dropdown-item.dropdown-logout i {
+    color: var(--color-danger) !important;
+}
+.dropdown-item.dropdown-logout:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
