@@ -46,3 +46,8 @@ wwwroot/generated-chatgpt/*
 !wwwroot/generated-chatgpt/.gitkeep
 wwwroot/generated-copilot/*
 !wwwroot/generated-copilot/.gitkeep
+
+## Local Settings
+appsettings.Local.json
+appsettings.Development.json
+appsettings.Production.json
