@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -6,12 +6,12 @@
   --bg-card: rgba(26, 28, 32, 0.40);
   --bg-surface: rgba(40, 42, 44, 0.42);
   --bg-surface-hover: rgba(51, 53, 56, 0.70);
-  --bg-input: rgba(26, 27, 30, 0.75);
+  --bg-input: rgba(0, 0, 0, 0.4);
   
-  --bg-hover-light: var(--bg-hover-light);
-  --bg-hover-strong: var(--bg-hover-strong);
+  --bg-hover-light: rgba(255, 255, 255, 0.05);
+  --bg-hover-strong: rgba(255, 255, 255, 0.1);
 
-  --border-color: var(--bg-hover-strong);
+  --border-color: rgba(255, 255, 255, 0.12);
   --border-hover: rgba(168, 199, 250, 0.45);
   --border-focus: #a8c7fa;
 
@@ -44,19 +44,19 @@
 }
 
 body.light-mode {
-  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, b�ylece �effaf beyaz kartlar belirgin olur */
+  --bg-page: #eaf0f7; /* Hafif mavimsi gri arka plan, bylece effaf beyaz kartlar belirgin olur */
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(26, 115, 232, 0.15), transparent 70%);
 
   --bg-sidebar: rgba(255, 255, 255, 0.75);
   --bg-card: rgba(255, 255, 255, 0.45);
   --bg-surface: rgba(255, 255, 255, 0.55);
   --bg-surface-hover: rgba(255, 255, 255, 0.85);
-  --bg-input: rgba(255, 255, 255, 0.65);
+  --bg-input: #ffffff;
 
   --bg-hover-light: rgba(0, 0, 0, 0.04);
   --bg-hover-strong: rgba(0, 0, 0, 0.08);
 
-  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color: rgba(0, 0, 0, 0.15);
   --border-hover: rgba(0, 0, 0, 0.20);
   --border-focus: #1a73e8;
 
