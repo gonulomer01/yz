@@ -1,4 +1,4 @@
-
+﻿
 // Theme Toggle Logic
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
@@ -56,7 +56,7 @@ const sectionStudio = document.getElementById('section-studio');
 const sectionDashboard = document.getElementById('section-dashboard');
 const generatorForm = document.getElementById('generator-form');
 
-// Sidebar ve Mobil Çekmece Menü Kontrolleri (Global & Güvenilir)
+// Sidebar ve Mobil Ã‡ekmece MenÃ¼ Kontrolleri (Global & GÃ¼venilir)
 const sidebarToggleBtn = document.getElementById('sidebar-toggle');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const appSidebar = document.getElementById('app-sidebar');
@@ -173,25 +173,25 @@ let isGenerating = false;
 let currentAbortController = null;
 let currentJobId = null;
 const samplePrompts = [
-  "Kayseri Erciyes Dağı'nın zirvesinde kar yağışı altında kuzey ışıkları, sinematik ultra detaylı manzara",
-  "Melikgazi tarihi sokaklarında gün batımı, taş konaklar ve sıcak sarı sokak lambalarının dramatik ışığı",
-  "Kapadokya'da sabah gün doğumunda gökyüzünde süzülen yüzlerce renkli sıcak hava balonu, 8k fotogerçekçi",
-  "Tarihi Kayseri Kalesi önünde fütüristik siberpunk tramvay, neon tabelalar ve yağmurlu ıslak zemin",
-  "Modern Selçuklu mimarisi tarzında tasarlanmış akıllı kütüphane binası, iç mekanda süzülen güneş ışıkları",
-  "Kayseri Kapalıçarşı'da baharat çuvalları, otantik dükkanlar ve güler yüzlü esnaf, National Geographic tarzı fotoğraf",
-  "Tarihi Gevher Nesibe Şifahanesi avlusunda ilkbahar çiçekleri, su şırıltısı ve huzurlu bir sabah atmosferi",
-  "Uzay istasyonunun devasa cam penceresinden mavi gezegen Dünya'ya bakan Türk astronot, yansımalı kask, 8k",
-  "Yıldızlararası bir uzay gemisinin teknolojik köprü üstü, hologram haritalar ve parlayan mavi kontrol panelleri",
-  "Bulutların üzerinde süzülen fütüristik yeşil şehir, güneş panelleri, dikey ormanlar ve uçan araçlar",
-  "Mars yüzeyinde kurulmuş cam kubbeli botanik bahçesi ve araştırma üssü, arka planda kızıl gezegen kanyonları",
-  "Sulu boya tarzında büyülü bir masal ormanı, parlayan peri ışıkları, mor ve turkuaz pastel tonlar",
-  "Studio Ghibli anime tarzında yemyeşil vadide akan şelale ve kenarında oturan sevimli küçük bir ejderha",
-  "Kristal mağarada parlayan ametist taşları ve yeraltı gölü, esrarengiz mavi ve mor ışık hüzmeleri",
-  "Tropikal yağmur ormanında yaprağın üzerindeki su damlasında yansıyan kurbağa, ultra net makro fotoğraf",
-  "Afrika savanasında altın gün batımı önünde silüeti görünen zürafa ailesi ve akasya ağaçları",
-  "Sonbaharda sarı ve kırmızı yapraklarla kaplanmış sisli bir patika yol, sabahın erken saatleri",
-  "Sarı ve siyah renklerde tasarlanmış ultra lüks elektrikli spor otomobil, dramatik stüdyo aydınlatması",
-  "Geleneksel motiflerle süslenmiş zırh giyen görkemli Selçuklu savaşçısı komutanı, sinematik stüdyo portresi"
+  "Kayseri Erciyes DaÄŸÄ±'nÄ±n zirvesinde kar yaÄŸÄ±ÅŸÄ± altÄ±nda kuzey Ä±ÅŸÄ±klarÄ±, sinematik ultra detaylÄ± manzara",
+  "Melikgazi tarihi sokaklarÄ±nda gÃ¼n batÄ±mÄ±, taÅŸ konaklar ve sÄ±cak sarÄ± sokak lambalarÄ±nÄ±n dramatik Ä±ÅŸÄ±ÄŸÄ±",
+  "Kapadokya'da sabah gÃ¼n doÄŸumunda gÃ¶kyÃ¼zÃ¼nde sÃ¼zÃ¼len yÃ¼zlerce renkli sÄ±cak hava balonu, 8k fotogerÃ§ekÃ§i",
+  "Tarihi Kayseri Kalesi Ã¶nÃ¼nde fÃ¼tÃ¼ristik siberpunk tramvay, neon tabelalar ve yaÄŸmurlu Ä±slak zemin",
+  "Modern SelÃ§uklu mimarisi tarzÄ±nda tasarlanmÄ±ÅŸ akÄ±llÄ± kÃ¼tÃ¼phane binasÄ±, iÃ§ mekanda sÃ¼zÃ¼len gÃ¼neÅŸ Ä±ÅŸÄ±klarÄ±",
+  "Kayseri KapalÄ±Ã§arÅŸÄ±'da baharat Ã§uvallarÄ±, otantik dÃ¼kkanlar ve gÃ¼ler yÃ¼zlÃ¼ esnaf, National Geographic tarzÄ± fotoÄŸraf",
+  "Tarihi Gevher Nesibe Åifahanesi avlusunda ilkbahar Ã§iÃ§ekleri, su ÅŸÄ±rÄ±ltÄ±sÄ± ve huzurlu bir sabah atmosferi",
+  "Uzay istasyonunun devasa cam penceresinden mavi gezegen DÃ¼nya'ya bakan TÃ¼rk astronot, yansÄ±malÄ± kask, 8k",
+  "YÄ±ldÄ±zlararasÄ± bir uzay gemisinin teknolojik kÃ¶prÃ¼ Ã¼stÃ¼, hologram haritalar ve parlayan mavi kontrol panelleri",
+  "BulutlarÄ±n Ã¼zerinde sÃ¼zÃ¼len fÃ¼tÃ¼ristik yeÅŸil ÅŸehir, gÃ¼neÅŸ panelleri, dikey ormanlar ve uÃ§an araÃ§lar",
+  "Mars yÃ¼zeyinde kurulmuÅŸ cam kubbeli botanik bahÃ§esi ve araÅŸtÄ±rma Ã¼ssÃ¼, arka planda kÄ±zÄ±l gezegen kanyonlarÄ±",
+  "Sulu boya tarzÄ±nda bÃ¼yÃ¼lÃ¼ bir masal ormanÄ±, parlayan peri Ä±ÅŸÄ±klarÄ±, mor ve turkuaz pastel tonlar",
+  "Studio Ghibli anime tarzÄ±nda yemyeÅŸil vadide akan ÅŸelale ve kenarÄ±nda oturan sevimli kÃ¼Ã§Ã¼k bir ejderha",
+  "Kristal maÄŸarada parlayan ametist taÅŸlarÄ± ve yeraltÄ± gÃ¶lÃ¼, esrarengiz mavi ve mor Ä±ÅŸÄ±k hÃ¼zmeleri",
+  "Tropikal yaÄŸmur ormanÄ±nda yapraÄŸÄ±n Ã¼zerindeki su damlasÄ±nda yansÄ±yan kurbaÄŸa, ultra net makro fotoÄŸraf",
+  "Afrika savanasÄ±nda altÄ±n gÃ¼n batÄ±mÄ± Ã¶nÃ¼nde silÃ¼eti gÃ¶rÃ¼nen zÃ¼rafa ailesi ve akasya aÄŸaÃ§larÄ±",
+  "Sonbaharda sarÄ± ve kÄ±rmÄ±zÄ± yapraklarla kaplanmÄ±ÅŸ sisli bir patika yol, sabahÄ±n erken saatleri",
+  "SarÄ± ve siyah renklerde tasarlanmÄ±ÅŸ ultra lÃ¼ks elektrikli spor otomobil, dramatik stÃ¼dyo aydÄ±nlatmasÄ±",
+  "Geleneksel motiflerle sÃ¼slenmiÅŸ zÄ±rh giyen gÃ¶rkemli SelÃ§uklu savaÅŸÃ§Ä±sÄ± komutanÄ±, sinematik stÃ¼dyo portresi"
 ];
 function showToast(msg, type = 'success') {
   let container = document.querySelector('.toast-container');
@@ -249,17 +249,17 @@ function switchPage(page) {
   if (page === 'studio') {
     if (navStudio) navStudio.classList.add('active');
     if (sectionStudio) sectionStudio.classList.add('active');
-    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Stüdyo</h2>';
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>StÃ¼dyo</h2>';
     fetchImages();
   } else if (page === 'gallery') {
     if (btnGalleryToggle) btnGalleryToggle.classList.add('active');
     if (sectionGallery) sectionGallery.classList.add('active');
-    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-images"></i> <h2>Görsel Arşivi</h2>';
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-images"></i> <h2>GÃ¶rsel ArÅŸivi</h2>';
     fetchImages();
   } else if (page === 'dashboard' && isAdmin) {
     if (navDashboard) navDashboard.classList.add('active');
     if (sectionDashboard) sectionDashboard.classList.add('active');
-    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>Yönetim Paneli</h2>';
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>YÃ¶netim Paneli</h2>';
     fetchKeys();
     fetchGeminiAccounts();
     loadChatGptAccounts();
@@ -269,7 +269,7 @@ function switchPage(page) {
   } else if (page === 'profile') {
     if (btnProfile) btnProfile.classList.add('active');
     if (sectionProfile) sectionProfile.classList.add('active');
-    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-user-gear"></i> <h2>Bilgileri Güncelle</h2>';
+    if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-user-gear"></i> <h2>Bilgileri GÃ¼ncelle</h2>';
     loadProfileData();
   }
 }
@@ -277,7 +277,7 @@ const btnSyncImages = document.getElementById('btn-sync-images');
 if (btnSyncImages) {
   btnSyncImages.addEventListener('click', async () => {
     btnSyncImages.classList.add('spinning');
-    showToast('Klasörler taranıyor ve senkronize ediliyor...');
+    showToast('KlasÃ¶rler taranÄ±yor ve senkronize ediliyor...');
     await fetchImages();
     setTimeout(() => btnSyncImages.classList.remove('spinning'), 600);
   });
@@ -296,7 +296,7 @@ if (galleryFolderTabs) {
 if (btnClear) btnClear.addEventListener('click', () => { promptInput.value = ''; });
 if (btnRandom) btnRandom.addEventListener('click', () => {
   promptInput.value = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
-  showToast('Rastgele fikir yüklendi!');
+  showToast('Rastgele fikir yÃ¼klendi!');
 });
 if (modelSelect) {
   modelSelect.addEventListener('change', () => {
@@ -315,7 +315,7 @@ if (modelSelect) {
 if (btnTranslate) {
   btnTranslate.addEventListener('click', async () => {
     const text = promptInput.value.trim();
-    if (!text) { showToast('Önce bir metin girin.', 'error'); return; }
+    if (!text) { showToast('Ã–nce bir metin girin.', 'error'); return; }
     btnTranslate.disabled = true;
     try {
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=tr|en`;
@@ -323,12 +323,12 @@ if (btnTranslate) {
       const data = await res.json();
       if (data.responseData && data.responseData.translatedText) {
         promptInput.value = data.responseData.translatedText;
-        showToast('Metin İngilizceye çevrildi!');
+        showToast('Metin Ä°ngilizceye Ã§evrildi!');
       } else {
-        throw new Error('Çeviri başarısız');
+        throw new Error('Ã‡eviri baÅŸarÄ±sÄ±z');
       }
     } catch (err) {
-      showToast('Çeviri yapılamadı: ' + err.message, 'error');
+      showToast('Ã‡eviri yapÄ±lamadÄ±: ' + err.message, 'error');
     } finally {
       btnTranslate.disabled = false;
     }
@@ -359,7 +359,7 @@ function resetToInitialState(isSuccess = false) {
     btnGenerate.disabled = false;
     btnGenerate.classList.remove('btn-cancel');
     if (btnLabel) {
-      btnLabel.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i><span class="desktop-text"> Oluştur</span>';
+      btnLabel.innerHTML = '<i class="fa-solid fa-bolt-lightning"></i><span class="desktop-text"> OluÅŸtur</span>';
       btnLabel.style.display = 'flex';
     }
     if (btnLoader) btnLoader.style.display = 'none';
@@ -390,7 +390,7 @@ async function cancelGeneration() {
   } catch {}
   currentJobId = null;
   resetToInitialState(false);
-  showToast('Üretim işlemi durduruldu ve başlangıç konumuna geçildi.', 'info');
+  showToast('Ãœretim iÅŸlemi durduruldu ve baÅŸlangÄ±Ã§ konumuna geÃ§ildi.', 'info');
 }
 
 async function handleGenerate(e) {
@@ -404,7 +404,7 @@ async function handleGenerate(e) {
   const prompt = promptInput.value.trim();
   const ratioEl = document.querySelector('input[name="ratio"]:checked');
   const ratio = ratioEl ? ratioEl.value : '1:1';
-  if (!prompt) { showToast('Lütfen bir görsel tarifi girin.', 'error'); return; }
+  if (!prompt) { showToast('LÃ¼tfen bir gÃ¶rsel tarifi girin.', 'error'); return; }
 
   const selectedModel = modelSelect.value;
 
@@ -423,7 +423,7 @@ async function handleGenerate(e) {
   btnGenerate.disabled = false;
   btnGenerate.classList.add('btn-cancel');
   if (btnLabel) {
-    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> İptal Et</span>';
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> Ä°ptal Et</span>';
     btnLabel.style.display = 'flex';
   }
   if (btnLoader) btnLoader.style.display = 'none';
@@ -435,9 +435,9 @@ async function handleGenerate(e) {
   if (canvasLoading) canvasLoading.style.display = 'flex';
 
   if (selectedModel.startsWith('gemini-') || selectedModel.startsWith('chatgpt-') || selectedModel.startsWith('copilot-')) {
-    loadingStatus.textContent = '🤖 Selenium tarayıcı otomasyonu çalışıyor…';
+    loadingStatus.textContent = 'ğŸ¤– Selenium tarayÄ±cÄ± otomasyonu Ã§alÄ±ÅŸÄ±yorâ€¦';
   } else {
-    loadingStatus.textContent = 'API sunucularına bağlanılıyor…';
+    loadingStatus.textContent = 'API sunucularÄ±na baÄŸlanÄ±lÄ±yorâ€¦';
   }
 
   let isSuccess = false;
@@ -455,7 +455,7 @@ async function handleGenerate(e) {
     });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.error || 'Görsel üretimi başarısız.');
+      throw new Error(err.error || 'GÃ¶rsel Ã¼retimi baÅŸarÄ±sÄ±z.');
     }
     const initialJobData = await res.json();
     let jobId = initialJobData.jobId;
@@ -470,35 +470,35 @@ async function handleGenerate(e) {
         const statusRes = await fetch(`/api/job-status/${jobId}`);
         if (!statusRes.ok) {
           pollRetryCount++;
-          if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile bağlantı koptu. Lütfen sayfayı yenileyip tekrar deneyin.');
-          if (loadingStatus) loadingStatus.textContent = `Bağlantı yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
+          if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile baÄŸlantÄ± koptu. LÃ¼tfen sayfayÄ± yenileyip tekrar deneyin.');
+          if (loadingStatus) loadingStatus.textContent = `BaÄŸlantÄ± yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
           await new Promise(r => setTimeout(r, 3000));
           continue;
         }
         statusData = await statusRes.json();
-        pollRetryCount = 0; // Başarılı bağlantı, sayacı sıfırla
+        pollRetryCount = 0; // BaÅŸarÄ±lÄ± baÄŸlantÄ±, sayacÄ± sÄ±fÄ±rla
       } catch (fetchErr) {
         if (fetchErr.name === 'AbortError') throw fetchErr;
         pollRetryCount++;
-        if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile bağlantı koptu. Lütfen sayfayı yenileyip tekrar deneyin.');
-        if (loadingStatus) loadingStatus.textContent = `Bağlantı yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
+        if (pollRetryCount >= maxPollRetries) throw new Error('Sunucu ile baÄŸlantÄ± koptu. LÃ¼tfen sayfayÄ± yenileyip tekrar deneyin.');
+        if (loadingStatus) loadingStatus.textContent = `BaÄŸlantÄ± yeniden deneniyor... (${pollRetryCount}/${maxPollRetries})`;
         await new Promise(r => setTimeout(r, 3000));
         continue;
       }
       
       if (statusData.status && statusData.status.startsWith('Beklemede')) {
-         if (loadingStatus) loadingStatus.textContent = `⏳ Sırada bekleniyor... (Sıranız: ${statusData.position || '?'})`;
-      } else if (statusData.status === 'Üretiliyor') {
-         if (loadingStatus) loadingStatus.textContent = '🎨 Üretiliyor... Lütfen bekleyin.';
-      } else if (statusData.status === 'Tamamlandı') {
+         if (loadingStatus) loadingStatus.textContent = `â³ SÄ±rada bekleniyor... (SÄ±ranÄ±z: ${statusData.position || '?'})`;
+      } else if (statusData.status === 'Ãœretiliyor') {
+         if (loadingStatus) loadingStatus.textContent = 'ğŸ¨ Ãœretiliyor... LÃ¼tfen bekleyin.';
+      } else if (statusData.status === 'TamamlandÄ±') {
          const resultData = statusData.result;
          isSuccess = true;
          addStudioImageToFeed(resultData.image, resultData.modelUsed, resultData.keyUsedLabel, true);
-         showToast('Görsel başarıyla üretildi!');
+         showToast('GÃ¶rsel baÅŸarÄ±yla Ã¼retildi!');
          await fetchImages();
          if (isAdmin) await fetchKeys();
          break;
-      } else if (statusData.status === 'Hata' || statusData.status === 'İptal Edildi') {
+      } else if (statusData.status === 'Hata' || statusData.status === 'Ä°ptal Edildi') {
          // Hata sonucu obje olabilir: { error: "mesaj" }
          let errMsg = statusData.status;
          if (statusData.result) {
@@ -529,7 +529,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
   btnGenerate.disabled = false;
   btnGenerate.classList.add('btn-cancel');
   if (btnLabel) {
-    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> İptal Et</span>';
+    btnLabel.innerHTML = '<i class="fa-solid fa-xmark"></i><span class="desktop-text"> Ä°ptal Et</span>';
     btnLabel.style.display = 'flex';
   }
   if (btnLoader) btnLoader.style.display = 'none';
@@ -548,10 +548,10 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
   const wrapper = document.createElement('div');
   wrapper.style.width = '100%';
 
-  let headerTitle = 'Çoklu Üretim Akışı (Gemini + ChatGPT + Copilot)';
-  if (targetSite === 'gemini') headerTitle = 'Google Gemini Üretim Akışı';
-  if (targetSite === 'chatgpt') headerTitle = 'ChatGPT (DALL-E) Üretim Akışı';
-  if (targetSite === 'copilot') headerTitle = 'Microsoft Copilot Üretim Akışı';
+  let headerTitle = 'Ã‡oklu Ãœretim AkÄ±ÅŸÄ± (Gemini + ChatGPT + Copilot)';
+  if (targetSite === 'gemini') headerTitle = 'Google Gemini Ãœretim AkÄ±ÅŸÄ±';
+  if (targetSite === 'chatgpt') headerTitle = 'ChatGPT (DALL-E) Ãœretim AkÄ±ÅŸÄ±';
+  if (targetSite === 'copilot') headerTitle = 'Microsoft Copilot Ãœretim AkÄ±ÅŸÄ±';
 
   let cardsHtml = '';
   if (targetSite === 'all' || targetSite === 'gemini') {
@@ -559,7 +559,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
       <div class="triple-stream-card" id="card-site-gemini">
         <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--color-primary);"></i>
-          <span style="font-size:0.85rem; color:#aaa;">Google Gemini üretiliyor...</span>
+          <span style="font-size:0.85rem; color:#aaa;">Google Gemini Ã¼retiliyor...</span>
         </div>
         <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-google" style="color:#4285f4;"></i> Google Gemini</h5>
       </div>`;
@@ -569,7 +569,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
       <div class="triple-stream-card" id="card-site-chatgpt">
         <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#10a37f;"></i>
-          <span style="font-size:0.85rem; color:#aaa;">ChatGPT (DALL-E) üretiliyor...</span>
+          <span style="font-size:0.85rem; color:#aaa;">ChatGPT (DALL-E) Ã¼retiliyor...</span>
         </div>
         <h5 style="margin-top:12px; color:#fff;"><i class="fa-solid fa-brain" style="color:#10a37f;"></i> ChatGPT (DALL-E)</h5>
       </div>`;
@@ -579,7 +579,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
       <div class="triple-stream-card" id="card-site-copilot">
         <div style="width:100%; height:240px; background: rgba(0,0,0,0.3); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
           <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:#00a4ef;"></i>
-          <span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot üretiliyor...</span>
+          <span style="font-size:0.85rem; color:#aaa;">Microsoft Copilot Ã¼retiliyor...</span>
         </div>
         <h5 style="margin-top:12px; color:#fff;"><i class="fa-brands fa-microsoft" style="color:#00a4ef;"></i> Microsoft Copilot</h5>
       </div>`;
@@ -603,7 +603,7 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
     const url = `/api/generate-triple-stream?prompt=${encodeURIComponent(prompt)}&aspectRatio=${encodeURIComponent(ratio)}&style=${encodeURIComponent(style)}&targetSite=${encodeURIComponent(targetSite)}`;
     const response = await fetch(url, { signal: currentAbortController.signal });
     if (!response.ok) {
-      throw new Error("Üçlü üretim servisine bağlanılamadı.");
+      throw new Error("ÃœÃ§lÃ¼ Ã¼retim servisine baÄŸlanÄ±lamadÄ±.");
     }
 
     const reader = response.body.getReader();
@@ -639,11 +639,11 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                   card.classList.add('completed');
                   const streamDownloadName = getFormattedDownloadFilename(item.image, item.modelUsed, item.site);
                   card.innerHTML = `
-                    <img src="${item.image}" alt="${item.site}" class="triple-stream-img clickable-img" title="Tam ekran görüntülemek için tıklayın">
+                    <img src="${item.image}" alt="${item.site}" class="triple-stream-img clickable-img" title="Tam ekran gÃ¶rÃ¼ntÃ¼lemek iÃ§in tÄ±klayÄ±n">
                     <h5 style="margin-top:10px; color:#fff;">${item.modelUsed || item.site.toUpperCase()}</h5>
                     <span style="font-size:0.78rem; color:#aaa; margin-bottom:8px;">${item.keyUsedLabel || ''}</span>
                     <a href="${item.image}" download="${streamDownloadName}" class="action-btn" style="width:100%; text-align:center; padding:6px; font-size:0.82rem;">
-                      <i class="fa-solid fa-download"></i> İndir
+                      <i class="fa-solid fa-download"></i> Ä°ndir
                     </a>
                   `;
                   const img = card.querySelector('img');
@@ -660,14 +660,14 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                   }
                   succeededImages.push(item);
                   if (typeof fetchImages === 'function') fetchImages();
-                  showToast(`${item.site.toUpperCase()} görseli üretildi ve eklendi!`);
+                  showToast(`${item.site.toUpperCase()} gÃ¶rseli Ã¼retildi ve eklendi!`);
                 } else {
                   card.classList.add('failed');
                   card.innerHTML = `
                     <div style="width:100%; height:240px; background: rgba(239,68,68,0.1); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:12px; text-align:center;">
                       <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--color-danger);"></i>
-                      <span style="font-size:0.85rem; color:#ff8888; font-weight:600;">${item.site.toUpperCase()} Başarısız</span>
-                      <span style="font-size:0.75rem; color:#ccc;">${item.error === 'login_required' ? 'Oturum Açılmamış' : (item.error || 'Limit/Bağlantı hatası')}</span>
+                      <span style="font-size:0.85rem; color:#ff8888; font-weight:600;">${item.site.toUpperCase()} BaÅŸarÄ±sÄ±z</span>
+                      <span style="font-size:0.75rem; color:#ccc;">${item.error === 'login_required' ? 'Oturum AÃ§Ä±lmamÄ±ÅŸ' : (item.error || 'Limit/BaÄŸlantÄ± hatasÄ±')}</span>
                     </div>
                     <h5 style="margin-top:10px; color:#aaa;">${item.site.toUpperCase()}</h5>
                   `;
@@ -679,11 +679,12 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
               if (actionsContainer && succeededImages.length > 0) {
                 const btnBulkDownload = document.createElement('button');
                 btnBulkDownload.className = 'action-btn primary-btn';
-                btnBulkDownload.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${succeededImages.length} Resim + Prompt TXT)`;
+                btnBulkDownload.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu Ä°ndir (${succeededImages.length} Resim + Prompt TXT)`;
                 btnBulkDownload.onclick = () => downloadTripleZip(succeededImages, prompt, groupId || 'multi');
                 actionsContainer.appendChild(btnBulkDownload);
               }
-              showToast(`Üçlü üretim tamamlandı! (${succeededImages.length}/${succeededImages.length + (payload.failures?.length || 0)} görsel başarılı)`);
+              showToast(`ÃœÃ§lÃ¼ Ã¼retim tamamlandÄ±! (${succeededImages.length}/${succeededImages.length + (payload.failures?.length || 0)} gÃ¶rsel baÅŸarÄ±lÄ±)`);
+              if (succeededImages.length > 0) { lastGeneratedGroupId = groupId || 'multi'; updateNotificationBadge(unreadNotificationCount + 1); }
               await fetchImages();
             }
           } catch (e) { console.error('SSE Error', e); }
@@ -727,7 +728,7 @@ async function downloadTripleZip(images, promptText, groupId) {
   if (!images || images.length === 0) return;
   try {
     const zip = new JSZip();
-    showToast('Zip arşivi oluşturuluyor...');
+    showToast('Zip arÅŸivi oluÅŸturuluyor...');
     for (let i = 0; i < images.length; i++) {
       const item = images[i];
       let modelTag = getModelTagFromItem(item);
@@ -736,7 +737,7 @@ async function downloadTripleZip(images, promptText, groupId) {
       const blob = await resp.blob();
       zip.file(filename, blob);
     }
-    zip.file("prompt.txt", promptText || "Prompt bilgisi bulunamadı.");
+    zip.file("prompt.txt", promptText || "Prompt bilgisi bulunamadÄ±.");
     const zipBlob = await zip.generateAsync({ type: "blob" });
     const downloadUrl = URL.createObjectURL(zipBlob);
     const a = document.createElement("a");
@@ -746,7 +747,7 @@ async function downloadTripleZip(images, promptText, groupId) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(downloadUrl);
-    showToast("Toplu indirme başarılı!");
+    showToast("Toplu indirme baÅŸarÄ±lÄ±!");
   } catch (err) {
     showToast("Toplu indirmede hata: " + err.message, "error");
   }
@@ -761,13 +762,13 @@ function addStudioImageToFeed(imageUrl, modelUsed, keyLabel, prepend = true) {
   const downloadFilename = getFormattedDownloadFilename(imageUrl, modelUsed, '');
   card.innerHTML = `
     <div class="studio-feed-img-wrap">
-      <img src="${imageUrl}" alt="Üretilen görsel" class="clickable-img" title="Tam ekran görüntülemek için tıklayın">
+      <img src="${imageUrl}" alt="Ãœretilen gÃ¶rsel" class="clickable-img" title="Tam ekran gÃ¶rÃ¼ntÃ¼lemek iÃ§in tÄ±klayÄ±n">
     </div>
     <div class="result-bar">
       <span class="result-tag"><i class="fa-solid fa-microchip"></i> ${modelUsed || 'AI Model'}</span>
       <span class="result-tag"><i class="fa-solid fa-key"></i> ${keyLabel || 'Anahtar'}</span>
       <a class="result-tag download-tag" href="${imageUrl}" download="${downloadFilename}">
-        <i class="fa-solid fa-download"></i> İndir
+        <i class="fa-solid fa-download"></i> Ä°ndir
       </a>
     </div>
   `;
@@ -799,7 +800,7 @@ async function fetchImages() {
     persistentImages = await res.json();
     renderGallery();
     if (galleryCount) galleryCount.textContent = persistentImages.length;
-    // Favori sayacını güncelle
+    // Favori sayacÄ±nÄ± gÃ¼ncelle
     const favCountEl = document.getElementById('fav-count');
     if (favCountEl) favCountEl.textContent = persistentImages.filter(i => i.isFavorite).length;
   } catch { }
@@ -840,8 +841,8 @@ function renderGallery() {
   }
 
   if (filteredList.length === 0) {
-    const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasörü)`;
-    galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bölümde${folderLabel} henüz görsel bulunmuyor.</p></div>`;
+    const folderLabel = currentGalleryFolder === 'all' ? '' : ` (${currentGalleryFolder.toUpperCase()} klasÃ¶rÃ¼)`;
+    galleryGrid.innerHTML = `<div class="gallery-empty-panel"><p>Bu bÃ¶lÃ¼mde${folderLabel} henÃ¼z gÃ¶rsel bulunmuyor.</p></div>`;
     return;
   }
 
@@ -858,10 +859,10 @@ function renderGallery() {
          <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
            ${groupOrItem.items.map((it, idx) => {
               if (idx > 2) return '';
-              return `<img src="${it.image}" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.85;">`;
+              return `<img src="${it.image}" alt="Ãœretilen gÃ¶rsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.85;">`;
            }).join('')}
          </div>
-         <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Üçlü Üretim</div>
+         <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> ÃœÃ§lÃ¼ Ãœretim</div>
          <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
              <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
          </div>
@@ -878,12 +879,12 @@ function renderGallery() {
        });
     } else {
        const item = groupOrItem;
-       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ãœcretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
        const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
        const favIcon = item.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
        const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
        div.innerHTML = `
-         <img src="${item.image}" alt="Üretilen görsel">
+         <img src="${item.image}" alt="Ãœretilen gÃ¶rsel">
          <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
          <div class="gallery-overlay">${item.model}</div>
          <button class="${favActiveClass} btn-fav-bottom-right" title="Favori" onclick="toggleFavorite(event, ${item.id})">
@@ -904,18 +905,18 @@ function renderGallery() {
 
 async function deleteGroup(e, groupId) {
   e.stopPropagation();
-  if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
+  if (!confirm('Bu Ã§oklu Ã¼retimi ve iÃ§indeki tÃ¼m gÃ¶rselleri silmek istiyor musunuz?')) return;
   const groupItems = persistentImages.filter(i => i.groupId === groupId);
   try {
     for (const item of groupItems) {
       await fetch(`/api/images/${item.id}`, { method: 'DELETE' });
     }
-    showToast('Çoklu üretim silindi!');
+    showToast('Ã‡oklu Ã¼retim silindi!');
     await fetchImages();
     renderFavorites();
     renderCollections();
   } catch (err) {
-    showToast('Silinirken hata oluştu');
+    showToast('Silinirken hata oluÅŸtu');
   }
 }
 
@@ -928,7 +929,7 @@ function openFullscreenLightbox(imageSrc, caption = '', modelName = '', site = '
   if (!modal || !imgEl) return;
 
   imgEl.src = imageSrc;
-  if (captionEl) captionEl.textContent = ''; // Prompt kaldırıldı, butonla iç içe geçmemesi için.
+  if (captionEl) captionEl.textContent = ''; // Prompt kaldÄ±rÄ±ldÄ±, butonla iÃ§ iÃ§e geÃ§memesi iÃ§in.
 
   if (btnDownload) {
     btnDownload.href = imageSrc;
@@ -981,7 +982,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
       
       col.innerHTML = `
         <div style="position: relative;">
-          <img src="${res.image}" alt="Generated" class="clickable-img" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
+          <img src="${res.image}" alt="Generated" class="clickable-img" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran gÃ¶rÃ¼ntÃ¼lemek iÃ§in tÄ±klayÄ±n">
           ${canModify ? `<button class="${favActiveClass} btn-fav-bottom-right" style="position: absolute; bottom: 16px; right: 8px; z-index: 20;" onclick="toggleFavorite(event, ${res.id})">
              <i class="${favIcon}"></i>
           </button>` : ''}
@@ -989,7 +990,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
         <h6 style="color: #fff; margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
         <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
         <a href="${res.image}" download="${downloadFilename}" class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
-          <i class="fa-solid fa-download"></i> İndir
+          <i class="fa-solid fa-download"></i> Ä°ndir
         </a>
       `;
       const imgInCol = col.querySelector('img');
@@ -1005,12 +1006,12 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
   if (modal) modal.style.display = 'flex';
   const btnDownloadAll = document.getElementById('btn-triple-group-download-all');
   if (btnDownloadAll) {
-    btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${group.length} Resim + Prompt TXT)`;
+    btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu Ä°ndir (${group.length} Resim + Prompt TXT)`;
     btnDownloadAll.onclick = async () => {
       try {
         const zip = new JSZip();
         btnDownloadAll.disabled = true;
-        btnDownloadAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Hazırlanıyor...';
+        btnDownloadAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> HazÄ±rlanÄ±yor...';
         for (let i = 0; i < group.length; i++) {
           const res = group[i];
           let modelTag = getModelTagFromItem(res);
@@ -1020,7 +1021,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
           zip.file(filename, blob);
         }
 
-        const promptText = (group[0] && group[0].prompt) || "Prompt bilgisi mevcut değil.";
+        const promptText = (group[0] && group[0].prompt) || "Prompt bilgisi mevcut deÄŸil.";
         zip.file("prompt.txt", promptText);
         const zipBlob = await zip.generateAsync({ type: "blob" });
         const downloadUrl = URL.createObjectURL(zipBlob);
@@ -1031,13 +1032,13 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(downloadUrl);
-        showToast("Toplu indirme başarılı!");
+        showToast("Toplu indirme baÅŸarÄ±lÄ±!");
       } catch (err) {
         console.error(err);
-        showToast("Toplu indirme sırasında bir hata oluştu.", "error");
+        showToast("Toplu indirme sÄ±rasÄ±nda bir hata oluÅŸtu.", "error");
       } finally {
         btnDownloadAll.disabled = false;
-        btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu İndir (${group.length} Resim + Prompt TXT)`;
+        btnDownloadAll.innerHTML = `<i class="fa-solid fa-file-zipper"></i> Toplu Ä°ndir (${group.length} Resim + Prompt TXT)`;
       }
     };
   }
@@ -1065,7 +1066,7 @@ function openSingleImageModal(item, canModify = true) {
     const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
     container.innerHTML = `
       <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%; position:relative;">
-        <img src="${item.image}" alt="Generated" class="clickable-img" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
+        <img src="${item.image}" alt="Generated" class="clickable-img" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran gÃ¶rÃ¼ntÃ¼lemek iÃ§in tÄ±klayÄ±n">
         <h6 style="color: #fff; margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
         ${canModify ? `<button class="${favActiveClass}" style="position:absolute; top: 15px; right: 15px; z-index:20; padding:10px; font-size:1.5rem; border:none; background:rgba(0,0,0,0.5); border-radius:50%; cursor:pointer; color:#fff;" title="Favori" onclick="toggleFavorite(event, ${item.id}); this.innerHTML = this.querySelector('.fa-solid') ? '<i class=\\'fa-regular fa-heart\\'></i>' : '<i class=\\'fa-solid fa-heart\\' style=\\'color:#f43f5e;\\'></i>'; this.classList.toggle('active');">
           <i class="${favIcon}" ${item.isFavorite ? 'style="color:#f43f5e;"' : ''}></i>
@@ -1100,11 +1101,11 @@ if (btnSingleImageOk) {
 }
 async function deleteImage(e, id) {
   e.stopPropagation();
-  if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
+  if (!confirm('Bu gÃ¶rseli kalÄ±cÄ± olarak silmek istiyor musunuz?')) return;
   try {
     const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Silinemedi');
-    showToast('Görsel silindi!');
+    showToast('GÃ¶rsel silindi!');
     await fetchImages();
     renderFavorites();
     renderCollections();
@@ -1130,7 +1131,7 @@ function renderKeys() {
   keysGrid.innerHTML = '';
   keysData.forEach(k => {
     let badgeClass, badgeText;
-    if (!k.hasKey) { badgeClass = 'badge-empty'; badgeText = 'Boş'; }
+    if (!k.hasKey) { badgeClass = 'badge-empty'; badgeText = 'BoÅŸ'; }
     else if (k.status === 'Active') { badgeClass = 'badge-active'; badgeText = 'Aktif'; }
     else { badgeClass = 'badge-exhausted'; badgeText = 'Pasif'; }
     const card = document.createElement('div');
@@ -1142,12 +1143,12 @@ function renderKeys() {
       </div>
       <div class="key-masked">${k.hasKey ? k.apiKeyMasked : 'Anahtar yok'}</div>
       <div class="key-stats-row">
-        <span class="key-stat">Bugün: <strong>${k.usageToday}</strong></span>
+        <span class="key-stat">BugÃ¼n: <strong>${k.usageToday}</strong></span>
         <span class="key-stat">Toplam: <strong>${k.totalUsage}</strong></span>
       </div>
       <div style="display: flex; gap: 6px;">
         <button onclick="openEditModal(${k.id}, '${k.label.replace(/'/g, "\\'")}', ${k.hasKey}, '${k.status || 'Active'}')" style="flex: 1;">
-          <i class="fa-solid fa-pen"></i> Düzenle
+          <i class="fa-solid fa-pen"></i> DÃ¼zenle
         </button>
         <button onclick="deleteKeySlot(${k.id})" style="color: var(--color-danger);" title="Sil">
           <i class="fa-solid fa-trash"></i>
@@ -1165,7 +1166,7 @@ function updateStats() {
   statsActive.textContent = active;
   statsToday.textContent = today;
   statsTotal.textContent = total;
-  statsIndex.textContent = keysData.some(k => k.hasKey) ? `#${currentKeyIndex + 1}` : '—';
+  statsIndex.textContent = keysData.some(k => k.hasKey) ? `#${currentKeyIndex + 1}` : 'â€”';
 }
 const dashSubtabsNav = document.getElementById('dash-subtabs-nav');
 if (dashSubtabsNav) {
@@ -1213,12 +1214,12 @@ if (accModelTabsNav) {
 
 if (btnResetLimits) {
   btnResetLimits.addEventListener('click', async () => {
-    if (!confirm('Tüm Stability AI anahtarlarının pasifliğini sıfırlamak istediğinize emin misiniz?')) return;
+    if (!confirm('TÃ¼m Stability AI anahtarlarÄ±nÄ±n pasifliÄŸini sÄ±fÄ±rlamak istediÄŸinize emin misiniz?')) return;
     try {
       const res = await fetch('/api/keys/reset', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        showToast('Stability AI anahtarları ve sayaçlar sıfırlandı!');
+        showToast('Stability AI anahtarlarÄ± ve sayaÃ§lar sÄ±fÄ±rlandÄ±!');
         fetchKeys();
       }
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
@@ -1228,11 +1229,11 @@ if (btnResetLimits) {
 const btnResetGeminiAccs = document.getElementById('btn-reset-gemini-accs');
 if (btnResetGeminiAccs) {
   btnResetGeminiAccs.addEventListener('click', async () => {
-    if (!confirm('Tüm Google Gemini hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    if (!confirm('TÃ¼m Google Gemini hesaplarÄ±nÄ±n pasifliÄŸini sÄ±fÄ±rlayÄ±p aktif duruma getirmek istiyor musunuz?')) return;
     try {
       const res = await fetch('/api/gemini-accounts/reset', { method: 'POST' });
       if (res.ok) {
-        showToast('Tüm Google Gemini hesapları aktif konuma getirildi!');
+        showToast('TÃ¼m Google Gemini hesaplarÄ± aktif konuma getirildi!');
         fetchGeminiAccounts();
       }
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
@@ -1242,11 +1243,11 @@ if (btnResetGeminiAccs) {
 const btnResetChatgptAccs = document.getElementById('btn-reset-chatgpt-accs');
 if (btnResetChatgptAccs) {
   btnResetChatgptAccs.addEventListener('click', async () => {
-    if (!confirm('Tüm ChatGPT hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    if (!confirm('TÃ¼m ChatGPT hesaplarÄ±nÄ±n pasifliÄŸini sÄ±fÄ±rlayÄ±p aktif duruma getirmek istiyor musunuz?')) return;
     try {
       const res = await fetch('/api/chatgpt-accounts/reset', { method: 'POST' });
       if (res.ok) {
-        showToast('Tüm ChatGPT hesapları aktif konuma getirildi!');
+        showToast('TÃ¼m ChatGPT hesaplarÄ± aktif konuma getirildi!');
         loadChatGptAccounts();
       }
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
@@ -1256,11 +1257,11 @@ if (btnResetChatgptAccs) {
 const btnResetCopilotAccs = document.getElementById('btn-reset-copilot-accs');
 if (btnResetCopilotAccs) {
   btnResetCopilotAccs.addEventListener('click', async () => {
-    if (!confirm('Tüm Microsoft Copilot hesaplarının pasifliğini sıfırlayıp aktif duruma getirmek istiyor musunuz?')) return;
+    if (!confirm('TÃ¼m Microsoft Copilot hesaplarÄ±nÄ±n pasifliÄŸini sÄ±fÄ±rlayÄ±p aktif duruma getirmek istiyor musunuz?')) return;
     try {
       const res = await fetch('/api/copilot-accounts/reset', { method: 'POST' });
       if (res.ok) {
-        showToast('Tüm Microsoft Copilot hesapları aktif konuma getirildi!');
+        showToast('TÃ¼m Microsoft Copilot hesaplarÄ± aktif konuma getirildi!');
         loadCopilotAccounts();
       }
     } catch (err) { showToast('Hata: ' + err.message, 'error'); }
@@ -1297,17 +1298,17 @@ if (editForm) {
     const statusEl = document.getElementById('edit-status');
     const status = statusEl ? statusEl.value : 'Active';
     const payload = { id, label, status };
-    if (apiKey && !apiKey.includes('•')) payload.apiKey = apiKey;
+    if (apiKey && !apiKey.includes('â€¢')) payload.apiKey = apiKey;
     try {
       const res = await fetch('/api/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Kayıt başarısız.');
+      if (!res.ok) throw new Error('KayÄ±t baÅŸarÄ±sÄ±z.');
       const data = await res.json();
       if (data.success) {
-        showToast(`Yuva #${id} güncellendi.`);
+        showToast(`Yuva #${id} gÃ¼ncellendi.`);
         closeModal();
         fetchKeys();
       }
@@ -1344,13 +1345,13 @@ function renderGeminiAccounts() {
       </div>
       <div class="key-masked">${a.profileName}</div>
       <div class="key-stats-row">
-        <span>Son: <strong>${a.lastUsed || '—'}</strong></span>
+        <span>Son: <strong>${a.lastUsed || 'â€”'}</strong></span>
       </div>
       <div style="display:flex; gap: 6px; margin-top: auto;">
         <button onclick="openGeminiLogin(${a.id}, '${a.accountLabel.replace(/'/g, "\\'")}')" style="flex:1;">
-          <i class="fa-solid fa-right-to-bracket"></i> Oturum Aç
+          <i class="fa-solid fa-right-to-bracket"></i> Oturum AÃ§
         </button>
-        <button onclick="openGeminiEditModal(${a.id}, '${a.accountLabel.replace(/'/g, "\\'")}', '${a.status}')" title="Düzenle">
+        <button onclick="openGeminiEditModal(${a.id}, '${a.accountLabel.replace(/'/g, "\\'")}', '${a.status}')" title="DÃ¼zenle">
           <i class="fa-solid fa-pen"></i>
         </button>
         <button onclick="deleteGeminiAccount(${a.id})" style="color: var(--color-danger);" title="Sil">
@@ -1362,7 +1363,7 @@ function renderGeminiAccounts() {
   });
 }
 window.openGeminiLogin = async function(id, label) {
-  showToast(`'${label}' için Chrome açılıyor…`, 'info');
+  showToast(`'${label}' iÃ§in Chrome aÃ§Ä±lÄ±yorâ€¦`, 'info');
   try {
     const res = await fetch('/api/gemini-web/login', {
       method: 'POST',
@@ -1371,9 +1372,9 @@ window.openGeminiLogin = async function(id, label) {
     });
     const data = await res.json();
     if (data.success) {
-      showToast(`'${label}' Chrome penceresi açıldı!`);
+      showToast(`'${label}' Chrome penceresi aÃ§Ä±ldÄ±!`);
     } else {
-      showToast('Chrome açılamadı.', 'error');
+      showToast('Chrome aÃ§Ä±lamadÄ±.', 'error');
     }
   } catch (err) {
     showToast('Hata: ' + err.message, 'error');
@@ -1411,11 +1412,11 @@ if (geminiEditForm) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Google hesabı #${id} güncellendi.`);
+        showToast(`Google hesabÄ± #${id} gÃ¼ncellendi.`);
         closeGeminiModal();
         fetchGeminiAccounts();
       } else {
-        throw new Error(data.error || 'Güncellenemedi.');
+        throw new Error(data.error || 'GÃ¼ncellenemedi.');
       }
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -1423,7 +1424,7 @@ if (geminiEditForm) {
 const btnAddGeminiAcc = document.getElementById('btn-add-gemini-acc');
 if (btnAddGeminiAcc) {
   btnAddGeminiAcc.addEventListener('click', async () => {
-    const label = prompt('Yeni Google hesabı adı:', `Google Hesap #${geminiAccountsData.length + 1}`);
+    const label = prompt('Yeni Google hesabÄ± adÄ±:', `Google Hesap #${geminiAccountsData.length + 1}`);
     if (label === null) return;
     try {
       const res = await fetch('/api/gemini-accounts/add', {
@@ -1433,7 +1434,7 @@ if (btnAddGeminiAcc) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Yeni profil yuvası eklendi!');
+        showToast('Yeni profil yuvasÄ± eklendi!');
         fetchGeminiAccounts();
       } else {
         throw new Error(data.error || 'Eklenemedi');
@@ -1442,7 +1443,7 @@ if (btnAddGeminiAcc) {
   });
 }
 window.deleteGeminiAccount = async function(id) {
-  if (!confirm(`#${id} Gemini profil yuvasını silmek istediğinize emin misiniz?`)) return;
+  if (!confirm(`#${id} Gemini profil yuvasÄ±nÄ± silmek istediÄŸinize emin misiniz?`)) return;
   try {
     const res = await fetch(`/api/gemini-accounts/${id}`, { method: 'DELETE' });
     const data = await res.json();
@@ -1484,11 +1485,11 @@ function renderChatGptAccounts() {
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-masked">${a.profileName}</div>
-      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
+      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || 'â€”'}</strong></span></div>
       <div style="display:flex; gap: 6px; margin-top: auto;">
-        <button data-login-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
-        <button data-tempmail-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;" title="Temp-Mail ile otomatik hesap oluştur"><i class="fa-solid fa-bolt"></i> Oto-Kayıt</button>
-        <button data-edit-chatgpt="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+        <button data-login-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum AÃ§</button>
+        <button data-tempmail-chatgpt="${a.id}" data-label="${safeLabel}" style="flex:1;" title="Temp-Mail ile otomatik hesap oluÅŸtur"><i class="fa-solid fa-bolt"></i> Oto-KayÄ±t</button>
+        <button data-edit-chatgpt="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="DÃ¼zenle"><i class="fa-solid fa-pen"></i></button>
         <button data-del-chatgpt="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
       </div>
     `;
@@ -1500,21 +1501,21 @@ function renderChatGptAccounts() {
   });
 }
 async function openChatGptLogin(id, label) {
-  showToast(label + ' için Chrome açılıyor…', 'info');
+  showToast(label + ' iÃ§in Chrome aÃ§Ä±lÄ±yorâ€¦', 'info');
   try {
     const res = await fetch('/api/chatgpt-web/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: id }) });
     const data = await res.json();
-    if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
+    if (data.success) { showToast(label + ' Chrome penceresi aÃ§Ä±ldÄ±!'); } else { showToast('Chrome aÃ§Ä±lamadÄ±.', 'error'); }
   } catch (err) { showToast('Hata: ' + err.message, 'error'); }
 }
 async function autoCreateChatGptWithTempMail(id, label) {
-  if (!confirm(`'${label}' profili için Temp-Mail ile otomatik ChatGPT hesabı oluşturulsun mu?`)) return;
-  showToast('Temp-Mail ile otomatik hesap oluşturma başlatılıyor…', 'info');
+  if (!confirm(`'${label}' profili iÃ§in Temp-Mail ile otomatik ChatGPT hesabÄ± oluÅŸturulsun mu?`)) return;
+  showToast('Temp-Mail ile otomatik hesap oluÅŸturma baÅŸlatÄ±lÄ±yorâ€¦', 'info');
   try {
     const res = await fetch(`/api/chatgpt-accounts/auto-create-tempmail/${id}`, { method: 'POST' });
     const data = await res.json();
     if (data.success) { showToast(data.message, 'success'); } else { showToast('Hata: ' + (data.message || 'Bilinmeyen hata'), 'error'); }
-  } catch (err) { showToast('Bağlantı hatası: ' + err.message, 'error'); }
+  } catch (err) { showToast('BaÄŸlantÄ± hatasÄ±: ' + err.message, 'error'); }
 }
 const btnAddChatgptGmail = document.getElementById('btn-add-chatgpt-gmail');
 if (btnAddChatgptGmail) {
@@ -1523,12 +1524,12 @@ if (btnAddChatgptGmail) {
     const gmailNo = document.getElementById('gmail-no-input').value.trim();
     const aliasNo = document.getElementById('alias-no-input').value.trim();
     if (!gmailNo || !aliasNo) {
-      showToast('Lütfen Gmail No (örn: 3) ve Alias No (örn: 2) giriniz.', 'error');
+      showToast('LÃ¼tfen Gmail No (Ã¶rn: 3) ve Alias No (Ã¶rn: 2) giriniz.', 'error');
       return;
     }
     const targetProfileId = targetInput ? parseInt(targetInput) : null;
-    let msg = `Gmail #${gmailNo} ile +${aliasNo} hesabı otomatik oluşturuluyor...`;
-    if (targetProfileId) msg = `Hedef Profil ${targetProfileId} üzerinde ` + msg;
+    let msg = `Gmail #${gmailNo} ile +${aliasNo} hesabÄ± otomatik oluÅŸturuluyor...`;
+    if (targetProfileId) msg = `Hedef Profil ${targetProfileId} Ã¼zerinde ` + msg;
 
     showToast(msg, 'info');
     try {
@@ -1542,10 +1543,10 @@ if (btnAddChatgptGmail) {
         showToast(data.message, 'success');
         await loadChatGptAccounts();
       } else {
-        showToast('Hata: ' + (data.message || 'Oluşturulamadı'), 'error');
+        showToast('Hata: ' + (data.message || 'OluÅŸturulamadÄ±'), 'error');
       }
     } catch (err) {
-      showToast('Bağlantı hatası: ' + err.message, 'error');
+      showToast('BaÄŸlantÄ± hatasÄ±: ' + err.message, 'error');
     }
   });
 }
@@ -1575,21 +1576,21 @@ if (chatgptEditForm) {
     const status = chatgptEditStatus.value;
     try {
       const res = await fetch('/api/chatgpt-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, accountLabel, status }) });
-      if (!res.ok) throw new Error('Kayıt başarısız.');
+      if (!res.ok) throw new Error('KayÄ±t baÅŸarÄ±sÄ±z.');
       const data = await res.json();
-      if (data.success || res.ok) { showToast('Hesap güncellendi.'); closeChatGptModal(); loadChatGptAccounts(); }
+      if (data.success || res.ok) { showToast('Hesap gÃ¼ncellendi.'); closeChatGptModal(); loadChatGptAccounts(); }
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
 const btnAddChatgptAcc = document.getElementById('btn-add-chatgpt-acc');
 if (btnAddChatgptAcc) {
   btnAddChatgptAcc.addEventListener('click', async () => {
-    const label = prompt('Yeni ChatGPT hesabı adı:', 'ChatGPT Hesap #' + (chatgptAccountsData.length + 1));
+    const label = prompt('Yeni ChatGPT hesabÄ± adÄ±:', 'ChatGPT Hesap #' + (chatgptAccountsData.length + 1));
     if (label === null) return;
     try {
       const res = await fetch('/api/chatgpt-accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: label.trim() || undefined }) });
       const data = await res.json();
-      if (data.success) { showToast('Yeni ChatGPT profil yuvası eklendi!'); loadChatGptAccounts(); }
+      if (data.success) { showToast('Yeni ChatGPT profil yuvasÄ± eklendi!'); loadChatGptAccounts(); }
       else { throw new Error(data.error || 'Eklenemedi'); }
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -1620,9 +1621,9 @@ if (btnStartAutoChatgptGen) {
   btnStartAutoChatgptGen.addEventListener('click', async () => {
     if (isAutoGenRunning) {
       isAutoGenRunning = false;
-      btnStartAutoChatgptGen.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+      btnStartAutoChatgptGen.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Ãœretimi BaÅŸlat';
       btnStartAutoChatgptGen.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
-      showToast('Otomatik hesap üretici durduruldu.', 'info');
+      showToast('Otomatik hesap Ã¼retici durduruldu.', 'info');
       return;
     }
 
@@ -1631,7 +1632,7 @@ if (btnStartAutoChatgptGen) {
     const email = emailInput ? emailInput.value.trim() : '';
 
     if (!email || !email.includes('@')) {
-      showToast('Lütfen geçerli bir e-posta adresi girin.', 'error');
+      showToast('LÃ¼tfen geÃ§erli bir e-posta adresi girin.', 'error');
       return;
     }
 
@@ -1648,7 +1649,7 @@ if (btnStartAutoChatgptGen) {
 async function runAutoGeneratorStep(currentEmail, isLoopMode) {
   if (!isAutoGenRunning) return;
 
-  showToast(`⚡ ${currentEmail} adresi ile hesap oluşturuluyor ve robot başlatılıyor...`, 'info');
+  showToast(`âš¡ ${currentEmail} adresi ile hesap oluÅŸturuluyor ve robot baÅŸlatÄ±lÄ±yor...`, 'info');
 
   try {
     const res = await fetch('/api/chatgpt-accounts/auto-create-custom-email', {
@@ -1659,7 +1660,7 @@ async function runAutoGeneratorStep(currentEmail, isLoopMode) {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      showToast(`🎉 ${currentEmail} hesabı oluşturuldu ve doğrulama robotu çalıştı!`, 'success');
+      showToast(`ğŸ‰ ${currentEmail} hesabÄ± oluÅŸturuldu ve doÄŸrulama robotu Ã§alÄ±ÅŸtÄ±!`, 'success');
       loadChatGptAccounts();
 
       if (isLoopMode && isAutoGenRunning) {
@@ -1667,7 +1668,7 @@ async function runAutoGeneratorStep(currentEmail, isLoopMode) {
         const emailInput = document.getElementById('auto-chatgpt-email-input');
         if (emailInput) emailInput.value = nextEmail;
 
-        showToast(`🔄 Sonsuz Döngü: 4 saniye sonra ${nextEmail} hesabı açılacak...`, 'info');
+        showToast(`ğŸ”„ Sonsuz DÃ¶ngÃ¼: 4 saniye sonra ${nextEmail} hesabÄ± aÃ§Ä±lacak...`, 'info');
         setTimeout(() => {
           if (isAutoGenRunning) {
             runAutoGeneratorStep(nextEmail, true);
@@ -1677,16 +1678,16 @@ async function runAutoGeneratorStep(currentEmail, isLoopMode) {
         isAutoGenRunning = false;
         const btn = document.getElementById('btn-start-auto-chatgpt-gen');
         if (btn) {
-          btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+          btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Ãœretimi BaÅŸlat';
           btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
         }
       }
     } else {
-      showToast('Hata: ' + (data.error || 'Hesap oluşturulamadı'), 'error');
+      showToast('Hata: ' + (data.error || 'Hesap oluÅŸturulamadÄ±'), 'error');
       stopAutoGeneratorUI();
     }
   } catch (err) {
-    showToast('Bağlantı hatası: ' + err.message, 'error');
+    showToast('BaÄŸlantÄ± hatasÄ±: ' + err.message, 'error');
     stopAutoGeneratorUI();
   }
 }
@@ -1695,7 +1696,7 @@ function stopAutoGeneratorUI() {
   isAutoGenRunning = false;
   const btn = document.getElementById('btn-start-auto-chatgpt-gen');
   if (btn) {
-    btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Üretimi Başlat';
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Otomatik Ãœretimi BaÅŸlat';
     btn.style.background = 'linear-gradient(135deg, #10a37f, #059669)';
   }
 }
@@ -1739,10 +1740,10 @@ function renderCopilotAccounts() {
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-masked">${a.profileName}</div>
-      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || '—'}</strong></span></div>
+      <div class="key-stats-row"><span>Son: <strong>${a.lastUsed || 'â€”'}</strong></span></div>
       <div style="display:flex; gap: 6px; margin-top: auto;">
-        <button data-login-copilot="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum Aç</button>
-        <button data-edit-copilot="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+        <button data-login-copilot="${a.id}" data-label="${safeLabel}" style="flex:1;"><i class="fa-solid fa-right-to-bracket"></i> Oturum AÃ§</button>
+        <button data-edit-copilot="${a.id}" data-label="${safeLabel}" data-status="${a.status}" title="DÃ¼zenle"><i class="fa-solid fa-pen"></i></button>
         <button data-del-copilot="${a.id}" style="color: var(--color-danger);" title="Sil"><i class="fa-solid fa-trash"></i></button>
       </div>
     `;
@@ -1753,11 +1754,11 @@ function renderCopilotAccounts() {
   });
 }
 async function openCopilotLogin(id, label) {
-  showToast(label + ' için Chrome açılıyor…', 'info');
+  showToast(label + ' iÃ§in Chrome aÃ§Ä±lÄ±yorâ€¦', 'info');
   try {
     const res = await fetch('/api/copilot-web/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profileId: id }) });
     const data = await res.json();
-    if (data.success) { showToast(label + ' Chrome penceresi açıldı!'); } else { showToast('Chrome açılamadı.', 'error'); }
+    if (data.success) { showToast(label + ' Chrome penceresi aÃ§Ä±ldÄ±!'); } else { showToast('Chrome aÃ§Ä±lamadÄ±.', 'error'); }
   } catch (err) { showToast('Hata: ' + err.message, 'error'); }
 }
 const copilotEditModal = document.getElementById('copilot-edit-modal');
@@ -1786,21 +1787,21 @@ if (copilotEditForm) {
     const status = copilotEditStatus.value;
     try {
       const res = await fetch('/api/copilot-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, accountLabel, status }) });
-      if (!res.ok) throw new Error('Kayıt başarısız.');
+      if (!res.ok) throw new Error('KayÄ±t baÅŸarÄ±sÄ±z.');
       const data = await res.json();
-      if (data.success || res.ok) { showToast('Hesap güncellendi.'); closeCopilotModal(); loadCopilotAccounts(); }
+      if (data.success || res.ok) { showToast('Hesap gÃ¼ncellendi.'); closeCopilotModal(); loadCopilotAccounts(); }
     } catch (err) { showToast(err.message, 'error'); }
   });
 }
 const btnAddCopilotAcc = document.getElementById('btn-add-copilot-acc');
 if (btnAddCopilotAcc) {
   btnAddCopilotAcc.addEventListener('click', async () => {
-    const label = prompt('Yeni Copilot hesabı adı:', 'Copilot Hesap #' + (copilotAccountsData.length + 1));
+    const label = prompt('Yeni Copilot hesabÄ± adÄ±:', 'Copilot Hesap #' + (copilotAccountsData.length + 1));
     if (label === null) return;
     try {
       const res = await fetch('/api/copilot-accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: label.trim() || undefined }) });
       const data = await res.json();
-      if (data.success) { showToast('Yeni Copilot profil yuvası eklendi!'); loadCopilotAccounts(); }
+      if (data.success) { showToast('Yeni Copilot profil yuvasÄ± eklendi!'); loadCopilotAccounts(); }
       else { throw new Error(data.error || 'Eklenemedi'); }
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -1820,7 +1821,7 @@ if (btnAddKey) {
     const nextNum = keysData.length === 0 ? 1 : (Math.max(...keysData.map(k => k.id || 0)) + 1);
     const label = prompt('Yeni anahtar etiketi:', `Stability #${nextNum}`);
     if (label === null) return;
-    const apiKey = prompt('API anahtarı (sk-...) veya boş bırakın:', '');
+    const apiKey = prompt('API anahtarÄ± (sk-...) veya boÅŸ bÄ±rakÄ±n:', '');
     if (apiKey === null) return;
     try {
       const res = await fetch('/api/keys/add', {
@@ -1830,7 +1831,7 @@ if (btnAddKey) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Yeni anahtar yuvası eklendi!');
+        showToast('Yeni anahtar yuvasÄ± eklendi!');
         fetchKeys();
       } else {
         throw new Error(data.error || 'Eklenemedi');
@@ -1839,7 +1840,7 @@ if (btnAddKey) {
   });
 }
 window.deleteKeySlot = async function(id) {
-  if (!confirm(`#${id} Stability anahtar yuvasını silmek istediğinize emin misiniz?`)) return;
+  if (!confirm(`#${id} Stability anahtar yuvasÄ±nÄ± silmek istediÄŸinize emin misiniz?`)) return;
   try {
     const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
     const data = await res.json();
@@ -1874,7 +1875,7 @@ if (profilePassword) profilePassword.addEventListener('input', updateProfileSubm
 async function loadProfileData() {
   try {
     const res = await fetch('/api/profile');
-    if (!res.ok) throw new Error('Profil yüklenemedi');
+    if (!res.ok) throw new Error('Profil yÃ¼klenemedi');
     const data = await res.json();
     if (profileUsername) profileUsername.value = data.username || '';
     if (profileRole) profileRole.value = data.role || '';
@@ -1905,11 +1906,11 @@ if (profileForm) {
       });
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Profil güncellenemedi');
+        throw new Error(errData.error || 'Profil gÃ¼ncellenemedi');
       }
       const data = await res.json();
       if (data.success) {
-        showToast('Profil bilgileriniz güncellendi!');
+        showToast('Profil bilgileriniz gÃ¼ncellendi!');
         initialProfileDisplayName = displayName;
         initialProfilePassword = '';
         updateProfileSubmitState();
@@ -1935,12 +1936,12 @@ function renderUsers() {
   usersGrid.innerHTML = '';
   const currentUserId = parseInt(document.body.getAttribute('data-user-id') || '0');
   usersData.forEach(u => {
-    let badgeClass = u.role === 'Yönetici' ? 'badge-active' : 'badge-empty';
-    let badgeText = u.role === 'Yönetici' ? 'Yönetici (Admin)' : 'Standart Kullanıcı';
+    let badgeClass = u.role === 'YÃ¶netici' ? 'badge-active' : 'badge-empty';
+    let badgeText = u.role === 'YÃ¶netici' ? 'YÃ¶netici (Admin)' : 'Standart KullanÄ±cÄ±';
     const card = document.createElement('div');
     card.className = 'key-card';
     const isCurrentAdmin = u.id === currentUserId;
-    const canSeeImages = u.role !== 'Yönetici' || isCurrentAdmin;
+    const canSeeImages = u.role !== 'YÃ¶netici' || isCurrentAdmin;
 
     card.innerHTML = `
       <div class="key-card-top">
@@ -1948,22 +1949,22 @@ function renderUsers() {
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="key-stats-row" style="margin-top: 12px; margin-bottom: 12px;">
-        <span>Üretilen Görsel Sayısı: <strong>${u.imageCount}</strong> adet</span>
+        <span>Ãœretilen GÃ¶rsel SayÄ±sÄ±: <strong>${u.imageCount}</strong> adet</span>
       </div>
       <div style="display:flex; gap: 6px; flex-wrap: wrap;">
         ${canSeeImages ? `
-          <button onclick="openUserImagesModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}')" style="flex:1;" title="Ürettiği görselleri gör">
-            <i class="fa-solid fa-images"></i> Görseller (${u.imageCount})
+          <button onclick="openUserImagesModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}')" style="flex:1;" title="ÃœrettiÄŸi gÃ¶rselleri gÃ¶r">
+            <i class="fa-solid fa-images"></i> GÃ¶rseller (${u.imageCount})
           </button>
         ` : `
-          <button disabled style="flex:1; opacity:0.55; cursor:not-allowed;" title="Diğer yöneticilerin ürettiği görseller görüntülenemez">
-            <i class="fa-solid fa-shield-halved"></i> Diğer Yönetici
+          <button disabled style="flex:1; opacity:0.55; cursor:not-allowed;" title="DiÄŸer yÃ¶neticilerin Ã¼rettiÄŸi gÃ¶rseller gÃ¶rÃ¼ntÃ¼lenemez">
+            <i class="fa-solid fa-shield-halved"></i> DiÄŸer YÃ¶netici
           </button>
         `}
-        <button onclick="openUserEditModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}', '${u.role}')" title="Kullanıcıyı Düzenle">
-          <i class="fa-solid fa-user-pen"></i> Düzenle
+        <button onclick="openUserEditModal(${u.id}, '${u.displayName.replace(/'/g, "\\'")}', '${u.role}')" title="KullanÄ±cÄ±yÄ± DÃ¼zenle">
+          <i class="fa-solid fa-user-pen"></i> DÃ¼zenle
         </button>
-        <button onclick="deleteUserSlot(${u.id}, '${u.username}')" style="color: var(--color-danger);" title="Kullanıcıyı Sil">
+        <button onclick="deleteUserSlot(${u.id}, '${u.username}')" style="color: var(--color-danger);" title="KullanÄ±cÄ±yÄ± Sil">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -2021,7 +2022,7 @@ if (userEditForm) {
     const id = parseInt(userEditId.value);
     const displayName = userEditDisplayName ? userEditDisplayName.value.trim() : '';
     const password = userEditPassword ? userEditPassword.value.trim() : '';
-    const role = userEditRole ? userEditRole.value : 'Kullanıcı';
+    const role = userEditRole ? userEditRole.value : 'KullanÄ±cÄ±';
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: 'POST',
@@ -2034,11 +2035,11 @@ if (userEditForm) {
       });
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Kullanıcı güncellenemedi');
+        throw new Error(errData.error || 'KullanÄ±cÄ± gÃ¼ncellenemedi');
       }
       const data = await res.json();
       if (data.success) {
-        showToast(`Kullanıcı #${id} güncellendi!`);
+        showToast(`KullanÄ±cÄ± #${id} gÃ¼ncellendi!`);
         closeUserEditModal();
         fetchUsers();
       }
@@ -2062,7 +2063,7 @@ if (btnAddUser) {
     if (userAddUsername) userAddUsername.value = '';
     if (userAddDisplayName) userAddDisplayName.value = '';
     if (userAddPassword) userAddPassword.value = '';
-    if (userAddRole) userAddRole.value = 'Kullanıcı';
+    if (userAddRole) userAddRole.value = 'KullanÄ±cÄ±';
     userAddModal.style.display = 'flex';
   });
 }
@@ -2076,7 +2077,7 @@ if (userAddForm) {
     const username = userAddUsername ? userAddUsername.value.trim() : '';
     const displayName = userAddDisplayName ? userAddDisplayName.value.trim() : '';
     const password = userAddPassword ? userAddPassword.value.trim() : '';
-    const role = userAddRole ? userAddRole.value : 'Kullanıcı';
+    const role = userAddRole ? userAddRole.value : 'KullanÄ±cÄ±';
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -2085,11 +2086,11 @@ if (userAddForm) {
       });
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Kullanıcı eklenemedi');
+        throw new Error(errData.error || 'KullanÄ±cÄ± eklenemedi');
       }
       const data = await res.json();
       if (data.success) {
-        showToast('Yeni kullanıcı oluşturuldu!');
+        showToast('Yeni kullanÄ±cÄ± oluÅŸturuldu!');
         closeUserAddModal();
         fetchUsers();
       }
@@ -2099,16 +2100,16 @@ if (userAddForm) {
   });
 }
 window.deleteUserSlot = async function(id, username) {
-  if (!confirm(`@${username} kullanıcısını ve ürettiği tüm görselleri kalıcı olarak silmek istediğinize emin misiniz?`)) return;
+  if (!confirm(`@${username} kullanÄ±cÄ±sÄ±nÄ± ve Ã¼rettiÄŸi tÃ¼m gÃ¶rselleri kalÄ±cÄ± olarak silmek istediÄŸinize emin misiniz?`)) return;
   try {
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
     if (!res.ok) {
       const errData = await res.json();
-      throw new Error(errData.error || 'Kullanıcı silinemedi');
+      throw new Error(errData.error || 'KullanÄ±cÄ± silinemedi');
     }
     const data = await res.json();
     if (data.success) {
-      showToast(`@${username} kullanıcısı silindi.`);
+      showToast(`@${username} kullanÄ±cÄ±sÄ± silindi.`);
       fetchUsers();
       fetchImages();
     }
@@ -2122,11 +2123,11 @@ const userImagesContainer = document.getElementById('user-images-container');
 const btnUserImagesClose = document.getElementById('btn-user-images-close');
 window.openUserImagesModal = function(userId, displayName) {
   if (!userImagesModal || !userImagesContainer) return;
-  if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} — Ürettiği Görseller`;
+  if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} â€” ÃœrettiÄŸi GÃ¶rseller`;
   const userObj = usersData.find(u => u.id === userId);
   const imgs = userObj ? userObj.images : [];
   if (!imgs || imgs.length === 0) {
-    userImagesContainer.innerHTML = `<div class="gallery-empty-panel" style="grid-column: 1/-1;"><p>Bu kullanıcının henüz üretmiş olduğu bir görsel bulunmuyor.</p></div>`;
+    userImagesContainer.innerHTML = `<div class="gallery-empty-panel" style="grid-column: 1/-1;"><p>Bu kullanÄ±cÄ±nÄ±n henÃ¼z Ã¼retmiÅŸ olduÄŸu bir gÃ¶rsel bulunmuyor.</p></div>`;
   } else {
     userImagesContainer.innerHTML = '';
     const groupedImages = [];
@@ -2151,10 +2152,10 @@ window.openUserImagesModal = function(userId, displayName) {
            <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
              ${groupOrItem.items.map((it, idx) => {
                 if (idx > 2) return '';
-                return '<img src="' + it.image + '" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">';
+                return '<img src="' + it.image + '" alt="Ãœretilen gÃ¶rsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">';
              }).join('')}
            </div>
-           <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+           <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Ã‡oklu Ãœretim</div>
            <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
                <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
            </div>
@@ -2168,10 +2169,10 @@ window.openUserImagesModal = function(userId, displayName) {
          });
       } else {
          const item = groupOrItem;
-         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ãœcretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
          const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
          div.innerHTML = `
-           <img src="${item.image}" alt="Üretilen görsel">
+           <img src="${item.image}" alt="Ãœretilen gÃ¶rsel">
            <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
            <div class="gallery-overlay">${item.model}</div>
            <button class="btn-del-img" title="Sil" onclick="deleteImageFromUserModal(event, ${item.id}, ${userId})">
@@ -2190,7 +2191,7 @@ window.openUserImagesModal = function(userId, displayName) {
 };
 window.deleteGroupFromUserModal = async function(e, groupId, userId) {
   e.stopPropagation();
-  if (!confirm('Bu çoklu üretimi ve içindeki tüm görselleri silmek istiyor musunuz?')) return;
+  if (!confirm('Bu Ã§oklu Ã¼retimi ve iÃ§indeki tÃ¼m gÃ¶rselleri silmek istiyor musunuz?')) return;
   const userObj = usersData.find(u => u.id === userId);
   const imgs = userObj ? userObj.images : [];
   const groupItems = imgs.filter(i => i.groupId === groupId);
@@ -2198,7 +2199,7 @@ window.deleteGroupFromUserModal = async function(e, groupId, userId) {
     for (const item of groupItems) {
       await fetch(`/api/images/${item.id}`, { method: 'DELETE' });
     }
-    showToast('Çoklu üretim silindi!');
+    showToast('Ã‡oklu Ã¼retim silindi!');
     await fetchUsers();
     await fetchImages();
     const updatedUserObj = usersData.find(u => u.id === userId);
@@ -2206,16 +2207,16 @@ window.deleteGroupFromUserModal = async function(e, groupId, userId) {
       openUserImagesModal(userId, updatedUserObj.displayName);
     }
   } catch (err) {
-    showToast('Silinirken hata oluştu');
+    showToast('Silinirken hata oluÅŸtu');
   }
 };
 window.deleteImageFromUserModal = async function(e, imageId, userId) {
   e.stopPropagation();
-  if (!confirm('Bu görseli kalıcı olarak silmek istiyor musunuz?')) return;
+  if (!confirm('Bu gÃ¶rseli kalÄ±cÄ± olarak silmek istiyor musunuz?')) return;
   try {
     const res = await fetch(`/api/images/${imageId}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Silinemedi');
-    showToast('Görsel silindi!');
+    showToast('GÃ¶rsel silindi!');
     await fetchUsers();
     await fetchImages();
     const userObj = usersData.find(u => u.id === userId);
@@ -2238,7 +2239,7 @@ if (isAdmin) {
   fetchUsers();
 }
 // ==========================================
-// KOLEKSİYON VE FAVORİLER MANTIĞI
+// KOLEKSÄ°YON VE FAVORÄ°LER MANTIÄI
 // ==========================================
 let currentCollectionFolder = null;
 
@@ -2283,7 +2284,7 @@ async function toggleFavorite(e, imageId) {
     }
     try {
         const res = await fetch(`/api/images/${imageId}/favorite`, { method: 'PUT' });
-        if (!res.ok) throw new Error('Favori işlemi başarısız');
+        if (!res.ok) throw new Error('Favori iÅŸlemi baÅŸarÄ±sÄ±z');
         const data = await res.json();
         
         const img = persistentImages.find(i => i.id === imageId);
@@ -2306,7 +2307,7 @@ async function toggleFavorite(e, imageId) {
         
         const favCountEl = document.getElementById('fav-count');
         if (favCountEl) favCountEl.textContent = persistentImages.filter(i => i.isFavorite).length;
-        showToast(data.isFavorite ? 'Favorilere eklendi!' : 'Favorilerden çıkarıldı.');
+        showToast(data.isFavorite ? 'Favorilere eklendi!' : 'Favorilerden Ã§Ä±karÄ±ldÄ±.');
     } catch(err) {
         showToast('Hata: ' + err.message, 'error');
     }
@@ -2367,7 +2368,7 @@ async function toggleGroupFavorite(e, groupId) {
                 else btn.classList.remove('active');
             });
         }
-        showToast(!isCurrentlyFavorite ? 'Grup favorilere eklendi!' : 'Grup favorilerden çıkarıldı.');
+        showToast(!isCurrentlyFavorite ? 'Grup favorilere eklendi!' : 'Grup favorilerden Ã§Ä±karÄ±ldÄ±.');
     } catch(err) {
         showToast('Hata: ' + err.message, 'error');
     }
@@ -2379,12 +2380,12 @@ function renderFavorites() {
     container.innerHTML = '';
     const favs = persistentImages.filter(i => i.isFavorite);
     
-    // Favori sayacını güncelle
+    // Favori sayacÄ±nÄ± gÃ¼ncelle
     const favCountEl = document.getElementById('fav-count');
     if (favCountEl) favCountEl.textContent = favs.length;
     
     if (favs.length === 0) {
-        container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-heart-crack"></i><p>Henüz favoriye eklenmiş bir görsel yok.</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-heart-crack"></i><p>HenÃ¼z favoriye eklenmiÅŸ bir gÃ¶rsel yok.</p></div>';
         return;
     }
     
@@ -2401,9 +2402,9 @@ function renderFavorites() {
             
             div.innerHTML = `
               <div style="display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap:2px; width:100%; height:100%;">
-                ${items.slice(0,4).map(it => `<img src="${it.image}" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">`).join('')}
+                ${items.slice(0,4).map(it => `<img src="${it.image}" alt="Ãœretilen gÃ¶rsel" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">`).join('')}
               </div>
-              <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+              <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Ã‡oklu Ãœretim</div>
               <div class="gallery-overlay" style="z-index:10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:10px;">
                   <span style="font-size:0.8rem; text-align:center;">${String(groupOrItem.prompt||'').substring(0,60)}...</span>
               </div>
@@ -2420,7 +2421,7 @@ function renderFavorites() {
             const favIcon = item.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
             div.innerHTML = `
-              <img src="${item.image}" alt="Görsel">
+              <img src="${item.image}" alt="GÃ¶rsel">
               <div class="gallery-overlay" style="z-index:10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:10px;">
                   <span style="font-size:0.8rem; text-align:center;">${String(item.prompt||'').substring(0,60)}...</span>
               </div>
@@ -2451,7 +2452,7 @@ function renderCollections() {
               </button>
               <h3 style="color:#fff; margin:0; flex:1;"><i class="fa-solid fa-folder-open" style="color:var(--color-primary);"></i> ${currentCollectionFolder}</h3>
               <button class="action-btn primary-btn" onclick="openAddImagesToCollectionModal('${currentCollectionFolder}')">
-                  <i class="fa-solid fa-plus"></i> Görsel Ekle
+                  <i class="fa-solid fa-plus"></i> GÃ¶rsel Ekle
               </button>
               <button class="action-btn" style="background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.3);" onclick="deleteCollection('${currentCollectionFolder}')">
                   <i class="fa-solid fa-trash-can"></i> Koleksiyonu Sil
@@ -2462,7 +2463,7 @@ function renderCollections() {
         container.innerHTML = '';
         const folderItems = persistentImages.filter(i => i.folderName === currentCollectionFolder);
         if (folderItems.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>Bu koleksiyonda henüz görsel yok. Yukarıdaki "Görsel Ekle" butonunu kullanarak ekleyebilirsiniz.</p></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>Bu koleksiyonda henÃ¼z gÃ¶rsel yok. YukarÄ±daki "GÃ¶rsel Ekle" butonunu kullanarak ekleyebilirsiniz.</p></div>';
             return;
         }
         
@@ -2478,16 +2479,16 @@ function renderCollections() {
                 
                 div.innerHTML = `
                   <div style="display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap:2px; width:100%; height:100%;">
-                    ${items.slice(0,4).map(it => `<img src="${it.image}" alt="Görsel" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">`).join('')}
+                    ${items.slice(0,4).map(it => `<img src="${it.image}" alt="GÃ¶rsel" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">`).join('')}
                   </div>
-                  <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+                  <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Ã‡oklu Ãœretim</div>
                   <div class="gallery-overlay" style="z-index:10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:10px;">
                       <span style="font-size:0.8rem; text-align:center;">${String(groupOrItem.prompt||'').substring(0,60)}...</span>
                   </div>
                   <button class="${favActiveClass} btn-fav-bottom-right" title="Favori" onclick="toggleGroupFavorite(event, '${groupOrItem.groupId}')">
                     <i class="${favIcon}"></i>
                   </button>
-                  <button class="btn-del-img" title="Koleksiyondan Çıkar" onclick="removeFromFolder(event, ${items[0].id}, true)">
+                  <button class="btn-del-img" title="Koleksiyondan Ã‡Ä±kar" onclick="removeFromFolder(event, ${items[0].id}, true)">
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 `;
@@ -2500,14 +2501,14 @@ function renderCollections() {
                 const favIcon = item.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
                 const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
                 div.innerHTML = `
-                  <img src="${item.image}" alt="Görsel">
+                  <img src="${item.image}" alt="GÃ¶rsel">
                   <div class="gallery-overlay" style="z-index:10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:10px;">
                       <span style="font-size:0.8rem; text-align:center;">${String(item.prompt||'').substring(0,60)}...</span>
                   </div>
                   <button class="${favActiveClass} btn-fav-bottom-right" title="Favori" onclick="toggleFavorite(event, ${item.id})">
                     <i class="${favIcon}"></i>
                   </button>
-                  <button class="btn-del-img" title="Koleksiyondan Çıkar" onclick="removeFromFolder(event, ${item.id}, false)">
+                  <button class="btn-del-img" title="Koleksiyondan Ã‡Ä±kar" onclick="removeFromFolder(event, ${item.id}, false)">
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 `;
@@ -2530,7 +2531,7 @@ function renderCollections() {
         const customFolders = JSON.parse(localStorage.getItem('customFolders') || '[]');
         const folders = [...new Set([...customFolders, ...persistentImages.filter(i => i.folderName).map(i => i.folderName)])];
         if (folders.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-layer-group"></i><p>Henüz koleksiyon bulunmuyor. "Yeni Koleksiyon" butonuyla oluşturun ve görsellerinizi düzenleyin.</p></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-layer-group"></i><p>HenÃ¼z koleksiyon bulunmuyor. "Yeni Koleksiyon" butonuyla oluÅŸturun ve gÃ¶rsellerinizi dÃ¼zenleyin.</p></div>';
             return;
         }
         
@@ -2548,7 +2549,7 @@ function renderCollections() {
               ${coverHtml}
               <div class="folder-card-info">
                   <span class="folder-card-name"><i class="fa-solid fa-folder" style="color:var(--color-primary);"></i> ${f}</span>
-                  <span class="folder-card-count">${fItems.length} görsel</span>
+                  <span class="folder-card-count">${fItems.length} gÃ¶rsel</span>
               </div>
               <div class="folder-card-actions">
                 <button class="action-btn-sm danger-btn-sm" title="Koleksiyonu Sil" onclick="event.stopPropagation(); deleteCollection('${f}')">
@@ -2566,10 +2567,10 @@ function renderCollections() {
 }
 
 async function deleteCollection(folderName) {
-    if (!confirm(`'${folderName}' koleksiyonunu silmek istiyor musunuz? Görseller silinmez, sadece koleksiyondan çıkarılır.`)) return;
+    if (!confirm(`'${folderName}' koleksiyonunu silmek istiyor musunuz? GÃ¶rseller silinmez, sadece koleksiyondan Ã§Ä±karÄ±lÄ±r.`)) return;
     try {
         const res = await fetch(`/api/folders/${encodeURIComponent(folderName)}`, { method: 'DELETE' });
-        // Silinemedi hatasını yoksayabiliriz çünkü backend'de folder tablosu yoksa 404 dönebilir
+        // Silinemedi hatasÄ±nÄ± yoksayabiliriz Ã§Ã¼nkÃ¼ backend'de folder tablosu yoksa 404 dÃ¶nebilir
         
         let customFolders = JSON.parse(localStorage.getItem('customFolders') || '[]');
         customFolders = customFolders.filter(f => f !== folderName);
@@ -2586,7 +2587,7 @@ async function deleteCollection(folderName) {
 
 async function removeFromFolder(e, imageId, isGroup) {
     e.stopPropagation();
-    if(!confirm('Bu görseli koleksiyondan çıkarmak istiyor musunuz?')) return;
+    if(!confirm('Bu gÃ¶rseli koleksiyondan Ã§Ä±karmak istiyor musunuz?')) return;
     try {
         if (isGroup) {
             const img = persistentImages.find(i => i.id === imageId);
@@ -2610,7 +2611,7 @@ async function removeFromFolder(e, imageId, isGroup) {
         }
         renderGallery();
         renderCollections();
-        showToast('Koleksiyondan çıkarıldı.');
+        showToast('Koleksiyondan Ã§Ä±karÄ±ldÄ±.');
     } catch(err) {
         showToast('Hata: ' + err.message, 'error');
     }
@@ -2653,7 +2654,7 @@ if (btnSaveFolder) {
     });
 }
 
-// Koleksiyona Görsel Ekle Modal
+// Koleksiyona GÃ¶rsel Ekle Modal
 let collectionSelectMode = false;
 let collectionSelectedImages = [];
 
@@ -2668,9 +2669,9 @@ function openAddImagesToCollectionModal(folderName) {
     container.innerHTML = '';
     const available = persistentImages.filter(i => i.folderName !== folderName);
     
-    // Çoklu üretim gruplarını ayır, hepsini tekil olarak göster (kullanıcı tekil seçmek istedi)
+    // Ã‡oklu Ã¼retim gruplarÄ±nÄ± ayÄ±r, hepsini tekil olarak gÃ¶ster (kullanÄ±cÄ± tekil seÃ§mek istedi)
     if (available.length === 0) {
-        container.innerHTML = '<p style="color:#aaa; text-align:center;">Eklenecek görsel bulunamadı.</p>';
+        container.innerHTML = '<p style="color:#aaa; text-align:center;">Eklenecek gÃ¶rsel bulunamadÄ±.</p>';
     } else {
         available.forEach(item => {
             const div = document.createElement('div');
@@ -2726,9 +2727,9 @@ if (btnConfirmCollectionAdd) {
             }
             renderGallery();
             renderCollections();
-            showToast(`${collectionSelectedImages.length} görsel koleksiyona eklendi.`);
+            showToast(`${collectionSelectedImages.length} gÃ¶rsel koleksiyona eklendi.`);
         } catch(err) {
-            showToast('Hata oluştu.', 'error');
+            showToast('Hata oluÅŸtu.', 'error');
         }
         
         btnConfirmCollectionAdd.disabled = false;
@@ -2738,7 +2739,7 @@ if (btnConfirmCollectionAdd) {
 }
 
 // ==========================================
-// YENİ SAYFA GEÇİŞLERİ (KOLEKSİYON & FAVORİLER)
+// YENÄ° SAYFA GEÃ‡Ä°ÅLERÄ° (KOLEKSÄ°YON & FAVORÄ°LER)
 // ==========================================
 const navCollections = document.getElementById('nav-collections');
 const navFavorites = document.getElementById('nav-favorites');
@@ -2795,17 +2796,17 @@ window.switchPage = function(page) {
         if (page === 'studio') {
             if (navStudio) navStudio.classList.add('active');
             if (sectionStudio) sectionStudio.classList.add('active');
-            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>Stüdyo</h2>';
+            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <h2>StÃ¼dyo</h2>';
             fetchImages();
         } else if (page === 'gallery') {
             if (btnGalleryToggle) btnGalleryToggle.classList.add('active');
             if (sectionGallery) sectionGallery.classList.add('active');
-            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-images"></i> <h2>Görsel Arşivi</h2>';
+            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-images"></i> <h2>GÃ¶rsel ArÅŸivi</h2>';
             fetchImages();
         } else if (page === 'dashboard' && isAdmin) {
             if (navDashboard) navDashboard.classList.add('active');
             if (sectionDashboard) sectionDashboard.classList.add('active');
-            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>Yönetim Paneli</h2>';
+            if (pageTitleHeading) pageTitleHeading.innerHTML = '<i class="fa-solid fa-sliders"></i> <h2>YÃ¶netim Paneli</h2>';
             if(typeof fetchKeys === 'function') fetchKeys();
             if(typeof fetchGeminiAccounts === 'function') fetchGeminiAccounts();
             if(typeof loadChatGptAccounts === 'function') loadChatGptAccounts();
@@ -2888,7 +2889,7 @@ window.renderUserModalContent = function() {
     
     const currentUserId = parseInt(document.body.getAttribute('data-user-id') || '0');
     const isOwnImages = currentUserModalId === currentUserId;
-    // Admin başkasının görsellerinde favori/koleksiyon değiştiremez, sadece görebilir
+    // Admin baÅŸkasÄ±nÄ±n gÃ¶rsellerinde favori/koleksiyon deÄŸiÅŸtiremez, sadece gÃ¶rebilir
     const canModify = isOwnImages;
     
     let filteredImages = userObj.images;
@@ -2899,14 +2900,14 @@ window.renderUserModalContent = function() {
     }
     
     if (filteredImages.length === 0) {
-        const emptyMsg = currentUserModalTab === 'favorites' ? 'Bu kullanıcının favorisi bulunmuyor.'
-            : currentUserModalTab === 'collections' ? 'Bu kullanıcının koleksiyonu bulunmuyor.'
-            : 'Bu sekmede gösterilecek görsel bulunmuyor.';
+        const emptyMsg = currentUserModalTab === 'favorites' ? 'Bu kullanÄ±cÄ±nÄ±n favorisi bulunmuyor.'
+            : currentUserModalTab === 'collections' ? 'Bu kullanÄ±cÄ±nÄ±n koleksiyonu bulunmuyor.'
+            : 'Bu sekmede gÃ¶sterilecek gÃ¶rsel bulunmuyor.';
         userImagesContainer.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-${currentUserModalTab === 'favorites' ? 'heart-crack' : currentUserModalTab === 'collections' ? 'folder-open' : 'image'}"></i><p>${emptyMsg}</p></div>`;
         return;
     }
     
-    // Koleksiyon sekmesinde klasör gruplama göster
+    // Koleksiyon sekmesinde klasÃ¶r gruplama gÃ¶ster
     if (currentUserModalTab === 'collections') {
         const userFolders = [...new Set(filteredImages.map(i => i.folderName).filter(Boolean))];
         userFolders.forEach(f => {
@@ -2943,7 +2944,7 @@ function renderUserModalItem(groupOrItem, showDelete, canModify) {
           <div style="display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap:2px; width:100%; height:100%;">
             ${items.slice(0,4).map(it => `<img src="${it.image}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">`).join('')}
           </div>
-          <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
+          <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Ã‡oklu Ãœretim</div>
           <div class="gallery-overlay" style="z-index:10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding:10px;">
               <span style="font-size:0.8rem; text-align:center;">${String(groupOrItem.prompt||'').substring(0,60)}...</span>
           </div>
@@ -2964,7 +2965,7 @@ function renderUserModalItem(groupOrItem, showDelete, canModify) {
         const folderBadge = item.folderName ? `<span class="gallery-user-folder-badge"><i class="fa-solid fa-folder"></i> ${item.folderName}</span>` : '';
         
         div.innerHTML = `
-          <img src="${item.image}" alt="Görsel">
+          <img src="${item.image}" alt="GÃ¶rsel">
           ${folderBadge}
           <div class="gallery-overlay">${item.model}</div>
           ${canModify ? `<span class="${favActiveClass} btn-fav-bottom-right" style="pointer-events:none;">
@@ -2985,10 +2986,37 @@ const oldOpenUserImagesModal = window.openUserImagesModal;
 window.openUserImagesModal = function(userId, displayName) {
     currentUserModalId = userId;
     if (userImagesModal) userImagesModal.style.display = 'flex';
-    if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} - Görselleri`;
+    if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} - GÃ¶rselleri`;
     renderUserModalContent();
 };
 
 
 
+
+
+// --- Notification System ---
+let unreadNotificationCount = 0;
+let lastGeneratedGroupId = null;
+
+function updateNotificationBadge(count) {
+  unreadNotificationCount = count;
+  const badgeDesktop = document.getElementById('notif-count');
+  const badgeMobile = document.getElementById('notif-count-mobile');
+  if (unreadNotificationCount > 0) {
+    if (badgeDesktop) { badgeDesktop.style.display = 'flex'; badgeDesktop.textContent = unreadNotificationCount; }
+    if (badgeMobile) { badgeMobile.style.display = 'flex'; badgeMobile.textContent = unreadNotificationCount; }
+  } else {
+    if (badgeDesktop) badgeDesktop.style.display = 'none';
+    if (badgeMobile) badgeMobile.style.display = 'none';
+  }
+}
+
+window.handleNotificationClick = function() {
+  if (unreadNotificationCount > 0 && lastGeneratedGroupId) {
+    updateNotificationBadge(0);
+    openTripleGroupModal(lastGeneratedGroupId);
+  } else {
+    showToast('Okunmamış yeni bildirim yok.', 'info');
+  }
+};
 

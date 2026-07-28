@@ -62,6 +62,12 @@
             <span class="gallery-count" id="gallery-count">0</span>
           </button>
 
+          <button id="nav-notifications" class="sidebar-nav-item nav-pill" title="Bildirimler" onclick="handleNotificationClick()">
+            <i class="fa-solid fa-bell"></i>
+            <span class="nav-text">Bildirimler</span>
+            <span class="gallery-count notif-badge" id="notif-count" style="display:none; background: var(--color-danger); color: white;">0</span>
+          </button>
+
           <button id="nav-collections" class="sidebar-nav-item nav-pill" title="Koleksiyonlar">
             <i class="fa-solid fa-box-archive"></i>
             <span class="nav-text">Koleksiyonlar</span>
@@ -99,6 +105,14 @@
 
     <!-- Sağ Ana İçerik Alanı -->
     <main class="main-content" id="main-content">
+      <!-- Mobile Only Brand Header -->
+      <div class="mobile-brand-header">
+        <img src="/images/logo.png" alt="Mega Image Studio">
+        <div class="brand-text">
+          <span class="brand-primary">MEGA IMAGE</span><span class="brand-secondary">STUDIO</span>
+          <span class="brand-subtitle">Görsel Platformu</span>
+        </div>
+      </div>
       <!-- Üst Bilgi Çubuğu (Top Bar) -->
       <header class="top-bar glass-card">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -126,6 +140,12 @@
           </div>
           <!-- Dropdown Menu -->
           <div id="user-dropdown-menu" class="user-dropdown-menu glass-card" style="display:none;">
+            @if (!isAdmin)
+            {
+                <button type="button" class="dropdown-item" onclick="document.getElementById('btn-profile').click(); document.getElementById('user-dropdown-menu').style.display='none';">
+                    <i class="fa-solid fa-user-gear"></i> Bilgileri Güncelle
+                </button>
+            }
             <form asp-controller="Home" asp-action="Logout" method="post" style="margin:0;">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="dropdown-item dropdown-logout">
@@ -966,12 +986,12 @@
             <i class="fa-solid fa-sliders"></i>
             <span>Yönetim</span>
           </button>
-      } else {
-          <button class="bottom-nav-item" onclick="document.getElementById('btn-profile').click()" title="Profil">
-            <i class="fa-solid fa-user-gear"></i>
-            <span>Profil</span>
-          </button>
       }
+      <button class="bottom-nav-item" onclick="document.getElementById('nav-notifications').click()" title="Bildirimler" style="position:relative;">
+        <i class="fa-solid fa-bell"></i>
+        <span>Bildirimler</span>
+        <span class="gallery-count notif-badge" id="notif-count-mobile" style="display:none; position:absolute; top:5px; right:15px; background:var(--color-danger); color:white; border-radius:50%; width:16px; height:16px; font-size:0.6rem; justify-content:center; align-items:center;">0</span>
+      </button>
     </nav>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="~/js/app.js" asp-append-version="true"></script>
