@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -108,13 +108,13 @@
     <!-- Sağ Ana İçerik Alanı -->
     <main class="main-content" id="main-content">
       <!-- Mobile Only Brand Header -->
-      <div class="mobile-brand-header">
-        <img src="/images/logo.png" alt="Mega Image Studio">
-        <div class="brand-text">
-          <span class="brand-primary">MEGA IMAGE</span><span class="brand-secondary">STUDIO</span>
-          <span class="brand-subtitle">Görsel Platformu</span>
+              <div class="mobile-brand-header">
+          <img src="/images/logo.png" alt="Mega Image Studio">
+          <div class="brand-text">
+            <span class="brand-primary">MEGA IMAGE <span class="brand-highlight">STUDIO</span></span>
+            <span class="brand-subtitle"><i class="fa-solid fa-sparkles"></i> Görsel Platformu</span>
+          </div>
         </div>
-      </div>
       <!-- Üst Bilgi Çubuğu (Top Bar) -->
       <header class="top-bar glass-card">
         <div style="display: flex; align-items: center; gap: 10px;">
