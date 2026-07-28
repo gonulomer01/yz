@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -1027,6 +1027,21 @@ namespace yz.Controllers
             var job = _jobQueueService.GetStatus(jobId);
             if (job == null) return NotFound(new { error = "Kuyrukta bulunamadı." });
             
+            if (job.Result is TripleJobState state)
+            {
+                foreach (var kv in state.SubJobIds)
+                {
+                    var childJob = _jobQueueService.GetStatus(kv.Value);
+                    if (childJob != null)
+                    {
+                        state.SubStatuses[kv.Key] = new {
+                            status = childJob.Status,
+                            position = childJob.Position
+                        };
+                    }
+                }
+            }
+            
             return Ok(new { 
                 status = job.Status, 
                 position = job.Position, 
@@ -1050,6 +1065,8 @@ namespace yz.Controllers
             public System.Collections.Generic.List<object> Progress { get; set; } = new();
             public System.Collections.Generic.List<object> Failures { get; set; } = new();
             public bool IsCompleted { get; set; } = false;
+            public System.Collections.Generic.Dictionary<string, string> SubJobIds { get; set; } = new();
+            public System.Collections.Generic.Dictionary<string, object> SubStatuses { get; set; } = new();
         }
 
         [HttpPost("generate-triple-job")]
@@ -1060,10 +1077,18 @@ namespace yz.Controllers
             int currentUserId = GetCurrentUserId();
             bool isAdmin = User.IsInRole("Yönetici");
             string formattedPrompt = _aiGenerationService.FormatPrompt(req.Prompt, req.Style);
-            string groupId = System.Guid.NewGuid().ToString("N").Substring(0, 12);
+            string? groupId = req.TargetSite == "all" ? System.Guid.NewGuid().ToString("N").Substring(0, 12) : null;
 
-            var job = _jobQueueService.EnqueueJob(currentUserId, req.TargetSite == "all" ? 3 : 1);
+            var job = _jobQueueService.EnqueueJob(currentUserId, 0); // 0 slots for parent job
             var state = new TripleJobState { GroupId = groupId, Prompt = req.Prompt };
+            
+            if (req.TargetSite == "all" || req.TargetSite == "gemini")
+                state.SubJobIds["gemini"] = _jobQueueService.EnqueueJob(currentUserId, 1).JobId;
+            if (req.TargetSite == "all" || req.TargetSite == "chatgpt")
+                state.SubJobIds["chatgpt"] = _jobQueueService.EnqueueJob(currentUserId, 1).JobId;
+            if (req.TargetSite == "all" || req.TargetSite == "copilot")
+                state.SubJobIds["copilot"] = _jobQueueService.EnqueueJob(currentUserId, 1).JobId;
+                
             job.Result = state;
 
             _ = System.Threading.Tasks.Task.Run(async () =>
@@ -1077,36 +1102,56 @@ namespace yz.Controllers
 
                     var pending = new System.Collections.Generic.List<System.Threading.Tasks.Task<SiteGenerationResult>>();
 
-                    if (req.TargetSite == "all" || req.TargetSite == "gemini")
+                    if (state.SubJobIds.TryGetValue("gemini", out var geminiJobId))
                     {
                         pending.Add(System.Threading.Tasks.Task.Run(async () =>
                         {
-                            using var scope = _scopeFactory.CreateScope();
-                            var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
-                            MultiAiSeleniumService.CurrentCancellationToken.Value = job.Cts.Token;
-                            return await svc.GenerateSiteForTripleAsync("gemini", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                            try {
+                                await _jobQueueService.WaitInQueueAsync(geminiJobId);
+                                var childJob = _jobQueueService.GetStatus(geminiJobId);
+                                if (childJob == null || childJob.Status == "İptal Edildi") return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" };
+                                using var scope = _scopeFactory.CreateScope();
+                                var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                                MultiAiSeleniumService.CurrentCancellationToken.Value = childJob.Cts.Token;
+                                var res = await svc.GenerateSiteForTripleAsync("gemini", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                                _jobQueueService.CompleteJob(geminiJobId, res);
+                                return res;
+                            } catch { _jobQueueService.CompleteJob(geminiJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "Hata" }; }
                         }));
                     }
-                    
-                    if (req.TargetSite == "all" || req.TargetSite == "chatgpt")
+                    if (state.SubJobIds.TryGetValue("chatgpt", out var chatgptJobId))
                     {
                         pending.Add(System.Threading.Tasks.Task.Run(async () =>
                         {
-                            using var scope = _scopeFactory.CreateScope();
-                            var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
-                            MultiAiSeleniumService.CurrentCancellationToken.Value = job.Cts.Token;
-                            return await svc.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                            try {
+                                await _jobQueueService.WaitInQueueAsync(chatgptJobId);
+                                var childJob = _jobQueueService.GetStatus(chatgptJobId);
+                                if (childJob == null || childJob.Status == "İptal Edildi") return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "cancelled" };
+                                using var scope = _scopeFactory.CreateScope();
+                                var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                                MultiAiSeleniumService.CurrentCancellationToken.Value = childJob.Cts.Token;
+                                var res = await svc.GenerateSiteForTripleAsync("chatgpt", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                                _jobQueueService.CompleteJob(chatgptJobId, res);
+                                return res;
+                            } catch { _jobQueueService.CompleteJob(chatgptJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "Hata" }; }
                         }));
                     }
 
-                    if (req.TargetSite == "all" || req.TargetSite == "copilot")
+                    if (state.SubJobIds.TryGetValue("copilot", out var copilotJobId))
                     {
                         pending.Add(System.Threading.Tasks.Task.Run(async () =>
                         {
-                            using var scope = _scopeFactory.CreateScope();
-                            var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
-                            MultiAiSeleniumService.CurrentCancellationToken.Value = job.Cts.Token;
-                            return await svc.GenerateSiteForTripleAsync("copilot", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                            try {
+                                await _jobQueueService.WaitInQueueAsync(copilotJobId);
+                                var childJob = _jobQueueService.GetStatus(copilotJobId);
+                                if (childJob == null || childJob.Status == "İptal Edildi") return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "cancelled" };
+                                using var scope = _scopeFactory.CreateScope();
+                                var svc = scope.ServiceProvider.GetRequiredService<MultiAiSeleniumService>();
+                                MultiAiSeleniumService.CurrentCancellationToken.Value = childJob.Cts.Token;
+                                var res = await svc.GenerateSiteForTripleAsync("copilot", formattedPrompt, req.AspectRatio, currentUserId, isAdmin, groupId);
+                                _jobQueueService.CompleteJob(copilotJobId, res);
+                                return res;
+                            } catch { _jobQueueService.CompleteJob(copilotJobId, error: "Hata"); return new SiteGenerationResult { Success = false, SourceSite = "copilot", Error = "Hata" }; }
                         }));
                     }
 
@@ -1176,6 +1221,12 @@ namespace yz.Controllers
         {
             if (req != null && !string.IsNullOrEmpty(req.JobId))
             {
+                var job = _jobQueueService.GetStatus(req.JobId);
+                if (job != null && job.Result is TripleJobState state)
+                {
+                    foreach (var kv in state.SubJobIds)
+                        _jobQueueService.CancelJob(kv.Value, GetCurrentUserId(), User.IsInRole("Yönetici"));
+                }
                 _jobQueueService.CancelJob(req.JobId, GetCurrentUserId(), User.IsInRole("Yönetici"));
             }
             return Ok(new { success = true, message = "Üretim işlemi durduruldu." });

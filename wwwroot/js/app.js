@@ -1,4 +1,4 @@
-﻿
+
 // Theme Toggle Logic
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
@@ -3015,6 +3015,8 @@ window.readNotification = function(id, groupId, imageId) {
   notificationsArray = notificationsArray.filter(n => n.id !== id);
   saveNotifications();
   renderNotifications();
+  const dropdown = document.getElementById('notification-dropdown-menu');
+  if (dropdown) dropdown.style.display = 'none';
   if (groupId && groupId !== 'single') {
       openTripleGroupModal(groupId);
   } else if (imageId) {
@@ -3336,6 +3338,24 @@ async function pollJob(jobId, type) {
           }
       } 
       else if (type === 'triple') {
+          if (data.result && data.result.subStatuses) {
+            Object.entries(data.result.subStatuses).forEach(([site, subData]) => {
+                const card = document.getElementById(`card-site-${site}`);
+                if (card) {
+                    const span = card.querySelector('.card-loader span');
+                    const icon = card.querySelector('.card-loader i');
+                    if (span && icon) {
+                        if (subData.status === 'Beklemede') {
+                            span.textContent = `Beklemede (Sıra: ${subData.position || '?'})`;
+                            icon.className = 'fa-regular fa-clock';
+                        } else if (subData.status === 'Üretiliyor') {
+                            span.textContent = `${site.charAt(0).toUpperCase() + site.slice(1)} Üretiliyor...`;
+                            icon.className = 'fa-solid fa-circle-notch fa-spin';
+                        }
+                    }
+                }
+            });
+          }
           if (data.result && data.result.progress) {
              // update cards dynamically
              const successes = data.result.progress;
