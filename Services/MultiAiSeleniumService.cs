@@ -628,7 +628,54 @@ namespace yz.Services
                     Console.WriteLine($"[Selenium] JS fetch ile görsel indirildi. Boyut: {fetchBytes.Length} byte.");
                     return fetchBytes;
                 }
-                Console.WriteLine($"[Selenium] Tüm indirme yöntemleri başarısız: {dataUrl}");
+                Console.WriteLine($"[Selenium] Tüm indirme yöntemleri başarısız: {dataUrl}. Yeni sekme ile Canvas deneniyor...");
+                try {
+                    string originalWindow = driver.CurrentWindowHandle;
+                    var jsExec = (IJavaScriptExecutor)driver;
+                    jsExec.ExecuteScript("window.open(arguments[0], '_blank');", src);
+                    await Task.Delay(1000);
+                    driver.SwitchTo().Window(driver.WindowHandles.Last());
+                    await Task.Delay(2000); // Wait for image to load
+                    
+                    string canvasScript2 = @"
+                        var done = arguments[0];
+                        try {
+                            var img = document.images[0] || document.querySelector('img');
+                            if (!img) { done('ERROR: No image found'); return; }
+                            var canvas = document.createElement('canvas');
+                            canvas.width = img.naturalWidth || img.width;
+                            canvas.height = img.naturalHeight || img.height;
+                            var ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            done(canvas.toDataURL('image/png'));
+                        } catch(e) { done('ERROR: ' + e.message); }
+                    ";
+                    
+                    var tabResult = jsExec.ExecuteAsyncScript(canvasScript2);
+                    string tabDataUrl = tabResult?.ToString() ?? "";
+                    
+                    driver.Close();
+                    driver.SwitchTo().Window(originalWindow);
+                    
+                    if (tabDataUrl.StartsWith("data:image"))
+                    {
+                        string base64DataTab = tabDataUrl.Substring(tabDataUrl.IndexOf(',') + 1);
+                        var tabBytes = Convert.FromBase64String(base64DataTab);
+                        Console.WriteLine($"[Selenium] Yeni sekme ile görsel çekildi. Boyut: {tabBytes.Length} byte.");
+                        return tabBytes;
+                    }
+                }
+                catch (Exception tabEx)
+                {
+                    Console.WriteLine($"[Selenium] Yeni sekme yöntemi başarısız: {tabEx.Message}");
+                    try {
+                        if (driver.WindowHandles.Count > 1) {
+                            driver.Close();
+                            driver.SwitchTo().Window(driver.WindowHandles.First());
+                        }
+                    } catch { }
+                }
+
                 return null;
             }
             catch (Exception ex)

@@ -3252,4 +3252,8 @@ body:not(.light-mode) .action-btn.primary-btn {
     .gallery-item .btn-del-img {
         opacity: 1 !important;
     }
+    .gallery-item .gallery-overlay {
+        opacity: 1 !important;
+        background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%) !important;
+    }
 }
