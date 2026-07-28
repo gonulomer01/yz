@@ -3256,4 +3256,31 @@ body:not(.light-mode) .action-btn.primary-btn {
         opacity: 1 !important;
         background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%) !important;
     }
+    
+    /* --- NEW FIXES FOR TOP BAR AND NOTIFICATION DROPDOWN --- */
+    .top-bar-title h2 {
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+    .top-bar-title i {
+        font-size: 1rem !important;
+    }
+    .top-bar {
+        padding: 8px 10px !important;
+        gap: 5px !important;
+        flex-wrap: nowrap !important;
+    }
+    .top-bar-right {
+        gap: 8px !important;
+    }
+    #notification-dropdown-menu {
+        position: fixed !important;
+        top: 60px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+        z-index: 9999 !important;
+    }
 }
