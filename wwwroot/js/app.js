@@ -866,7 +866,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
     group.forEach(res => {
       const downloadFilename = getFormattedDownloadFilename(res.image, res.model, res.sourceSite);
       const col = document.createElement('div');
-      col.style.cssText = "background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column;";
+      col.style.cssText = "background: var(--bg-hover-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; display: flex; flex-direction: column;";
       
       const favIcon = res.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
       const favActiveClass = res.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
