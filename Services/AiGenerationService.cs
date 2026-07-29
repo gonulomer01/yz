@@ -162,15 +162,15 @@ namespace yz.Services
                     Console.WriteLine($"[DB Save Warning - Free Image] {dbEx.Message}");
                 }
                 Console.WriteLine($"[Success] Free image generated and saved: {relPath} (UserId={userId})");
-                return (200, new
+                return (200, new System.Collections.Generic.Dictionary<string, object>
                 {
-                    success = true,
-                    image = relPath,
-                    modelUsed = modelDisplayName,
-                    keyUsedId = 0,
-                    keyUsedLabel = "Pollinations AI (Ücretsiz Sınırsız)",
-                    imageId = savedImage.Id,
-                    userId = userId
+                    { "success", true },
+                    { "image", relPath },
+                    { "modelUsed", modelDisplayName },
+                    { "keyUsedId", 0 },
+                    { "keyUsedLabel", "Pollinations AI (Ücretsiz Sınırsız)" },
+                    { "imageId", savedImage.Id },
+                    { "userId", userId }
                 });
             }
             catch (Exception ex)

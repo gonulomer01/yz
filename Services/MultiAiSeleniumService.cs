@@ -144,16 +144,16 @@ namespace yz.Services
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
                     await _credentialsService.SaveCredentialsAsync(creds);
-                    return (200, new
+                    return (200, new System.Collections.Generic.Dictionary<string, object>
                     {
-                        success = true,
-                        image = result.ImagePath,
-                        modelUsed = result.ModelUsed,
-                        keyUsedId = 0,
-                        keyUsedLabel = result.KeyUsedLabel,
-                        imageId = result.ImageId,
-                        userId = userId,
-                        sourceSite = "gemini"
+                        { "success", true },
+                        { "image", result.ImagePath },
+                        { "modelUsed", result.ModelUsed },
+                        { "keyUsedId", 0 },
+                        { "keyUsedLabel", result.KeyUsedLabel },
+                        { "imageId", result.ImageId },
+                        { "userId", userId },
+                        { "sourceSite", "gemini" }
                     });
                 }
                 // login_required ise hesabı Exhausted yapma, sadece sonraki hesaba geç
@@ -182,16 +182,16 @@ namespace yz.Services
                     {
                         firstActive.LastUsed = DateTime.Now.ToString("g");
                         await _credentialsService.SaveCredentialsAsync(creds);
-                        return (200, new
+                        return (200, new System.Collections.Generic.Dictionary<string, object>
                         {
-                            success = true,
-                            image = retryResult.ImagePath,
-                            modelUsed = retryResult.ModelUsed,
-                            keyUsedId = 0,
-                            keyUsedLabel = retryResult.KeyUsedLabel,
-                            imageId = retryResult.ImageId,
-                            userId = userId,
-                            sourceSite = "gemini"
+                            { "success", true },
+                            { "image", retryResult.ImagePath },
+                            { "modelUsed", retryResult.ModelUsed },
+                            { "keyUsedId", 0 },
+                            { "keyUsedLabel", retryResult.KeyUsedLabel },
+                            { "imageId", retryResult.ImageId },
+                            { "userId", userId },
+                            { "sourceSite", "gemini" }
                         });
                     }
                 }
@@ -224,16 +224,16 @@ namespace yz.Services
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
                     await _credentialsService.SaveCredentialsAsync(creds);
-                    return (200, new
+                    return (200, new System.Collections.Generic.Dictionary<string, object>
                     {
-                        success = true,
-                        image = result.ImagePath,
-                        modelUsed = result.ModelUsed,
-                        keyUsedId = 0,
-                        keyUsedLabel = result.KeyUsedLabel,
-                        imageId = result.ImageId,
-                        userId = userId,
-                        sourceSite = "chatgpt"
+                        { "success", true },
+                        { "image", result.ImagePath },
+                        { "modelUsed", result.ModelUsed },
+                        { "keyUsedId", 0 },
+                        { "keyUsedLabel", result.KeyUsedLabel },
+                        { "imageId", result.ImageId },
+                        { "userId", userId },
+                        { "sourceSite", "chatgpt" }
                     });
                 }
                 // login_required ve cancelled dışındaki tüm hatalarda hesabı Exhausted yap
@@ -261,16 +261,16 @@ namespace yz.Services
                     {
                         firstActive.LastUsed = DateTime.Now.ToString("g");
                         await _credentialsService.SaveCredentialsAsync(creds);
-                        return (200, new
+                        return (200, new System.Collections.Generic.Dictionary<string, object>
                         {
-                            success = true,
-                            image = retryResult.ImagePath,
-                            modelUsed = retryResult.ModelUsed,
-                            keyUsedId = 0,
-                            keyUsedLabel = retryResult.KeyUsedLabel,
-                            imageId = retryResult.ImageId,
-                            userId = userId,
-                            sourceSite = "chatgpt"
+                            { "success", true },
+                            { "image", retryResult.ImagePath },
+                            { "modelUsed", retryResult.ModelUsed },
+                            { "keyUsedId", 0 },
+                            { "keyUsedLabel", retryResult.KeyUsedLabel },
+                            { "imageId", retryResult.ImageId },
+                            { "userId", userId },
+                            { "sourceSite", "chatgpt" }
                         });
                     }
                 }
@@ -303,16 +303,16 @@ namespace yz.Services
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
                     await _credentialsService.SaveCredentialsAsync(creds);
-                    return (200, new
+                    return (200, new System.Collections.Generic.Dictionary<string, object>
                     {
-                        success = true,
-                        image = result.ImagePath,
-                        modelUsed = result.ModelUsed,
-                        keyUsedId = 0,
-                        keyUsedLabel = result.KeyUsedLabel,
-                        imageId = result.ImageId,
-                        userId = userId,
-                        sourceSite = "copilot"
+                        { "success", true },
+                        { "image", result.ImagePath },
+                        { "modelUsed", result.ModelUsed },
+                        { "keyUsedId", 0 },
+                        { "keyUsedLabel", result.KeyUsedLabel },
+                        { "imageId", result.ImageId },
+                        { "userId", userId },
+                        { "sourceSite", "copilot" }
                     });
                 }
                 // login_required ve cancelled dışındaki tüm hatalarda hesabı Exhausted yap
@@ -340,16 +340,16 @@ namespace yz.Services
                     {
                         firstActive.LastUsed = DateTime.Now.ToString("g");
                         await _credentialsService.SaveCredentialsAsync(creds);
-                        return (200, new
+                        return (200, new System.Collections.Generic.Dictionary<string, object>
                         {
-                            success = true,
-                            image = retryResult.ImagePath,
-                            modelUsed = retryResult.ModelUsed,
-                            keyUsedId = 0,
-                            keyUsedLabel = retryResult.KeyUsedLabel,
-                            imageId = retryResult.ImageId,
-                            userId = userId,
-                            sourceSite = "copilot"
+                            { "success", true },
+                            { "image", retryResult.ImagePath },
+                            { "modelUsed", retryResult.ModelUsed },
+                            { "keyUsedId", 0 },
+                            { "keyUsedLabel", retryResult.KeyUsedLabel },
+                            { "imageId", retryResult.ImageId },
+                            { "userId", userId },
+                            { "sourceSite", "copilot" }
                         });
                     }
                 }
