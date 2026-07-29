@@ -871,6 +871,12 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
       const favIcon = res.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
       const favActiveClass = res.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
       
+      let displayName = res.sourceSite;
+      if (res.sourceSite === 'gemini') displayName = 'Gemini';
+      else if (res.sourceSite === 'chatgpt') displayName = 'ChatGPT';
+      else if (res.sourceSite === 'copilot') displayName = 'Copilot';
+      else displayName = res.model || res.sourceSite;
+
       col.innerHTML = `
         <div style="position: relative;">
           <img src="${res.image}" alt="Generated" class="clickable-img" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
@@ -878,8 +884,7 @@ function openTripleGroupModal(groupId, sourceImages = persistentImages, canModif
              <i class="${favIcon}"></i>
           </button>` : ''}
         </div>
-        <h6 style="color: var(--text-main); margin-bottom: 5px;">${res.model || res.sourceSite}</h6>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; flex: 1;">${(res.sourceSite || '').toUpperCase()}</p>
+        <h6 style="color: var(--text-main); margin-bottom: 15px; flex: 1;">${displayName}</h6>
         <a href="${res.image}" download="${downloadFilename}" class="action-btn" style="text-align: center; text-decoration: none; padding: 8px;">
           <i class="fa-solid fa-download"></i> İndir
         </a>
