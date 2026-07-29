@@ -2359,7 +2359,7 @@ function renderCollections() {
                   <button class="${favActiveClass} btn-fav-bottom-right" title="Favori" onclick="toggleFavorite(event, ${item.id})">
                     <i class="${favIcon}"></i>
                   </button>
-                  <button class="btn-del-img" title="Koleksiyondan Çıkar" onclick="removeFromFolder(event, ${item.id}, false)">
+                  <button class="btn-del-img" title="Koleksiyondan Çıkar" onclick="removeFromFolder(event, ${item.id}, true)">
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 `;
@@ -3324,7 +3324,7 @@ async function pollJob(jobId, type) {
              for (let item of successes) {
                 const card = document.getElementById(`card-site-${item.site}`);
                 if (card && card.querySelector('.card-loader')) {
-                   card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick=\"openSingleImageModal({id:0, image:'${item.image}', prompt: document.getElementById('prompt-input') ? document.getElementById('prompt-input').value : '', model: '${item.site}', sourceSite: '${item.site}'}, false)\" />
+                   card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick="openSingleImageModal({id:0, image:'${item.image}', prompt: document.getElementById('prompt-input') ? document.getElementById('prompt-input').value : '', model: '${item.site}', sourceSite: '${item.site}'}, true)" />
                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
                      <h5 style="color:var(--text-main); margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> ${item.site}</h5>
                    </div>`;

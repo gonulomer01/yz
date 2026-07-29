@@ -582,15 +582,20 @@ namespace yz.Services
         {
             try
             {
-                if ((src.Contains("googleusercontent.com") || src.Contains("ggpht.com")) && src.Contains("="))
+                if (src.Contains("googleusercontent.com") || src.Contains("ggpht.com"))
                 {
-                    int equalIndex = src.LastIndexOf('=');
-                    if (equalIndex > src.LastIndexOf('/'))
-                        src = src.Substring(0, equalIndex) + "=s0";
-                }
-                else if ((src.Contains("googleusercontent.com") || src.Contains("ggpht.com")) && !src.Contains("="))
-                {
-                    src += "=s0";
+                    if (src.Contains("="))
+                    {
+                        src = System.Text.RegularExpressions.Regex.Replace(src, @"=([wsdh]\d+.*?)(?=&|$)", "=s0");
+                        if (!src.Contains("=s0")) {
+                            int eqIdx = src.LastIndexOf('=');
+                            if (eqIdx > src.LastIndexOf('/')) src = src.Substring(0, eqIdx) + "=s0";
+                        }
+                    }
+                    else
+                    {
+                        src += "=s0";
+                    }
                 }
                 Console.WriteLine($"[Selenium] İndirilecek orijinal görsel URL'si: {src}");
                 if (src.StartsWith("blob:", StringComparison.OrdinalIgnoreCase))
