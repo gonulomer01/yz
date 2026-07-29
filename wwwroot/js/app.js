@@ -3291,6 +3291,11 @@ async function pollJob(jobId, type) {
           } else if (data.status === 'Tamamlandı') {
              isSuccess = true;
              addStudioImageToFeed(data.result.image, data.result.modelUsed, data.result.keyUsedLabel, true);
+             console.log('SINGLE JOB SUCCESS. RESULT IS:', data.result);
+             if (!data.result.imageId) {
+                 console.error('MISSING IMAGE ID FROM API!');
+                 if (typeof showToast === 'function') showToast('API görsel kimliğini döndürmedi!', 'error');
+             }
              showToast('Görsel başarıyla üretildi!');
              
              // Add notification
