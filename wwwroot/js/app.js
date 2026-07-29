@@ -2988,6 +2988,8 @@ window.readNotification = async function(id, groupId, imageId) {
         } else {
             switchPage('studio');
         }
+    } else {
+        switchPage('studio');
     }
 };
 

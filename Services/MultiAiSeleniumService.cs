@@ -896,7 +896,30 @@ namespace yz.Services
                     return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "exhausted" };
                 byte[]? imageBytes = null;
                 Console.WriteLine("[Gemini] URL tabanlı indirme (Yüksek Çözünürlük) deneniyor...");
+                
+                for(int w = 0; w < 10; w++) {
+                    string? tempSrc = generatedImg.GetAttribute("src");
+                    if (!string.IsNullOrEmpty(tempSrc) && !tempSrc.StartsWith("blob:")) break;
+                    await Task.Delay(500);
+                }
+
                 string? src = generatedImg.GetAttribute("src");
+                
+                // If it's still a blob, click it to open the lightbox and get the real URL
+                if (!string.IsNullOrEmpty(src) && src.StartsWith("blob:"))
+                {
+                    try {
+                        var jsExecutor = (IJavaScriptExecutor)driver;
+                        try { generatedImg.Click(); } catch { jsExecutor.ExecuteScript("arguments[0].click();", generatedImg); }
+                        await Task.Delay(1500);
+                        var lightboxImg = driver.FindElements(By.CssSelector("div[role='dialog'] img, .lightbox img")).FirstOrDefault(i => { try { return i.Displayed && !string.IsNullOrEmpty(i.GetAttribute("src")) && !i.GetAttribute("src").StartsWith("blob:"); } catch { return false; } });
+                        if (lightboxImg != null) {
+                            src = lightboxImg.GetAttribute("src");
+                            Console.WriteLine($"[Gemini] Lightbox URL yakalandı: {src}");
+                        }
+                    } catch { }
+                }
+
                 if (!string.IsNullOrEmpty(src))
                 {
                     imageBytes = await DownloadOriginalImageAsync(driver, src);
