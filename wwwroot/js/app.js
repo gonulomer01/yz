@@ -851,9 +851,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-function openTripleGroupModal(groupId, sourceImages = persistentImages, canModify = true) {
-  const group = sourceImages.filter(i => i.groupId === groupId);
-  if (!group || group.length === 0) return;
+async function openTripleGroupModal(groupId, sourceImages = persistentImages, canModify = true) {
+    let group = sourceImages.filter(i => i.groupId === groupId);
+    if (!group || group.length === 0) {
+        try {
+            await fetchImages();
+            group = persistentImages.filter(i => i.groupId === groupId);
+        } catch(e) {}
+    }
+    if (!group || group.length === 0) {
+        if (typeof showToast === 'function') showToast('Görseller yükleniyor, lütfen bekleyin...', 'info');
+        return;
+    }
   if (group.length === 1) {
     openSingleImageModal(group[0], canModify);
     return;
@@ -2903,15 +2912,11 @@ window.addEventListener('focus', function() {
 
 window.renderNotifications = function() {
     const list = document.getElementById('top-notifications-list');
-    const empty = document.getElementById('top-notifications-empty');
-    if (!list || !empty) return;
+    if (!list) return;
     
     if (notificationsArray.length === 0) {
-      empty.style.display = 'block';
-      list.innerHTML = '';
-      list.appendChild(empty);
+      list.innerHTML = '<div id="top-notifications-empty" style="padding: 30px 20px; text-align: center; color: var(--text-muted);"><i class="fa-regular fa-bell-slash" style="font-size: 1.5rem; margin-bottom: 10px;"></i><p style="font-size: 0.9rem; margin: 0;">Henüz bildiriminiz yok.</p></div>';
     } else {
-      empty.style.display = 'none';
       list.innerHTML = notificationsArray.map(n => `
         <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, ${n.groupId && n.groupId !== 'single' ? `'${n.groupId}'` : 'null'}, ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
           <div style="flex:1;">
@@ -3345,7 +3350,7 @@ async function pollJob(jobId, type) {
                  }
                  const actions = document.getElementById('triple-stream-actions');
                  if(actions && successes.length > 0) {
-                     actions.innerHTML = `<button class="action-btn primary-btn" onclick="openTripleGroupModal('${data.result.groupId}')" style="padding: 6px 12px; font-size:0.85rem;"><i class="fa-solid fa-expand"></i> Sonuçları Büyüt</button>`;
+                     actions.innerHTML = ``;
                  }
                  await fetchImages();
                  break;
