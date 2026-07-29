@@ -700,7 +700,7 @@ function renderGallery() {
   const groupMap = new Map();
 
   persistentImages.forEach(item => {
-    if (item.groupId) {
+    if (item.groupId && item.groupId !== 'single') {
       if (!groupMap.has(item.groupId)) {
         const groupObj = {
           isGroup: true,
@@ -2098,7 +2098,7 @@ window.groupImages = function(imgs) {
     const groupedImages = [];
     const groupMap = new Map();
     imgs.forEach(item => {
-        if (item.groupId) {
+        if (item.groupId && item.groupId !== 'single') {
             if (!groupMap.has(item.groupId)) {
                 groupMap.set(item.groupId, { isGroup: true, groupId: item.groupId, prompt: item.prompt, items: [], createdAt: item.createdAt });
             }
@@ -3013,7 +3013,7 @@ window.renderTrash = async function() {
     const groupMap = new Map();
   
     data.forEach(item => {
-      if (item.groupId) {
+      if (item.groupId && item.groupId !== 'single') {
         if (!groupMap.has(item.groupId)) {
           const groupObj = {
             isGroup: true,

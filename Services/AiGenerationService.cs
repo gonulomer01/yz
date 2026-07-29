@@ -316,15 +316,15 @@ namespace yz.Services
                         Console.WriteLine($"[DB Save Warning - Stability Image] {dbEx.Message}");
                     }
                     Console.WriteLine($"[Success] Image generated and saved: {relPath} (Key #{keyObj.Id}, UserId={userId})");
-                    return (200, new
+                    return (200, new System.Collections.Generic.Dictionary<string, object>
                     {
-                        success = true,
-                        image = relPath,
-                        modelUsed = modelName,
-                        keyUsedId = keyObj.Id,
-                        keyUsedLabel = keyObj.Label,
-                        imageId = savedImage.Id,
-                        userId = userId
+                        { "success", true },
+                        { "image", relPath },
+                        { "modelUsed", modelName },
+                        { "keyUsedId", keyObj.Id },
+                        { "keyUsedLabel", keyObj.Label },
+                        { "imageId", savedImage.Id },
+                        { "userId", userId }
                     });
                 }
                 catch (Exception ex)
