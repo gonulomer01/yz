@@ -531,7 +531,7 @@ namespace yz.Services
             return aspectRatio switch
             {
                 "1:1" => " The image MUST be strictly 1:1 square aspect ratio.",
-                "16:9" => " The image MUST be strictly 16:9 landscape widescreen aspect ratio.",
+                "16:9" => " The image MUST be strictly 16:9 landscape widescreen aspect ratio. Ensure the image is generated in the highest possible ultra high definition (UHD) 4K native resolution with maximum quality and details.",
                 "9:16" => " The image MUST be strictly 9:16 portrait vertical aspect ratio.",
                 _ => $" The image MUST be in {aspectRatio} aspect ratio."
             };

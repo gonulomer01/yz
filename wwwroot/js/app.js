@@ -2978,9 +2978,12 @@ window.readNotification = function(id, groupId, imageId) {
     if (groupId && String(groupId) !== 'single' && String(groupId) !== 'null' && String(groupId) !== 'undefined') {
         openTripleGroupModal(String(groupId));
     } else if (imageId && String(imageId) !== 'null' && String(imageId) !== 'undefined') {
-        const imgItem = document.querySelector(`.gallery-item-img[data-id="${imageId}"]`);
-        if (imgItem) imgItem.click();
-        else switchPage('studio');
+        const imgObj = persistentImages.find(i => String(i.id) === String(imageId));
+        if (imgObj) {
+            openSingleImageModal(imgObj, true);
+        } else {
+            switchPage('studio');
+        }
     }
 };
 
@@ -3321,7 +3324,7 @@ async function pollJob(jobId, type) {
              for (let item of successes) {
                 const card = document.getElementById(`card-site-${item.site}`);
                 if (card && card.querySelector('.card-loader')) {
-                   card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick="openTripleGroupModal('${data.result.groupId}')" />
+                   card.innerHTML = `<img src="${item.image}" style="width:100%; height:240px; object-fit:cover; border-radius:10px; cursor:pointer;" onclick=\"openSingleImageModal({id:0, image:'${item.image}', prompt: document.getElementById('prompt-input') ? document.getElementById('prompt-input').value : '', model: '${item.site}', sourceSite: '${item.site}'}, false)\" />
                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
                      <h5 style="color:var(--text-main); margin:0;"><i class="fa-solid fa-check" style="color:var(--color-primary);"></i> ${item.site}</h5>
                    </div>`;
