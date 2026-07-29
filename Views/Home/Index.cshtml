@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
     bool isAdmin = User.IsInRole("Yönetici");
     string displayName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "Kullanıcı";
@@ -241,67 +241,17 @@
           </form>
         </div>
 
-        <!-- Gemini Web Bilgi Bandı -->
-        <div id="gemini-web-info" class="gemini-info-banner" style="display: none;">
-          <i class="fa-brands fa-google" id="gemini-banner-icon"></i>
-          <div>
-            <strong>Çoklu Google Hesabı Rotasyon Modu Aktif</strong>
-            <span id="gemini-mode-desc">Bir hesabın günlük kotası dolduğunda sistem otomatik olarak sıradaki aktif Google hesabına geçer. @(!isAdmin ? "Arkaplan otomasyonu sekmesi gizli olarak çalıştırılır." : "")</span>
-          </div>
-        </div>
-
-        <!-- ChatGPT Web Bilgi Bandı -->
-        <div id="chatgpt-web-info" class="gemini-info-banner" style="display: none; --banner-accent: #10a37f;">
-          <i class="fa-solid fa-brain" style="color: #10a37f;"></i>
-          <div>
-            <strong>ChatGPT (DALL-E) Çoklu Hesap Rotasyon Modu Aktif</strong>
-            <span>Bir hesabın limiti dolduğunda sistem otomatik olarak sıradaki ChatGPT hesabına geçer.@(!isAdmin ? " Arkaplan otomasyonu gizli çalışır." : "")</span>
-          </div>
-        </div>
-
-        <!-- Copilot Web Bilgi Bandı -->
-        <div id="copilot-web-info" class="gemini-info-banner" style="display: none; --banner-accent: #00a4ef;">
-          <i class="fa-brands fa-microsoft" style="color: #00a4ef;"></i>
-          <div>
-            <strong>Microsoft Copilot (DALL-E 3) Çoklu Hesap Rotasyon Modu Aktif</strong>
-            <span>Bir hesabın limiti dolduğunda sistem otomatik olarak sıradaki Copilot hesabına geçer.@(!isAdmin ? " Arkaplan otomasyonu gizli çalışır." : "")</span>
-          </div>
-        </div>
-
-        <!-- Üçlü Üretim Bilgi Bandı -->
-        <div id="triple-ai-info" class="gemini-info-banner" style="display: none; --banner-accent: #f59e0b;">
-          <i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i>
-          <div>
-            <strong>Üçlü AI Üretim Modu — Gemini + ChatGPT + Copilot</strong>
-            <span>Üç platformdan da aynı anda görsel üretilir. Sonuçta 3 farklı AI'dan gelen görselleri karşılaştırabilir ve hepsini indirebilirsiniz.</span>
-          </div>
-        </div>
-
         <!-- Üretim Ayarları -->
         <div class="settings-row">
           <div class="setting-chip glass-card">
             <label for="model-select"><i class="fa-solid fa-robot"></i> Model</label>
             <div class="select-wrap">
               <select id="model-select">
-                <optgroup label="🤖 Web Tarayıcı AI Otomasyonu">
-                  <option value="gemini-web-profile" selected>🤖 Google Gemini Web (Çoklu Hesap Rotasyon)</option>
-                  <option value="chatgpt-web-profile">🤖 ChatGPT Web — DALL-E (Çoklu Hesap)</option>
-                  <option value="copilot-web-profile">🤖 Microsoft Copilot — DALL-E 3 (Çoklu Hesap)</option>
-                </optgroup>
-                <optgroup label="🚀 Çoklu AI Üretim">
-                  <option value="triple-ai">🚀 Üçlü Üretim (Gemini + ChatGPT + Copilot)</option>
-                </optgroup>
-                <optgroup label="🌟 Ücretsiz & Sınırsız">
-                  <option value="pollinations-flux-realism">FLUX.1 Realism (En Kaliteli) — Ücretsiz</option>
-                </optgroup>
-                <optgroup label="💳 Stability AI (Kredili)">
-                  <option value="sdxl">SDXL 1.0 (~1 Kredi - En Stabil)</option>
-                  <option value="core">Stable Image Core (3 Kredi)</option>
-                  <option value="sd3.5-medium">SD 3.5 Medium (3.5 Kredi)</option>
-                  <option value="sd3.5-large-turbo">SD 3.5 Turbo (4 Kredi)</option>
-                  <option value="sd3.5-large">SD 3.5 Large (6.5 Kredi)</option>
-                  <option value="ultra">Stable Image Ultra (8 Kredi - En Kaliteli)</option>
-                </optgroup>
+                <option value="gemini-web-profile" selected>Gemini</option>
+                <option value="chatgpt-web-profile">ChatGPT</option>
+                <option value="copilot-web-profile">Copilot</option>
+                <option value="triple-ai">Üçlü Gemini+Chat+Copilot</option>
+                <option value="pollinations-flux-realism">Flux</option>
               </select>
               <i class="fa-solid fa-chevron-down"></i>
             </div>
@@ -352,9 +302,7 @@
             <button class="dash-subtab-btn active" data-dash-tab="accounts">
               <i class="fa-solid fa-layer-group"></i> 1. Hesap Yönetimi
             </button>
-            <button class="dash-subtab-btn" data-dash-tab="keys">
-              <i class="fa-solid fa-key"></i> 2. Key Yönetimi
-            </button>
+
             <button class="dash-subtab-btn" data-dash-tab="users">
               <i class="fa-solid fa-users-gear"></i> 3. Kullanıcı Yönetimi
             </button>
@@ -478,58 +426,6 @@
             </div>
           </div>
 
-          <!-- BÖLÜM 2: KEY YÖNETİMİ (Stability AI) -->
-          <div class="dash-subpanel" id="dash-subpanel-keys">
-            <div class="dash-stats">
-              <div class="stat-card glass-card">
-                <div class="stat-icon"><i class="fa-solid fa-key"></i></div>
-                <div>
-                  <span class="stat-num" id="stats-active">0</span>
-                  <span class="stat-label">Aktif Stability Yuvası</span>
-                </div>
-              </div>
-              <div class="stat-card glass-card">
-                <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
-                <div>
-                  <span class="stat-num" id="stats-today">0</span>
-                  <span class="stat-label">Bugünkü Kredi</span>
-                </div>
-              </div>
-              <div class="stat-card glass-card">
-                <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
-                <div>
-                  <span class="stat-num" id="stats-total">0</span>
-                  <span class="stat-label">Toplam Kredi</span>
-                </div>
-              </div>
-              <div class="stat-card glass-card">
-                <div class="stat-icon"><i class="fa-solid fa-arrows-spin"></i></div>
-                <div>
-                  <span class="stat-num" id="stats-index">#1</span>
-                  <span class="stat-label">Sıradaki Anahtar</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Stability Anahtarları -->
-            <div class="glass-card dash-section-card">
-              <div class="dash-section-header">
-                <div>
-                  <h3><i class="fa-solid fa-key" style="color: var(--color-secondary);"></i> Stability AI — Anahtar Havuzu</h3>
-                  <p>Stability AI modelleri için API anahtar havuzu. Kısıtlama olduğunda sistem otomatik olarak bir sonrakine geçer.</p>
-                </div>
-                <div style="display:flex; gap:8px;">
-                  <button id="btn-reset-limits" class="action-btn secondary-btn" title="Tüm Stability AI anahtarlarını aktif duruma getir ve sayaçları sıfırla">
-                    <i class="fa-solid fa-rotate-left"></i> Pasifliği Sıfırla
-                  </button>
-                  <button id="btn-add-key" class="action-btn primary-btn">
-                    <i class="fa-solid fa-plus"></i> Yeni Anahtar
-                  </button>
-                </div>
-              </div>
-              <div class="keys-grid" id="keys-grid"></div>
-            </div>
-          </div>
 
           <!-- BÖLÜM 3: KULLANICI YÖNETİMİ (Kullanıcılar) -->
           <div class="dash-subpanel" id="dash-subpanel-users">
@@ -548,45 +444,6 @@
             </div>
           </div>
 
-          <!-- Stability Düzenleme Modalı -->
-          <div id="edit-modal" class="modal-overlay" style="display:none">
-            <div class="modal-box glass-card">
-              <div class="modal-header">
-                <h3><i class="fa-solid fa-pen-to-square" style="color: var(--color-primary);"></i> API Anahtarı Düzenle</h3>
-                <button id="btn-modal-close" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
-              </div>
-              <form id="edit-form">
-                <input type="hidden" id="edit-id">
-                <div class="field">
-                  <label for="edit-label">Etiket</label>
-                  <input type="text" id="edit-label" placeholder="Ör: Ana Anahtar #1">
-                </div>
-                <div class="field">
-                  <label for="edit-key">API Anahtarı (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
-                  <div class="key-input-wrap">
-                    <input type="password" id="edit-key" placeholder="sk-... (Değiştirmiyorsanız boş bırakın)">
-                    <button type="button" id="btn-toggle-key" class="chip-btn"><i class="fa-solid fa-eye"></i></button>
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="edit-status">Durum</label>
-                  <div class="select-wrap">
-                    <select id="edit-status">
-                      <option value="Active">Aktif</option>
-                      <option value="Exhausted">Pasif</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down"></i>
-                  </div>
-                </div>
-                <div class="modal-actions">
-                  <button type="button" id="btn-modal-cancel" class="action-btn">İptal</button>
-                  <button type="submit" class="action-btn primary-btn">
-                    <i class="fa-solid fa-check"></i> Kaydet
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
 
           <!-- Gemini Düzenleme Modalı -->
           <div id="gemini-edit-modal" class="modal-overlay" style="display:none">
@@ -886,7 +743,6 @@
         <div class="gallery-folder-tabs" id="gallery-folder-tabs" style="margin-bottom: 20px;">
           <button class="folder-tab active" data-folder="all"><i class="fa-solid fa-layer-group"></i> Tümü</button>
           <button class="folder-tab" data-folder="triple"><i class="fa-solid fa-object-group"></i> Üçlü Üretimler</button>
-          <button class="folder-tab" data-folder="stability"><i class="fa-solid fa-key"></i> Stability AI</button>
           <button class="folder-tab" data-folder="gemini"><i class="fa-brands fa-google"></i> Gemini Web</button>
           <button class="folder-tab" data-folder="chatgpt"><i class="fa-solid fa-robot"></i> ChatGPT</button>
           <button class="folder-tab" data-folder="copilot"><i class="fa-brands fa-microsoft"></i> Copilot</button>
@@ -912,6 +768,12 @@
     <!-- === FAVORİLER EKRANI === -->
     <section id="section-favorites" class="page">
       <div class="glass-card dash-section-card">
+        <div class="dash-section-header" style="justify-content: space-between;">
+          <h3 style="color:var(--text-main); margin:0;"><i class="fa-solid fa-heart" style="color:var(--color-primary);"></i> Favoriler</h3>
+          <button class="action-btn primary-btn" onclick="openAddImagesToCollectionModal('__favorites__')">
+            <i class="fa-solid fa-plus"></i> Görsel Ekle
+          </button>
+        </div>
         <div id="favorites-grid" class="gallery-grid-main"></div>
       </div>
     </section>
@@ -984,8 +846,8 @@
         <div id="collectionAddGrid" class="gallery-grid-main"></div>
       </div>
       <div class="modal-footer" style="padding:15px; border-top:1px solid var(--border-color); text-align:right;">
-        <button class="btn btn-outline" onclick="closeCollectionAddModal()">İptal</button>
-        <button id="btnConfirmCollectionAdd" class="btn btn-primary" style="margin-left:10px;">
+        <button class="action-btn secondary-btn" onclick="closeCollectionAddModal()">İptal</button>
+        <button id="btnConfirmCollectionAdd" class="action-btn primary-btn" style="margin-left:10px;">
             <i class="fa-solid fa-check"></i> Ekle
         </button>
       </div>

@@ -1,4 +1,4 @@
-﻿
+
 // Theme Toggle Logic
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
@@ -567,9 +567,10 @@ async function handleTripleStreamGenerate(prompt, ratio, style, targetSite = 'al
                   id: Date.now(),
                   groupId: groupId || 'multi',
                   text: `${succeededImages.length} görsel üretildi.`,
-                  time: new Date().toLocaleTimeString()
+                  time: new Date().toLocaleTimeString(),
+                  unread: true
                 });
-                updateNotificationBadge(notificationsArray.length);
+                saveNotifications();
               }
               await fetchImages();
             }
@@ -2013,78 +2014,10 @@ const userImagesModalTitle = document.getElementById('user-images-modal-title');
 const userImagesContainer = document.getElementById('user-images-container');
 const btnUserImagesClose = document.getElementById('btn-user-images-close');
 window.openUserImagesModal = function(userId, displayName) {
-  if (!userImagesModal || !userImagesContainer) return;
-  if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} — Ürettiği Görseller`;
-  const userObj = usersData.find(u => u.id === userId);
-  const imgs = userObj ? userObj.images : [];
-  if (!imgs || imgs.length === 0) {
-    userImagesContainer.innerHTML = `<div class="gallery-empty-panel" style="grid-column: 1/-1;"><p>Bu kullanıcının henüz üretmiş olduğu bir görsel bulunmuyor.</p></div>`;
-  } else {
-    userImagesContainer.innerHTML = '';
-    const groupedImages = [];
-    const groupMap = new Map();
-    imgs.forEach(item => {
-      if (item.groupId) {
-        if (!groupMap.has(item.groupId)) {
-          groupMap.set(item.groupId, { isGroup: true, groupId: item.groupId, prompt: item.prompt, items: [], createdAt: item.createdAt });
-          groupedImages.push(groupMap.get(item.groupId));
-        }
-        groupMap.get(item.groupId).items.push(item);
-      } else {
-        groupedImages.push(item);
-      }
-    });
-    
-    for (let i = 0; i < groupedImages.length; i++) {
-      if (groupedImages[i].isGroup && groupedImages[i].items.length === 1) {
-        groupedImages[i] = groupedImages[i].items[0];
-      }
-    }
-    groupedImages.forEach(groupOrItem => {
-      const div = document.createElement('div');
-      div.className = 'gallery-item';
-      div.style.aspectRatio = '1 / 1';
-      if (groupOrItem.isGroup) {
-         div.innerHTML = `
-           <div style="position: absolute; top:0; left:0; width:100%; height:100%; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;">
-             ${groupOrItem.items.map((it, idx) => {
-                if (idx > 2) return '';
-                return '<img src="' + it.image + '" alt="Üretilen görsel" style="width:100%; height:100%; object-fit:cover; opacity: 0.8;">';
-             }).join('')}
-           </div>
-           <div class="gallery-folder-badge badge-gemini" style="background: linear-gradient(135deg, #10b981, #3b82f6);"><i class="fa-solid fa-layer-group"></i> Çoklu Üretim</div>
-           <div class="gallery-overlay" style="z-index: 10; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; padding: 10px;">
-               <span style="font-size: 0.8rem; margin-bottom: 5px; text-align: center;">${(String(groupOrItem.prompt || '')).substring(0,60)}${(String(groupOrItem.prompt || '')).length > 60 ? '...' : ''}</span>
-           </div>
-           <button class="btn-del-img" title="Sil" onclick="deleteGroupFromUserModal(event, '${groupOrItem.groupId}', ${userId})" style="z-index: 10;">
-             <i class="fa-solid fa-trash-can"></i>
-           </button>
-         `;
-         div.addEventListener('click', (e) => {
-           if (e.target.closest('.btn-del-img')) return;
-           openTripleGroupModal(groupOrItem.groupId, imgs); 
-         });
-      } else {
-         const item = groupOrItem;
-         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
-         const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
-         div.innerHTML = `
-           <img src="${item.image}" alt="Üretilen görsel">
-           <div class="gallery-folder-badge ${badgeClass}">${badgeText}</div>
-           <div class="gallery-overlay">${item.model}</div>
-           <button class="btn-del-img" title="Sil" onclick="deleteImageFromUserModal(event, ${item.id}, ${userId})">
-             <i class="fa-solid fa-trash-can"></i>
-           </button>
-         `;
-         div.addEventListener('click', (e) => {
-           if (e.target.closest('.btn-del-img')) return;
-           openSingleImageModal(item);
-         });
-      }
-      userImagesContainer.appendChild(div);
-    });
-  }
-  userImagesModal.style.display = 'flex';
+    currentUserModalId = userId;
+    if (userImagesModal) userImagesModal.style.display = 'flex';
+    if (userImagesModalTitle) userImagesModalTitle.innerHTML = `<i class="fa-solid fa-images" style="color: var(--color-primary);"></i> ${displayName} - Görselleri`;
+    renderUserModalContent();
 };
 window.deleteGroupFromUserModal = async function(e, groupId, userId) {
   e.stopPropagation();
@@ -2351,7 +2284,7 @@ function renderCollections() {
               <button class="action-btn primary-btn" onclick="openAddImagesToCollectionModal('${currentCollectionFolder}')">
                   <i class="fa-solid fa-plus"></i> Görsel Ekle
               </button>
-              <button class="action-btn" style="background:rgba(239,68,68,0.15); color:#f87171; border-color:rgba(239,68,68,0.3);" onclick="deleteCollection('${currentCollectionFolder}')">
+              <button class="action-btn" style="background: var(--bg-danger-light); color: var(--color-danger); border-color: rgba(242, 139, 130, 0.3);" onclick="deleteCollection('${currentCollectionFolder}')">
                   <i class="fa-solid fa-trash-can"></i> Koleksiyonu Sil
               </button>
             </div>
@@ -2900,7 +2833,6 @@ function renderUserModalItem(groupOrItem, showDelete, canModify) {
 }
 
 // Make sure that when opening the user modal we render the current tab
-const oldOpenUserImagesModal = window.openUserImagesModal;
 window.openUserImagesModal = function(userId, displayName) {
     currentUserModalId = userId;
     if (userImagesModal) userImagesModal.style.display = 'flex';
@@ -2908,54 +2840,55 @@ window.openUserImagesModal = function(userId, displayName) {
     renderUserModalContent();
 };
 
-
-
-
-
 // --- Notification System ---
-let unreadNotificationCount = 0;
-let lastGeneratedGroupId = null;
 
-function updateNotificationBadge(count) {
-  unreadNotificationCount = count;
-  const badgeTop = document.getElementById('top-notif-count');
-  if (unreadNotificationCount > 0) {
-    if (badgeTop) { badgeTop.style.display = 'inline-block'; badgeTop.textContent = unreadNotificationCount; }
-  } else {
-    if (badgeTop) badgeTop.style.display = 'none';
-  }
+function updateNotificationBadge() {
+    unreadNotificationCount = notificationsArray.filter(n => n.unread !== false).length;
+    const badgeTop = document.getElementById('top-notif-count');
+    if (unreadNotificationCount > 0) {
+      if (badgeTop) { badgeTop.style.display = 'inline-block'; badgeTop.textContent = unreadNotificationCount; }
+    } else {
+      if (badgeTop) { badgeTop.style.display = 'none'; }
+    }
 }
-
-
-
 
 // --- Notifications Array & Render ---
 let notificationsArray = JSON.parse(localStorage.getItem('yz_notifications') || '[]');
+
+window.saveNotifications = function() {
+    localStorage.setItem('yz_notifications', JSON.stringify(notificationsArray));
+    updateNotificationBadge();
+};
+
+window.deleteNotification = function(e, id) {
+    e.stopPropagation();
+    notificationsArray = notificationsArray.filter(n => n.id !== id);
+    saveNotifications();
+    renderNotifications();
+};
 
 // Sync notifications across multiple tabs
 window.addEventListener('storage', function(e) {
   if (e.key === 'yz_notifications') {
     try {
       notificationsArray = JSON.parse(e.newValue || '[]');
-      updateNotificationBadge(notificationsArray.length);
+      updateNotificationBadge();
       renderNotifications();
     } catch(err) {}
   }
 });
+
 window.addEventListener('focus', function() {
   try {
     const freshData = localStorage.getItem('yz_notifications');
     if (freshData) {
       notificationsArray = JSON.parse(freshData);
-      updateNotificationBadge(notificationsArray.length);
+      updateNotificationBadge();
       renderNotifications();
     }
   } catch(err) {}
 });
-window.saveNotifications = function() {
-    localStorage.setItem('yz_notifications', JSON.stringify(notificationsArray));
-    updateNotificationBadge(notificationsArray.length);
-};
+
 window.renderNotifications = function() {
   const list = document.getElementById('top-notifications-list');
   const empty = document.getElementById('top-notifications-empty');
@@ -2968,12 +2901,14 @@ window.renderNotifications = function() {
   } else {
     empty.style.display = 'none';
     list.innerHTML = notificationsArray.map(n => `
-      <div class="notification-item" onclick="readNotification(${n.id}, '${n.groupId}', ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
-        <div>
+      <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, '${n.groupId}', ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
+        <div style="flex:1;">
           <strong style="color:var(--text-main); font-weight:700; font-size: 0.9rem;">${n.text}</strong>
           <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
         </div>
-        <i class="fa-solid fa-chevron-right" style="color:var(--color-primary); opacity:0.7; font-size: 0.8rem;"></i>
+        <button class="action-btn-sm danger-btn-sm" style="margin-left:10px; padding: 4px 8px;" onclick="deleteNotification(event, ${n.id})" title="Sil">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
     `).join('');
   }
@@ -2984,6 +2919,13 @@ window.toggleNotificationDropdown = function(e) {
     const dropdown = document.getElementById('notification-dropdown-menu');
     const userDropdown = document.getElementById('user-dropdown-menu');
     if (userDropdown) userDropdown.style.display = 'none';
+    
+    // Bildirimleri okundu olarak isaretle
+    if (unreadNotificationCount > 0) {
+        notificationsArray.forEach(n => n.unread = false);
+        saveNotifications();
+    }
+    
     if (dropdown) {
       if (dropdown.style.display === 'block') {
         dropdown.style.display = 'none';
@@ -2991,7 +2933,7 @@ window.toggleNotificationDropdown = function(e) {
         dropdown.style.display = 'block';
       }
     }
-  };
+};
 
 window.clearNotifications = function(e) {
   if (e) e.stopPropagation();

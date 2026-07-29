@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -125,7 +125,7 @@ namespace yz.Services
             foreach (var acc in creds.GeminiAccounts) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = creds.GeminiAccounts.OrderBy(a => a.Id).ToList();
-            int currentIdx = 0;
+            int currentIdx = creds.CurrentGeminiProfileIndex;
             if (!profiles.Any())
                 return (400, new { error = "Panel'den en az bir Gemini hesap profili ekleyin." });
             int totalProfiles = profiles.Count;
@@ -135,11 +135,14 @@ namespace yz.Services
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
+                
+                creds.CurrentGeminiProfileIndex = (evalIdx + 1) % totalProfiles;
+                await _credentialsService.SaveCredentialsAsync(creds);
+                
                 var result = await RunGeminiSession(accountObj, prompt, aspectRatio, userId, isAdmin);
                 if (result.Success)
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
-                    creds.CurrentGeminiProfileIndex = evalIdx;
                     await _credentialsService.SaveCredentialsAsync(creds);
                     return (200, new
                     {
@@ -202,7 +205,7 @@ namespace yz.Services
             foreach (var acc in (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>())) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = (creds.ChatGptAccounts ?? new List<ChatGptAccountItem>()).OrderBy(a => a.Id).ToList();
-            int currentIdx = 0;
+            int currentIdx = creds.CurrentChatGptProfileIndex;
             if (!profiles.Any())
                 return (400, new { error = "Panel'den en az bir ChatGPT hesap profili ekleyin." });
             int totalProfiles = profiles.Count;
@@ -212,11 +215,14 @@ namespace yz.Services
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
+                
+                creds.CurrentChatGptProfileIndex = (evalIdx + 1) % totalProfiles;
+                await _credentialsService.SaveCredentialsAsync(creds);
+
                 var result = await RunChatGptSession(accountObj, prompt, aspectRatio, userId, isAdmin);
                 if (result.Success)
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
-                    creds.CurrentChatGptProfileIndex = evalIdx;
                     await _credentialsService.SaveCredentialsAsync(creds);
                     return (200, new
                     {
@@ -278,7 +284,7 @@ namespace yz.Services
             foreach (var acc in (creds.CopilotAccounts ?? new List<CopilotAccountItem>())) { if (acc.Status == "Exhausted" && DateTime.TryParse(acc.LastUsed, out var dt) && dt.Date < DateTime.Today) acc.Status = "Active"; }
             await _credentialsService.SaveCredentialsAsync(creds);
             var profiles = (creds.CopilotAccounts ?? new List<CopilotAccountItem>()).OrderBy(a => a.Id).ToList();
-            int currentIdx = 0;
+            int currentIdx = creds.CurrentCopilotProfileIndex;
             if (!profiles.Any())
                 return (400, new { error = "Panel'den en az bir Copilot hesap profili ekleyin." });
             int totalProfiles = profiles.Count;
@@ -288,11 +294,14 @@ namespace yz.Services
                 int evalIdx = (currentIdx + attempt) % totalProfiles;
                 var accountObj = profiles[evalIdx];
                 if (accountObj.Status == "Exhausted") continue;
+                
+                creds.CurrentCopilotProfileIndex = (evalIdx + 1) % totalProfiles;
+                await _credentialsService.SaveCredentialsAsync(creds);
+
                 var result = await RunCopilotSession(accountObj, prompt, aspectRatio, userId, isAdmin);
                 if (result.Success)
                 {
                     accountObj.LastUsed = DateTime.Now.ToString("g");
-                    creds.CurrentCopilotProfileIndex = evalIdx;
                     await _credentialsService.SaveCredentialsAsync(creds);
                     return (200, new
                     {
