@@ -2986,9 +2986,11 @@ window.readNotification = async function(id, groupId, imageId) {
         if (imgObj) {
             openSingleImageModal(imgObj, true);
         } else {
+            if (typeof showToast === 'function') showToast('Görsel bulunamadı veya silinmiş.', 'error');
             switchPage('studio');
         }
     } else {
+        if (typeof showToast === 'function') showToast('Eski bildirimlerin detayı gösterilemez.', 'info');
         switchPage('studio');
     }
 };
