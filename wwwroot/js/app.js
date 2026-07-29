@@ -766,7 +766,7 @@ function renderGallery() {
        });
     } else {
        const item = groupOrItem;
-       const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+       const badgeText = item.folder === 'gemini' ? 'Gemini' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
        const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
        const favIcon = item.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
        const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
@@ -960,10 +960,17 @@ function openSingleImageModal(item, canModify = true) {
   if (container) {
     const favIcon = item.isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
     const favActiveClass = item.isFavorite ? 'btn-fav-img active' : 'btn-fav-img';
+    
+    let displayName = item.sourceSite;
+    if (item.sourceSite === 'gemini') displayName = 'Gemini';
+    else if (item.sourceSite === 'chatgpt') displayName = 'ChatGPT';
+    else if (item.sourceSite === 'copilot') displayName = 'Copilot';
+    else displayName = item.model || item.sourceSite || '';
+
     container.innerHTML = `
-      <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%; position:relative;">
+      <div style="background: var(--bg-hover-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; width: 100%; position:relative;">
         <img src="${item.image}" alt="Generated" class="clickable-img" style="width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; margin-bottom: 10px;" title="Tam ekran görüntülemek için tıklayın">
-        <h6 style="color: var(--text-main); margin-bottom: 5px; text-align: center;">${item.model || item.sourceSite || ''}</h6>
+        <h6 style="color: var(--text-main); margin-bottom: 5px; text-align: center;">${displayName}</h6>
         ${canModify ? `<button class="${favActiveClass}" style="position:absolute; top: 15px; right: 15px; z-index:20; padding:10px; font-size:1.5rem; border:none; background:rgba(0,0,0,0.5); border-radius:50%; cursor:pointer; color:var(--text-main);" title="Favori" onclick="toggleFavorite(event, ${item.id}); this.innerHTML = this.querySelector('.fa-solid') ? '<i class=\\'fa-regular fa-heart\\'></i>' : '<i class=\\'fa-solid fa-heart\\' style=\\'color:#f43f5e;\\'></i>'; this.classList.toggle('active');">
           <i class="${favIcon}" ${item.isFavorite ? 'style="color:#f43f5e;"' : ''}></i>
         </button>` : ''}
@@ -3035,7 +3042,7 @@ window.renderTrash = async function() {
          });
       } else {
          const item = groupOrItem;
-         const badgeText = item.folder === 'gemini' ? 'Gemini Web' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
+         const badgeText = item.folder === 'gemini' ? 'Gemini' : (item.folder === 'free' ? 'Ücretsiz' : (item.folder === 'stability' ? 'Stability AI' : (item.folder === 'chatgpt' ? 'ChatGPT' : (item.folder === 'copilot' ? 'Copilot' : 'Genel'))));
          const badgeClass = item.folder === 'gemini' ? 'badge-gemini' : (item.folder === 'free' ? 'badge-free' : (item.folder === 'chatgpt' ? 'badge-chatgpt' : (item.folder === 'copilot' ? 'badge-copilot' : 'badge-stability')));
          div.innerHTML = `
            <img src="${item.image}" alt="Trash">
