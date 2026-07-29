@@ -582,13 +582,13 @@ namespace yz.Services
         {
             try
             {
-                if (src.Contains("googleusercontent.com") && src.Contains("="))
+                if ((src.Contains("googleusercontent.com") || src.Contains("ggpht.com")) && src.Contains("="))
                 {
                     int equalIndex = src.LastIndexOf('=');
                     if (equalIndex > src.LastIndexOf('/'))
                         src = src.Substring(0, equalIndex) + "=s0";
                 }
-                else if (src.Contains("googleusercontent.com") && !src.Contains("="))
+                else if ((src.Contains("googleusercontent.com") || src.Contains("ggpht.com")) && !src.Contains("="))
                 {
                     src += "=s0";
                 }
