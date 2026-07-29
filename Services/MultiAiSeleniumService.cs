@@ -584,18 +584,14 @@ namespace yz.Services
             {
                 if (src.Contains("googleusercontent.com") || src.Contains("ggpht.com"))
                 {
-                    if (src.Contains("="))
-                    {
-                        src = System.Text.RegularExpressions.Regex.Replace(src, @"=([wsdh]\d+.*?)(?=&|$)", "=s0");
-                        if (!src.Contains("=s0")) {
-                            int eqIdx = src.LastIndexOf('=');
-                            if (eqIdx > src.LastIndexOf('/')) src = src.Substring(0, eqIdx) + "=s0";
-                        }
+                    var parts = src.Split('?');
+                    string baseUri = parts[0];
+                    string query = parts.Length > 1 ? "?" + parts[1] : "";
+                    int eqIdx = baseUri.LastIndexOf('=');
+                    if (eqIdx > baseUri.LastIndexOf('/')) {
+                        baseUri = baseUri.Substring(0, eqIdx);
                     }
-                    else
-                    {
-                        src += "=s0";
-                    }
+                    src = baseUri + "=s0" + query;
                 }
                 Console.WriteLine($"[Selenium] İndirilecek orijinal görsel URL'si: {src}");
                 if (src.StartsWith("blob:", StringComparison.OrdinalIgnoreCase))

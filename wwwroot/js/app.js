@@ -2918,7 +2918,7 @@ window.renderNotifications = function() {
       list.innerHTML = '<div id="top-notifications-empty" style="padding: 30px 20px; text-align: center; color: var(--text-muted);"><i class="fa-regular fa-bell-slash" style="font-size: 1.5rem; margin-bottom: 10px;"></i><p style="font-size: 0.9rem; margin: 0;">Henüz bildiriminiz yok.</p></div>';
     } else {
       list.innerHTML = notificationsArray.map(n => `
-        <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, ${n.groupId && n.groupId !== 'single' ? `'${n.groupId}'` : 'null'}, ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
+        <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, ${n.groupId && n.groupId !== 'single' ? `'${n.groupId}'` : 'null'}, ${n.imageId ? '\'' + n.imageId + '\'' : 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
           <div style="flex:1;">
             <strong style="color:var(--text-main); font-weight:700; font-size: 0.9rem;">${n.text}</strong>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
@@ -2967,7 +2967,7 @@ document.addEventListener('click', function(e) {
   }
 });
 
-window.readNotification = function(id, groupId, imageId) {
+window.readNotification = async function(id, groupId, imageId) {
     const notif = notificationsArray.find(n => n.id === id);
     if (notif) notif.unread = false;
     saveNotifications();
@@ -2978,7 +2978,11 @@ window.readNotification = function(id, groupId, imageId) {
     if (groupId && String(groupId) !== 'single' && String(groupId) !== 'null' && String(groupId) !== 'undefined') {
         openTripleGroupModal(String(groupId));
     } else if (imageId && String(imageId) !== 'null' && String(imageId) !== 'undefined') {
-        const imgObj = persistentImages.find(i => String(i.id) === String(imageId));
+        let imgObj = persistentImages.find(i => String(i.id) === String(imageId));
+        if (!imgObj) {
+            if (typeof showToast === 'function') showToast('Görsel yükleniyor...', 'info');
+            try { await fetchImages(); imgObj = persistentImages.find(i => String(i.id) === String(imageId)); } catch(e) {}
+        }
         if (imgObj) {
             openSingleImageModal(imgObj, true);
         } else {
