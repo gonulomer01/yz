@@ -1,0 +1,65 @@
+/* --- THEME TOGGLE DARK MODE VISIBILITY --- */
+.theme-slider {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+}
+.light-mode .theme-slider {
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    background: var(--bg-hover-light) !important;
+}
+
+
+/* --- NOTIFICATIONS ITEM --- */
+.notification-item {
+    background: var(--bg-card);
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.notification-item:hover {
+    background: var(--bg-hover-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+
+/* --- GLOBAL LIGHT MODE TEXT FIXES --- */
+body.light-mode .stat-num,
+body.light-mode .dash-section-header h3,
+body.light-mode .modal-heading,
+body.light-mode .key-stat strong,
+body.light-mode .u-step-text strong,
+body.light-mode .u-step-text span {
+    color: var(--text-main) !important;
+}
+
+
+/* --- LIGHT MODE: Notification Dropdown Fix --- */
+body.light-mode #notification-dropdown-menu {
+    background: var(--bg-surface) !important;
+}
+body.light-mode .notification-item {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+body.light-mode .notification-item:hover {
+    background: var(--bg-hover-light);
+}
+
+
+/* --- LIGHT MODE: User Dropdown Menu Fix --- */
+body.light-mode .user-dropdown-menu {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+
+
+/* --- LIGHT MODE: Toast Fix --- */
+body.light-mode .toast {
+    border-color: var(--border-color);
+}

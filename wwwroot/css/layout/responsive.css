@@ -1,0 +1,41 @@
+/* --- MOBILE LIGHT MODE FIX FOR AUTH BODY --- */
+@media (max-width: 900px) {
+    body.light-mode.auth-body {
+        background: var(--bg-page) !important;
+    }
+}
+
+
+/* --- MOBILE DROPDOWN TEXT ALIGNMENT FIX --- */
+.dropdown-item {
+    white-space: nowrap !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+
+/* --- STUDIO HEIGHT REDUCTION --- */
+@media (min-width: 769px) {
+    .studio-feed-container {
+        max-height: 380px !important;
+    }
+    .canvas-area {
+        min-height: 180px !important;
+    }
+}
+@media (max-width: 768px) {
+    .studio-feed-container {
+        max-height: 200px !important;
+        padding: 10px !important;
+    }
+    .canvas-area {
+        min-height: 80px !important;
+    }
+}
+
+
+/* --- LIGHT MODE: Mobile Bottom Bar Fix --- */
+body.light-mode .mobile-bottom-bar {
+    background: var(--bg-page);
+    border-top-color: var(--border-color);
+}

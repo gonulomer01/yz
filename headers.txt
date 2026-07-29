@@ -1,0 +1,4 @@
+2854: // --- Notification System ---
+2866: // --- Notifications Array & Render ---
+2980: // --- Trash Feature ---
+3130: // --- Robust Background Generation Logic ---

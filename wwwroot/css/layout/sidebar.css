@@ -1,0 +1,10 @@
+/* --- MODAL Z-INDEX FIX (OVERLAPPING NAVBAR) --- */
+.modal-overlay, .fullscreen-lightbox-overlay {
+    z-index: 100000 !important;
+}
+
+
+/* --- LIGHT MODE: Sidebar Fix --- */
+body.light-mode .app-sidebar {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+}

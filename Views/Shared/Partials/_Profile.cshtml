@@ -1,0 +1,32 @@
+<section id="section-profile" class="page">
+      <div class="glass-card dash-section-card">
+        <div class="dash-section-header">
+          <div>
+            <p style="margin: 0;">Kullanıcı hesabı bilgilerinizi ve şifrenizi aşağıdan güncelleyebilirsiniz.</p>
+          </div>
+        </div>
+        <form id="profile-form" style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="field">
+            <label for="profile-username">Kullanıcı Adı</label>
+            <input type="text" id="profile-username" disabled style="opacity: 0.6; cursor: not-allowed;">
+          </div>
+          <div class="field">
+            <label for="profile-role">Mevcut Rol</label>
+            <input type="text" id="profile-role" disabled style="opacity: 0.6; cursor: not-allowed;">
+          </div>
+          <div class="field">
+            <label for="profile-displayName">Ad Soyad / Görünen Ad</label>
+            <input type="text" id="profile-displayName" required placeholder="Ad Soyad giriniz">
+          </div>
+          <div class="field">
+            <label for="profile-password">Yeni Şifre (Değiştirmek için yazın, aksi takdirde boş bırakın)</label>
+            <input type="password" id="profile-password" placeholder="Şifrenizi değiştirmiyorsanız boş bırakın">
+          </div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+            <button type="submit" class="action-btn primary-btn" style="padding: 10px 24px;">
+              <i class="fa-solid fa-check"></i> Güncelle & Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>

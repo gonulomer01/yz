@@ -1,0 +1,110 @@
+<section id="section-studio" class="page active">
+      <div class="studio-centered">
+
+        <!-- Ortalanmış Görsel Önizleme Alanı -->
+        <div class="canvas-area glass-card" id="canvas-area">
+
+          <div id="canvas-placeholder" class="canvas-state">
+            <div class="placeholder-content">
+              <div class="placeholder-art">
+                <img src="~/images/logo.png" alt="Mega Image Studio Logo" class="placeholder-main-logo">
+              </div>
+              <h3>Mega Image Studio</h3>
+              <p>Aşağıdaki alana bir görsel tarifi yazın ve modeli seçerek üretimi başlatın.</p>
+            </div>
+          </div>
+
+          <div id="canvas-loading" class="canvas-state" style="display:none">
+            <div class="pulse-ring"></div>
+            <p class="loading-text">Yapay Zeka Motoru Görseli İşliyor…</p>
+            <p class="loading-sub" id="loading-status">API sunucularına bağlanılıyor…</p>
+          </div>
+
+          <div id="canvas-success" class="studio-feed-container" style="display:none">
+            <div id="studio-feed-list" class="studio-feed-list"></div>
+          </div>
+
+          <div id="canvas-error" class="canvas-state" style="display:none">
+            <i class="fa-solid fa-circle-exclamation error-icon"></i>
+            <p id="error-message" style="font-weight: 600; font-size: 1.05rem; margin-bottom: 6px;">İşlem sırasında bir hata oluştu.</p>
+            <button id="btn-retry" class="action-btn primary-btn" style="margin-top: 14px;">
+              <i class="fa-solid fa-rotate-right"></i> Tekrar Dene
+            </button>
+          </div>
+        </div>
+
+        <!-- Prompt Alanı -->
+        <div class="prompt-container glass-card">
+          <form id="generator-form" class="prompt-form">
+            <div class="prompt-field">
+              <textarea id="prompt-input" rows="3" placeholder="Bir görsel hayal edin ve buraya yazın..."></textarea>
+              <div class="prompt-inline-actions">
+                <button type="button" id="btn-translate" class="inline-btn" title="Türkçe → İngilizce Çevir">
+                  <i class="fa-solid fa-language"></i>
+                </button>
+                <button type="button" id="btn-random" class="inline-btn" title="Rastgele Fikir">
+                  <i class="fa-solid fa-lightbulb"></i>
+                </button>
+                <button type="button" id="btn-clear" class="inline-btn" title="Temizle">
+                  <i class="fa-solid fa-eraser"></i>
+                </button>
+                <div class="prompt-divider"></div>
+                <button type="submit" id="btn-generate" class="btn-generate">
+                  <span class="btn-label"><i class="fa-solid fa-bolt-lightning"></i><span class="desktop-text"> Oluştur</span></span>
+                  <span class="btn-loader" style="display:none"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Üretim Ayarları -->
+        <div class="settings-row">
+          <div class="setting-chip glass-card">
+            <label for="model-select"><i class="fa-solid fa-robot"></i> Model</label>
+            <div class="select-wrap">
+              <select id="model-select">
+                <option value="gemini-web-profile" selected>Gemini</option>
+                <option value="chatgpt-web-profile">ChatGPT</option>
+                <option value="copilot-web-profile">Copilot</option>
+                <option value="triple-ai">Üçlü Gemini+Chat+Copilot</option>
+                <option value="pollinations-flux-realism">Flux</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="setting-chip glass-card">
+            <label for="style-select"><i class="fa-solid fa-palette"></i> Tarz</label>
+            <div class="select-wrap">
+              <select id="style-select">
+                <option value="none">Doğal (Tarz Yok)</option>
+                <option value="cinematic">Sinematik</option>
+                <option value="photorealistic">Fotogerçekçi</option>
+                <option value="anime">Anime</option>
+                <option value="digital-art">Dijital Sanat</option>
+                <option value="3d-render">3D Render</option>
+                <option value="watercolor">Suluboya</option>
+                <option value="oil-painting">Yağlı Boya</option>
+                <option value="comic">Çizgi Roman</option>
+                <option value="cyberpunk">Siberpunk</option>
+              </select>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+          </div>
+
+          <div class="setting-chip glass-card">
+            <label><i class="fa-solid fa-expand"></i> Boyut</label>
+            <div class="ratio-group">
+              <input type="radio" name="ratio" id="r1" value="1:1">
+              <label for="r1" class="ratio-chip"><i class="fa-regular fa-square"></i> 1:1</label>
+              <input type="radio" name="ratio" id="r2" value="16:9" checked>
+              <label for="r2" class="ratio-chip"><i class="fa-solid fa-display"></i> 16:9</label>
+              <input type="radio" name="ratio" id="r3" value="9:16">
+              <label for="r3" class="ratio-chip"><i class="fa-solid fa-mobile-screen"></i> 9:16</label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>

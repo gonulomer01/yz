@@ -1,0 +1,48 @@
+/* --- MOBILE GALLERY GRID & TRIPLE MODAL OVERFLOW FIX --- */
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    .gallery-item-img {
+        height: 150px !important;
+    }
+    
+    #triple-group-container {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    #triple-group-container img {
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 12px !important;
+    }
+}
+
+
+/* --- PREVENT MODALS FROM GOING UNDER BOTTOM BAR ON MOBILE --- */
+@media (max-width: 768px) {
+    .modal-overlay, .fullscreen-lightbox-overlay {
+        bottom: 70px !important;
+    }
+    .modal-box, .fullscreen-lightbox-content {
+        max-height: calc(100vh - 100px) !important; 
+    }
+    .gallery-item .btn-del-img {
+        opacity: 1 !important;
+    }
+    .gallery-item .gallery-overlay {
+        opacity: 1 !important;
+        background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%) !important;
+    }
+    
+    
+/* --- LIGHT MODE: Fullscreen Lightbox Fix --- */
+body.light-mode .fullscreen-lightbox-overlay {
+    background: rgba(240, 240, 245, 0.95);
+}
+body.light-mode .fullscreen-lightbox-close {
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border-color: var(--border-color);
+}

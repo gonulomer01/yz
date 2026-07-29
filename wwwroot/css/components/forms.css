@@ -1,0 +1,43 @@
+/* --- BLUE SECTIONS (BUTTONS) WHITE TEXT FIX --- */
+.btn-generate,
+.btn-primary,
+.action-btn.primary-btn {
+    color: #ffffff !important;
+}
+
+
+/* --- DROPDOWN (ONLY LOGOUT IS RED) FIX --- */
+.dropdown-item {
+    color: var(--text-main) !important;
+}
+.dropdown-item i {
+    color: var(--text-muted) !important;
+}
+.dropdown-item:hover {
+    background: var(--bg-hover-light) !important;
+    color: var(--text-main) !important;
+}
+.dropdown-item.dropdown-logout {
+    color: var(--color-danger) !important;
+}
+.dropdown-item.dropdown-logout i {
+    color: var(--color-danger) !important;
+}
+.dropdown-item.dropdown-logout:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+
+/* --- OVERRIDE PREVIOUS BUTTON TEXT COLOR RULE --- */
+body:not(.light-mode) .btn-generate,
+body:not(.light-mode) .btn-primary,
+body:not(.light-mode) .action-btn.primary-btn {
+    color: #131314 !important;
+}
+
+
+/* --- LIGHT MODE: Key Masked Input Fix --- */
+body.light-mode .key-masked {
+    background: var(--bg-hover-light);
+    color: var(--text-muted);
+}

@@ -1,0 +1,73 @@
+@{
+    bool isAdmin = User.IsInRole("Yönetici");
+}
+<aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-header">
+        <a class="brand" href="/">
+          <img src="~/images/logo.png" alt="Mega Image Studio Logo" class="brand-logo">
+          <div class="brand-text">
+            <span class="brand-primary">MEGA IMAGE <span class="brand-highlight">STUDIO</span></span>
+            <span class="brand-secondary"><i class="fa-solid fa-sparkles"></i> Görsel Platformu</span>
+          </div>
+        </a>
+        <button id="sidebar-toggle" class="sidebar-toggle-btn" onclick="toggleDesktopSidebar(event)" title="Genişlet / Daralt">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-group">
+          <button id="nav-studio" class="sidebar-nav-item nav-pill active" title="Stüdyo">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span class="nav-text">Stüdyo</span>
+          </button>
+
+          <button id="btn-gallery-toggle" class="sidebar-nav-item nav-pill gallery-pill" title="Görsel Arşivi">
+            <i class="fa-solid fa-images"></i>
+            <span class="nav-text">Görsel Arşivi</span>
+            <span class="gallery-count" id="gallery-count">0</span>
+          </button>
+
+
+
+          <button id="nav-collections" class="sidebar-nav-item nav-pill" title="Koleksiyonlar">
+            <i class="fa-solid fa-box-archive"></i>
+            <span class="nav-text">Koleksiyonlar</span>
+          </button>
+
+          <button id="nav-favorites" class="sidebar-nav-item nav-pill" title="Favoriler">
+            <i class="fa-regular fa-heart"></i>
+            <span class="nav-text">Favoriler</span>
+            <span class="gallery-count fav-badge" id="fav-count">0</span>
+          </button>
+
+          <button id="nav-trash" class="sidebar-nav-item nav-pill" title="Çöp Kutusu" onclick="switchPage('trash')">
+            <i class="fa-solid fa-trash-can"></i>
+            <span class="nav-text">Çöp Kutusu</span>
+          </button>
+
+          <button id="btn-profile" class="sidebar-nav-item nav-pill" title="Profil Bilgilerimi Düzenle">
+            <i class="fa-solid fa-user-gear"></i>
+            <span class="nav-text">Bilgileri Güncelle</span>
+          </button>
+
+          @if (isAdmin)
+          {
+              <button id="nav-dashboard" class="sidebar-nav-item nav-pill" title="Yönetim Paneli">
+                <i class="fa-solid fa-sliders"></i>
+                <span class="nav-text">Yönetim Paneli</span>
+              </button>
+          }
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <form asp-controller="Home" asp-action="Logout" method="post" style="width: 100%;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="sidebar-nav-item logout-pill" title="Çıkış Yap">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="nav-text">Çıkış Yap</span>
+            </button>
+        </form>
+      </div>
+    </aside>

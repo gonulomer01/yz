@@ -15,7 +15,7 @@ namespace yz.Controllers
     [ApiController]
     [Route("api")]
     [Authorize]
-    public class ApiController : ControllerBase
+    public partial class ApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private readonly AiGenerationService _aiGenerationService;
