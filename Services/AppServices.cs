@@ -48,6 +48,18 @@ namespace yz.Services
                             BEGIN
                                 ALTER TABLE GeneratedImages ADD FolderName NVARCHAR(200) NULL;
                             END
+                            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'GroupId')
+                            BEGIN
+                                ALTER TABLE GeneratedImages ADD GroupId NVARCHAR(50) NULL;
+                            END
+                            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'IsSelected')
+                            BEGIN
+                                ALTER TABLE GeneratedImages ADD IsSelected BIT NOT NULL DEFAULT 0;
+                            END
+                            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('GeneratedImages') AND name = 'SourceSite')
+                            BEGIN
+                                ALTER TABLE GeneratedImages ADD SourceSite NVARCHAR(50) NOT NULL DEFAULT '';
+                            END
                         ");
                     }
                     catch (Exception ex)
