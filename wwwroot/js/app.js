@@ -2902,28 +2902,28 @@ window.addEventListener('focus', function() {
 });
 
 window.renderNotifications = function() {
-  const list = document.getElementById('top-notifications-list');
-  const empty = document.getElementById('top-notifications-empty');
-  if (!list || !empty) return;
-  
-  if (notificationsArray.length === 0) {
-    empty.style.display = 'block';
-    list.innerHTML = '';
-    list.appendChild(empty);
-  } else {
-    empty.style.display = 'none';
-    list.innerHTML = notificationsArray.map(n => `
-      <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, '${n.groupId}', ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
-        <div style="flex:1;">
-          <strong style="color:var(--text-main); font-weight:700; font-size: 0.9rem;">${n.text}</strong>
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
+    const list = document.getElementById('top-notifications-list');
+    const empty = document.getElementById('top-notifications-empty');
+    if (!list || !empty) return;
+    
+    if (notificationsArray.length === 0) {
+      empty.style.display = 'block';
+      list.innerHTML = '';
+      list.appendChild(empty);
+    } else {
+      empty.style.display = 'none';
+      list.innerHTML = notificationsArray.map(n => `
+        <div class="notification-item ${n.unread !== false ? 'unread-notif' : ''}" onclick="readNotification(${n.id}, ${n.groupId && n.groupId !== 'single' ? `'${n.groupId}'` : 'null'}, ${n.imageId || 'null'})" style="padding: 12px 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; background: ${n.unread !== false ? 'var(--bg-hover-light)' : 'transparent'};">
+          <div style="flex:1;">
+            <strong style="color:var(--text-main); font-weight:700; font-size: 0.9rem;">${n.text}</strong>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:3px;"><i class="fa-regular fa-clock"></i> ${n.time}</div>
+          </div>
+          <button class="action-btn-sm danger-btn-sm" style="margin-left:10px; padding: 4px 8px;" onclick="deleteNotification(event, ${n.id})" title="Sil">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button class="action-btn-sm danger-btn-sm" style="margin-left:10px; padding: 4px 8px;" onclick="deleteNotification(event, ${n.id})" title="Sil">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-    `).join('');
-  }
+      `).join('');
+    }
 };
 
 window.toggleNotificationDropdown = function(e) {
@@ -2963,19 +2963,20 @@ document.addEventListener('click', function(e) {
 });
 
 window.readNotification = function(id, groupId, imageId) {
-  notificationsArray = notificationsArray.filter(n => n.id !== id);
-  saveNotifications();
-  renderNotifications();
-  const dropdown = document.getElementById('notification-dropdown-menu');
-  if (dropdown) dropdown.style.display = 'none';
-  if (groupId && groupId !== 'single') {
-      openTripleGroupModal(groupId);
-  } else if (imageId) {
-      // Find the image in the grid and click it
-      const imgItem = document.querySelector(`.gallery-item-img[data-id="${imageId}"]`);
-      if (imgItem) imgItem.click();
-      else switchPage('studio');
-  }
+    const notif = notificationsArray.find(n => n.id === id);
+    if (notif) notif.unread = false;
+    saveNotifications();
+    renderNotifications();
+    if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+    const dropdown = document.getElementById('notification-dropdown-menu');
+    if (dropdown) dropdown.style.display = 'none';
+    if (groupId && String(groupId) !== 'single' && String(groupId) !== 'null' && String(groupId) !== 'undefined') {
+        openTripleGroupModal(String(groupId));
+    } else if (imageId && String(imageId) !== 'null' && String(imageId) !== 'undefined') {
+        const imgItem = document.querySelector(`.gallery-item-img[data-id="${imageId}"]`);
+        if (imgItem) imgItem.click();
+        else switchPage('studio');
+    }
 };
 
 // --- Trash Feature ---
