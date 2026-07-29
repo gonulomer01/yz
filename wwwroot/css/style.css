@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg-page: #131314;
   --bg-subtle-grad: radial-gradient(circle at 50% 0%, rgba(168, 199, 250, 0.08), transparent 70%);
 
@@ -3275,12 +3275,12 @@ body:not(.light-mode) .action-btn.primary-btn {
         gap: 8px !important;
     }
     #notification-dropdown-menu {
-        position: fixed !important;
-        top: 60px !important;
-        right: 10px !important;
-        left: 10px !important;
-        width: auto !important;
-        max-width: none !important;
+        position: absolute !important;
+        top: 45px !important;
+        right: -10px !important;
+        left: auto !important;
+        width: 300px !important;
+        max-width: 90vw !important;
         z-index: 9999 !important;
     }
 }
