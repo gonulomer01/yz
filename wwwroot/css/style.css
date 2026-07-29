@@ -3371,3 +3371,41 @@ body.light-mode .app-sidebar {
     color: var(--text-main) !important;
 }
 
+
+/* Smaller action buttons */
+.action-btn-sm {
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.danger-btn {
+  background: var(--bg-danger-light) !important;
+  color: var(--color-danger) !important;
+  border-color: rgba(242, 139, 130, 0.3) !important;
+}
+
+.danger-btn:hover {
+  background: var(--color-danger) !important;
+  color: #fff !important;
+}
+
+.danger-btn-sm {
+  background: var(--bg-danger-light);
+  color: var(--color-danger);
+  border-color: rgba(242, 139, 130, 0.3);
+}
+
+.danger-btn-sm:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
