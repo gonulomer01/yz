@@ -3079,6 +3079,40 @@ namespace yz.Services
                             
                             var loginBtn = WaitAndFindElement(driver, By.XPath("//div[@id='passwordNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
                             loginBtn.Click();
+
+                            // Araya girip güvenlik uyarılarını (Passkey, kurtarma e-postası vs.) atlama bloğu
+                            for (int k = 0; k < 12; k++)
+                            {
+                                await Task.Delay(1500);
+                                try
+                                {
+                                    string curUrl = driver.Url.ToLower();
+                                    if (curUrl.Contains("accounts.google") || curUrl.Contains("myaccount.google") || curUrl.Contains("signin"))
+                                    {
+                                        var skipEls = driver.FindElements(By.CssSelector("button, div[role='button'], span, a"));
+                                        string[] skipWords = { "şimdi değil", "not now", "iptal", "cancel", "atla", "skip" };
+                                        foreach (var el in skipEls)
+                                        {
+                                            if (el.Displayed && el.Enabled)
+                                            {
+                                                string txt = el.Text.ToLower().Trim();
+                                                if (Array.Exists(skipWords, w => txt == w))
+                                                {
+                                                    Console.WriteLine($"[BulkLogin] Google ekranı geçiliyor: '{el.Text}'");
+                                                    el.Click();
+                                                    await Task.Delay(2500);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        break; // Yönlendirme tamamlandı, Gemini'ye geçildi
+                                    }
+                                }
+                                catch { }
+                            }
                         }
                         catch (Exception ex)
                         {
