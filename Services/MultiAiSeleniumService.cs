@@ -3241,21 +3241,13 @@ namespace yz.Services
                     }
                     else if (acc.ModelType.Equals("Copilot", StringComparison.OrdinalIgnoreCase))
                     {
-                        driver.Navigate().GoToUrl("https://www.bing.com/images/create");
-
+                        // Doğrudan Bing'in kimlik doğrulama (login) yönlendiricisine gidiyoruz
+                        // Bu bizi otomatik olarak Google butonunun bulunduğu Microsoft OAuth sayfasına yönlendirecek.
+                        driver.Navigate().GoToUrl("https://www.bing.com/fd/auth/signin?action=interactive&provider=windows_live_id&return_url=https%3A%2F%2Fwww.bing.com%2Fimages%2Fcreate");
+                        
                         try
                         {
-                            try {
-                                var signInBtn = WaitAndFindElement(driver, By.XPath("//a[@id='id_l'] | //a[@id='create_btn_c'] | //a[contains(@href, 'login.live.com')] | //a[descendant::text()[contains(., 'Oturum') or contains(., 'Sign')]] | //button[descendant::text()[contains(., 'Oturum')]]"), 10);
-                                signInBtn.Click();
-                                await Task.Delay(3000);
-                            } catch {
-                                try {
-                                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                                    js.ExecuteScript("var els = document.querySelectorAll('a, button'); for(var i=0; i<els.length; i++) { if(els[i].innerText.includes('Oturum') || els[i].innerText.includes('Sign') || els[i].innerText.includes('Katıl')) { els[i].click(); break; } }");
-                                    await Task.Delay(3000);
-                                } catch { }
-                            }
+                            await Task.Delay(4000);
 
                             // "Google ile devam et" butonuna tıkla
                             try {
