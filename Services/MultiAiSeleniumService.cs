@@ -790,10 +790,36 @@ namespace yz.Services
                 driver = await Task.Run(() => CreateDriver(account.ProfileName, isAdmin));
                 driver.Navigate().GoToUrl("https://gemini.google.com/app");
                 IWebElement? promptBox = null;
-                for (int i = 0; i < 12; i++)
+                for (int i = 0; i < 18; i++)
                 {
                     if (IsCancelRequested) { try { driver?.Quit(); driver?.Dispose(); } catch { } return new SiteGenerationResult { Success = false, SourceSite = "gemini", Error = "cancelled" }; }
                     await Task.Delay(1000);
+
+                    try
+                    {
+                        string curUrl = driver.Url.ToLower();
+                        if (curUrl.Contains("accounts.google") || curUrl.Contains("myaccount.google"))
+                        {
+                            var skipEls = driver.FindElements(By.CssSelector("button, div[role='button'], span, a"));
+                            string[] skipWords = { "şimdi değil", "not now", "iptal", "cancel", "atla", "skip" };
+                            foreach (var el in skipEls)
+                            {
+                                if (el.Displayed && el.Enabled)
+                                {
+                                    string txt = el.Text.ToLower().Trim();
+                                    if (Array.Exists(skipWords, w => txt == w))
+                                    {
+                                        Console.WriteLine($"[Gemini] Google ekranı geçiliyor: '{el.Text}'");
+                                        el.Click();
+                                        await Task.Delay(2000);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
                     try
                     {
                         var elements = driver.FindElements(By.CssSelector("rich-textarea [contenteditable='true'], div[role='textbox'], textarea"));
