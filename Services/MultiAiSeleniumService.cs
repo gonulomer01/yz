@@ -1572,10 +1572,23 @@ namespace yz.Services
                                 string? largeSrc = largeImg.GetAttribute("src");
                                 if (!string.IsNullOrEmpty(largeSrc))
                                 {
+                                    // Bing Image Creator tam boyut URL dönüşümü
                                     if (largeSrc.Contains("th?id=OIG"))
                                     {
-                                        int qIndex = largeSrc.IndexOf('?');
-                                        if (qIndex > 0) largeSrc = largeSrc.Substring(0, qIndex); 
+                                        // Küçük resim URL'sini tam boyuta çevir
+                                        // Örnek: https://th.bing.com/th?id=OIG.xxx&w=270&h=270 → https://th.bing.com/th/id/OIG.xxx
+                                        var uri = new Uri(largeSrc);
+                                        var idParam = System.Web.HttpUtility.ParseQueryString(uri.Query)["id"];
+                                        if (!string.IsNullOrEmpty(idParam))
+                                        {
+                                            largeSrc = $"{uri.Scheme}://{uri.Host}/th/id/{idParam}";
+                                        }
+                                        else
+                                        {
+                                            // Query string yoksa sadece w ve h parametrelerini kaldır
+                                            int qIndex = largeSrc.IndexOf('?');
+                                            if (qIndex > 0) largeSrc = largeSrc.Substring(0, qIndex);
+                                        }
                                     }
                                     Console.WriteLine($"[Copilot] Orijinal URL üzerinden yüksek çözünürlüklü indiriliyor: {largeSrc}");
                                     imageBytes = await DownloadOriginalImageAsync(driver, largeSrc);
