@@ -1562,9 +1562,7 @@ namespace yz.Services
                     var acc = creds.CopilotAccounts?.FirstOrDefault(a => a.Id == profileId);
                     profName = acc?.ProfileName ?? $"CopilotChromeProfile_{profileId}";
                     email = ExtractEmailFromAccountLabel(acc?.AccountLabel ?? "");
-                    targetUrl = !string.IsNullOrEmpty(email) 
-                        ? $"https://login.live.com/login.srf?username={Uri.EscapeDataString(email)}" 
-                        : "https://copilot.microsoft.com/images/create";
+                    targetUrl = "https://www.bing.com/images/create";
                 }
                 else 
                 {
@@ -3241,24 +3239,13 @@ namespace yz.Services
                     }
                     else if (acc.ModelType.Equals("Copilot", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Öncelikle Bing Image Creator anasayfasına gidiyoruz
-                        driver.Navigate().GoToUrl("https://www.bing.com/images/create");
-                        await Task.Delay(2000);
+                        // Doğrudan Bing'in kimlik doğrulama (login) yönlendiricisine gidiyoruz
+                        // Bu bizi otomatik olarak Google butonunun bulunduğu Microsoft OAuth sayfasına yönlendirecek.
+                        driver.Navigate().GoToUrl("https://www.bing.com/fd/auth/signin?action=interactive&provider=windows_live_id&return_url=https%3A%2F%2Fwww.bing.com%2Fimages%2Fcreate");
                         
                         try
                         {
-                            // "Oturum aç" veya "Katıl" butonuna tıklama (Selenium ve JavaScript Fallback ile agresif tarama)
-                            try {
-                                var signInBtn = WaitAndFindElement(driver, By.XPath("//a[@id='id_l'] | //a[@id='create_btn_c'] | //a[contains(@href, 'login.live.com')] | //a[descendant::text()[contains(., 'Oturum') or contains(., 'Sign')]] | //button[descendant::text()[contains(., 'Oturum')]]"), 5);
-                                signInBtn.Click();
-                                await Task.Delay(3000);
-                            } catch {
-                                try {
-                                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                                    js.ExecuteScript("var btn = document.getElementById('id_l'); if(btn && btn.href) { window.location.href = btn.href; } else { var els = document.querySelectorAll('a, button'); for(var i=0; i<els.length; i++) { if(els[i].innerText.includes('Oturum') || els[i].innerText.includes('Sign') || els[i].innerText.includes('Katıl')) { window.location.href = els[i].href || els[i].getAttribute('href'); break; } } }");
-                                    await Task.Delay(3000);
-                                } catch { }
-                            }
+                            await Task.Delay(4000);
 
                             // "Google ile devam et" butonuna tıkla
                             try {
