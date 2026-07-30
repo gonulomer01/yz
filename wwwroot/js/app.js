@@ -3449,3 +3449,69 @@ async function checkActiveJobs() {
 window.readNotification = window.readNotification;
 
 
+
+
+// --- Bulk Account Import ---
+document.addEventListener('DOMContentLoaded', () => {
+    const btnRunBulkImport = document.getElementById('btn-run-bulk-import');
+    const fileInput = document.getElementById('bulk-import-file');
+    const statusDiv = document.getElementById('bulk-import-status');
+    const btnSelect = document.getElementById('btn-select-bulk-file');
+
+    if (btnRunBulkImport && fileInput && statusDiv) {
+        btnRunBulkImport.addEventListener('click', async () => {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                if (typeof showToast === 'function') showToast('Lütfen önce bir TXT dosyası seçin.', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            btnRunBulkImport.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Yükleniyor ve işlem başlatılıyor...';
+            
+            try {
+                const res = await fetch('/api/bulk-accounts/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                let data = {};
+                try { data = await res.json(); } catch(e) {}
+                
+                if (res.ok || res.status === 200) {
+                    if (typeof showToast === 'function') showToast(data.message || 'Hesaplar başarıyla eklendi.', 'success');
+                    statusDiv.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i> ' + (data.message || 'İşlem arka planda başlatıldı.');
+                    fileInput.value = ''; 
+                    if(btnSelect) btnSelect.innerHTML = '<i class="fa-solid fa-folder-open"></i> Dosya Seç';
+                    
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        if (typeof window.fetchCredentials === 'function') window.fetchCredentials();
+                    }, 5000);
+                } else {
+                    throw new Error(data.message || data.error || data || 'Yükleme başarısız oldu.');
+                }
+            } catch(err) {
+                console.error(err);
+                if (typeof showToast === 'function') showToast(err.message, 'error');
+                statusDiv.innerHTML = '<i class="fa-solid fa-xmark" style="color: #ef4444;"></i> Hata: ' + err.message;
+            } finally {
+                btnRunBulkImport.disabled = false;
+            }
+        });
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files && fileInput.files.length > 0) {
+                if(btnSelect) btnSelect.innerHTML = `<i class="fa-solid fa-file-lines"></i> ${fileInput.files[0].name}`;
+            } else {
+                if(btnSelect) btnSelect.innerHTML = '<i class="fa-solid fa-folder-open"></i> Dosya Seç';
+            }
+        });
+    }
+});
