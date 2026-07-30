@@ -3490,7 +3490,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     setTimeout(() => {
                         statusDiv.style.display = 'none';
-                        if (typeof window.fetchCredentials === 'function') window.fetchCredentials();
+                        if (typeof window.fetchGeminiAccounts === 'function') window.fetchGeminiAccounts();
+                        if (typeof window.loadChatGptAccounts === 'function') window.loadChatGptAccounts();
+                        if (typeof window.loadCopilotAccounts === 'function') window.loadCopilotAccounts();
                     }, 5000);
                 } else {
                     throw new Error(data.message || data.error || data || 'Yükleme başarısız oldu.');
