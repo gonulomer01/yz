@@ -2968,6 +2968,7 @@ document.addEventListener('click', function(e) {
 });
 
 window.readNotification = async function(id, groupId, imageId) {
+    console.log('[readNotification] id:', id, 'groupId:', groupId, 'imageId:', imageId);
     const notif = notificationsArray.find(n => n.id === id);
     if (notif) notif.unread = false;
     saveNotifications();
@@ -2977,7 +2978,7 @@ window.readNotification = async function(id, groupId, imageId) {
     if (dropdown) dropdown.style.display = 'none';
     if (groupId && String(groupId) !== 'single' && String(groupId) !== 'null' && String(groupId) !== 'undefined') {
         openTripleGroupModal(String(groupId));
-    } else if (imageId && String(imageId) !== 'null' && String(imageId) !== 'undefined') {
+    } else if (imageId && String(imageId) !== 'null' && String(imageId) !== 'undefined' && String(imageId) !== '0') {
         let imgObj = persistentImages.find(i => String(i.id) === String(imageId));
         if (!imgObj) {
             if (typeof showToast === 'function') showToast('Görsel yükleniyor...', 'info');
@@ -2986,12 +2987,22 @@ window.readNotification = async function(id, groupId, imageId) {
         if (imgObj) {
             openSingleImageModal(imgObj, true);
         } else {
-            if (typeof showToast === 'function') showToast('Görsel bulunamadı veya silinmiş.', 'error');
-            switchPage('studio');
+            // Son çare: en son eklenen görseli göster
+            if (persistentImages.length > 0) {
+                openSingleImageModal(persistentImages[0], true);
+            } else {
+                if (typeof showToast === 'function') showToast('Görsel bulunamadı veya silinmiş.', 'error');
+                switchPage('archive');
+            }
         }
     } else {
-        if (typeof showToast === 'function') showToast('Eski bildirimlerin detayı gösterilemez.', 'info');
-        switchPage('studio');
+        // imageId yoksa bile son eklenen görseli göstermeyi dene
+        if (persistentImages.length > 0) {
+            openSingleImageModal(persistentImages[0], true);
+        } else {
+            if (typeof showToast === 'function') showToast('Görsel bulunamadı.', 'info');
+            switchPage('archive');
+        }
     }
 };
 

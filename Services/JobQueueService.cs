@@ -151,7 +151,7 @@ namespace yz.Services
                 if (error != null)
                 {
                     job.Status = "Hata";
-                    job.Result = new { error };
+                    job.Result = new System.Collections.Generic.Dictionary<string, object> { { "error", error } };
                 }
                 else
                 {
@@ -179,7 +179,7 @@ namespace yz.Services
                     return false; // Yetkisiz
 
                 job.Status = "İptal Edildi";
-                job.Result = new { error = "Kullanıcı tarafından iptal edildi." };
+                job.Result = new System.Collections.Generic.Dictionary<string, object> { { "error", "Kullanıcı tarafından iptal edildi." } };
                 
                 if (!job.Cts.IsCancellationRequested)
                 {
