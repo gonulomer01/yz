@@ -3259,13 +3259,19 @@ namespace yz.Services
 
                             // "Google ile devam et" butonuna tıkla
                             try {
-                                var googleBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Google')] | //a[contains(., 'Google')] | //div[@id='b_google'] | //div[contains(@class, 'thirdParty')]"), 10);
+                                var googleBtn = WaitAndFindElement(driver, By.XPath("//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'google')] | //a[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'google')] | //div[@id='b_google']"), 5);
                                 googleBtn.Click();
-                                await Task.Delay(2000);
-                            } catch { }
+                                await Task.Delay(3000);
+                            } catch {
+                                try {
+                                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                                    js.ExecuteScript("var els = document.querySelectorAll('a, button, div, span'); for(var i=0; i<els.length; i++) { if(els[i].innerText.toLowerCase().includes('google')) { els[i].click(); break; } }");
+                                    await Task.Delay(3000);
+                                } catch { }
+                            }
 
                             // Artık Google accounts sayfasındayız, Gemini ile aynı mantığı işlet
-                            var emailInput = WaitAndFindElement(driver, By.XPath("//input[@type='email' or @id='identifierId']"));
+                            var emailInput = WaitAndFindElement(driver, By.XPath("//input[@id='identifierId' or @name='identifier']"), 10);
                             emailInput.Clear();
                             emailInput.SendKeys(acc.Email);
                             
