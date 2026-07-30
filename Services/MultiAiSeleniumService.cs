@@ -3195,10 +3195,16 @@ namespace yz.Services
                     }
                     else if (acc.ModelType.Equals("Copilot", StringComparison.OrdinalIgnoreCase))
                     {
-                        driver.Navigate().GoToUrl("https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=13&ct=1619890984&rver=7.0.6737.0&wp=MBI_SSL&wreply=https%3a%2f%2fcopilot.microsoft.com%2f");
+                        driver.Navigate().GoToUrl("https://www.bing.com/images/create");
 
                         try
                         {
+                            try {
+                                var signInBtn = WaitAndFindElement(driver, By.XPath("//a[contains(@href, 'login.live.com') or contains(., 'Oturum') or contains(., 'Sign') or contains(., 'Join')] | //button[contains(., 'Oturum') or contains(., 'Sign') or contains(., 'Katıl')]"), 5);
+                                signInBtn.Click();
+                                await Task.Delay(3000);
+                            } catch { }
+
                             // "Google ile devam et" butonuna tıkla
                             try {
                                 var googleBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Google')] | //a[contains(., 'Google')] | //div[@id='b_google']"), 5);
