@@ -3200,14 +3200,20 @@ namespace yz.Services
                         try
                         {
                             try {
-                                var signInBtn = WaitAndFindElement(driver, By.XPath("//a[contains(@href, 'login.live.com') or contains(., 'Oturum') or contains(., 'Sign') or contains(., 'Join')] | //button[contains(., 'Oturum') or contains(., 'Sign') or contains(., 'Katıl')]"), 5);
+                                var signInBtn = WaitAndFindElement(driver, By.XPath("//a[@id='id_l'] | //a[@id='create_btn_c'] | //a[contains(@href, 'login.live.com')] | //a[descendant::text()[contains(., 'Oturum') or contains(., 'Sign')]] | //button[descendant::text()[contains(., 'Oturum')]]"), 10);
                                 signInBtn.Click();
                                 await Task.Delay(3000);
-                            } catch { }
+                            } catch {
+                                try {
+                                    IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
+                                    js.ExecuteScript("var els = document.querySelectorAll('a, button'); for(var i=0; i<els.length; i++) { if(els[i].innerText.includes('Oturum') || els[i].innerText.includes('Sign') || els[i].innerText.includes('Katıl')) { els[i].click(); break; } }");
+                                    await Task.Delay(3000);
+                                } catch { }
+                            }
 
                             // "Google ile devam et" butonuna tıkla
                             try {
-                                var googleBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Google')] | //a[contains(., 'Google')] | //div[@id='b_google']"), 5);
+                                var googleBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Google')] | //a[contains(., 'Google')] | //div[@id='b_google'] | //div[contains(@class, 'thirdParty')]"), 10);
                                 googleBtn.Click();
                                 await Task.Delay(2000);
                             } catch { }
