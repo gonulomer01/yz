@@ -1269,18 +1269,67 @@ namespace yz.Services
                     return new SiteGenerationResult { Success = false, SourceSite = "chatgpt", Error = "exhausted" };
                 }
                 byte[]? imageBytes = null;
-                Console.WriteLine("[ChatGPT] URL tabanlı indirme (Yüksek Çözünürlük) deneniyor...");
-                string? src = generatedImg.GetAttribute("src");
-                if (!string.IsNullOrEmpty(src) && !src.StartsWith("blob:"))
+                
+                // 1. ÖNCELİKLİ YÖNTEM: ChatGPT'nin kendi İndir butonuyla orijinal kalitede indirme
+                Console.WriteLine("[ChatGPT] Orijinal kalite: İndir butonu ile indirme deneniyor...");
+                try
                 {
-                    try
+                    // Görsele tıklayıp büyütme (download butonu genellikle büyük görüntüde çıkar)
+                    var jsHover = (IJavaScriptExecutor)driver;
+                    jsHover.ExecuteScript("arguments[0].scrollIntoView({block:'center'});", generatedImg);
+                    await Task.Delay(500);
+                    try { generatedImg.Click(); } catch { jsHover.ExecuteScript("arguments[0].click();", generatedImg); }
+                    await Task.Delay(1500);
+                    
+                    var downloadBtn = driver.FindElements(By.CssSelector(
+                        "a[download], button[aria-label*='Download'], button[aria-label*='İndir'], " +
+                        "a[aria-label*='Download'], a[aria-label*='İndir'], " +
+                        "button[data-testid*='download'], a[data-testid*='download']"
+                    )).FirstOrDefault(b => { try { return b.Displayed; } catch { return false; } });
+                    
+                    if (downloadBtn != null)
                     {
-                        imageBytes = await _sharedHttpClient.GetByteArrayAsync(src);
-                        Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
+                        Console.WriteLine("[ChatGPT] İndir butonu bulundu, orijinal kalitede indiriliyor...");
+                        imageBytes = await DownloadImageViaButtonAsync(driver, By.CssSelector(
+                            "a[download], button[aria-label*='Download'], button[aria-label*='İndir'], " +
+                            "a[aria-label*='Download'], a[aria-label*='İndir'], " +
+                            "button[data-testid*='download'], a[data-testid*='download']"
+                        ));
+                        if (imageBytes != null && imageBytes.Length > 1000)
+                        {
+                            Console.WriteLine($"[ChatGPT] ✅ İndir butonu ile orijinal kalitede görsel alındı! Boyut: {imageBytes.Length} byte ({imageBytes.Length / 1024}KB).");
+                        }
+                        else
+                        {
+                            imageBytes = null;
+                        }
                     }
-                    catch (Exception httpEx)
+                    
+                    // Lightbox/dialog açıksa kapat
+                    try {
+                        var body = driver.FindElement(By.TagName("body"));
+                        body.SendKeys(Keys.Escape);
+                        await Task.Delay(500);
+                    } catch { }
+                }
+                catch { }
+                
+                // 2. YEDEK YÖNTEM: URL tabanlı indirme (Yüksek Çözünürlük)
+                if (imageBytes == null || imageBytes.Length < 1000)
+                {
+                    Console.WriteLine("[ChatGPT] URL tabanlı indirme (Yüksek Çözünürlük) deneniyor...");
+                    string? src = generatedImg.GetAttribute("src");
+                    if (!string.IsNullOrEmpty(src) && !src.StartsWith("blob:"))
                     {
-                        Console.WriteLine($"[ChatGPT] HttpClient başarısız: {httpEx.Message}");
+                        try
+                        {
+                            imageBytes = await _sharedHttpClient.GetByteArrayAsync(src);
+                            Console.WriteLine($"[ChatGPT] HttpClient ile görsel indirildi. Boyut: {imageBytes.Length} byte.");
+                        }
+                        catch (Exception httpEx)
+                        {
+                            Console.WriteLine($"[ChatGPT] HttpClient başarısız: {httpEx.Message}");
+                        }
                     }
                 }
                 if (imageBytes == null || imageBytes.Length < 1000)
@@ -1502,10 +1551,17 @@ namespace yz.Services
                             var downloadBtn = driver.FindElements(By.CssSelector("a#downl, a[download], [data-testid='download-button'], a[aria-label='Download'], a[aria-label='İndir']")).FirstOrDefault(b => { try { return b.Displayed && b.Enabled; } catch { return false; } });
                             if (downloadBtn != null)
                             {
-                                Console.WriteLine("[Copilot] İndir (Download) butonu bulundu. Dosya sistemine indiriliyor...");
-                                try { downloadBtn.Click(); } catch { js.ExecuteScript("arguments[0].click();", downloadBtn); }
-                                await Task.Delay(2000);
-                                imageBytes = await ExtractImageViaCanvasAsync(driver, firstImg); 
+                                Console.WriteLine("[Copilot] İndir (Download) butonu bulundu. Orijinal kalitede dosya indiriliyor...");
+                                imageBytes = await DownloadImageViaButtonAsync(driver, By.CssSelector("a#downl, a[download], [data-testid='download-button'], a[aria-label='Download'], a[aria-label='İndir']"));
+                                if (imageBytes != null && imageBytes.Length > 1000)
+                                {
+                                    Console.WriteLine($"[Copilot] ✅ İndir butonu ile orijinal kalitede görsel alındı! Boyut: {imageBytes.Length} byte ({imageBytes.Length / 1024}KB).");
+                                }
+                                else
+                                {
+                                    imageBytes = null;
+                                    Console.WriteLine("[Copilot] İndir butonu ile indirme başarısız, diğer yöntemlere geçiliyor...");
+                                }
                             }
                             try { firstImg.Click(); } catch { js.ExecuteScript("arguments[0].click();", firstImg); }
                             await Task.Delay(2000);
