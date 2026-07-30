@@ -3130,32 +3130,63 @@ namespace yz.Services
                                 loginLink.Click();
                                 await Task.Delay(2000);
                             }
-                            catch { } // Log in butonu yoksa direkt e-posta ekranındayız demektir.
+                            catch { }
 
-                            var emailInput = WaitAndFindElement(driver, By.CssSelector("input#username, input[type='email'], input#email-input, input[name='email']"));
+                            // Continue with Google butonuna tıkla
+                            try {
+                                var googleBtn = WaitAndFindElement(driver, By.XPath("//button[@data-provider='google'] | //button[contains(., 'Google')]"), 5);
+                                googleBtn.Click();
+                                await Task.Delay(2000);
+                            } catch { }
+
+                            // Artık Google accounts sayfasındayız, Gemini ile aynı mantığı işlet
+                            var emailInput = WaitAndFindElement(driver, By.XPath("//input[@type='email' or @id='identifierId']"));
                             emailInput.Clear();
                             emailInput.SendKeys(acc.Email);
                             
-                            var nextBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Continue') or contains(., 'Devam') or @type='submit' or @name='action'] | //button[descendant::text()[contains(., 'Devam') or contains(., 'Continue')]]"));
+                            var nextBtn = WaitAndFindElement(driver, By.XPath("//div[@id='identifierNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
                             nextBtn.Click();
-                            await Task.Delay(4000);
 
-                            try {
-                                if (driver.Url.Contains("google.com")) {
-                                    var googleIdentifierNext = driver.FindElements(By.XPath("//div[@data-identifier] | //div[@id='identifierNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]")).FirstOrDefault(e => e.Displayed);
-                                    if (googleIdentifierNext != null) {
-                                        googleIdentifierNext.Click();
-                                        await Task.Delay(3000);
-                                    }
-                                }
-                            } catch { }
-
-                            var passInput = WaitAndFindElement(driver, By.CssSelector("input[type='password'], input#password, input[name='Passwd']"));
+                            var passInput = WaitAndFindElement(driver, By.XPath("//input[@type='password' or @name='Passwd']"));
                             passInput.Clear();
                             passInput.SendKeys(acc.Password);
-
-                            var loginBtn = WaitAndFindElement(driver, By.XPath("//button[contains(., 'Continue') or contains(., 'Devam') or @type='submit' or @name='action'] | //button[descendant::text()[contains(., 'Devam') or contains(., 'Continue')]] | //div[@id='passwordNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
+                            
+                            var loginBtn = WaitAndFindElement(driver, By.XPath("//div[@id='passwordNext']//button | //button[contains(., 'İleri') or contains(., 'Next')]"));
                             loginBtn.Click();
+
+                            // Araya girip güvenlik uyarılarını (Passkey, kurtarma e-postası vs.) atlama bloğu
+                            for (int k = 0; k < 12; k++)
+                            {
+                                await Task.Delay(1500);
+                                try
+                                {
+                                    string curUrl = driver.Url.ToLower();
+                                    if (curUrl.Contains("accounts.google") || curUrl.Contains("myaccount.google") || curUrl.Contains("signin"))
+                                    {
+                                        var skipEls = driver.FindElements(By.CssSelector("button, div[role='button'], span, a"));
+                                        string[] skipWords = { "şimdi değil", "not now", "iptal", "cancel", "atla", "skip" };
+                                        foreach (var el in skipEls)
+                                        {
+                                            if (el.Displayed && el.Enabled)
+                                            {
+                                                string txt = el.Text.ToLower().Trim();
+                                                if (Array.Exists(skipWords, w => txt == w))
+                                                {
+                                                    Console.WriteLine($"[BulkLogin] Google ekranı geçiliyor: '{el.Text}'");
+                                                    el.Click();
+                                                    await Task.Delay(2500);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        break; // Yönlendirme tamamlandı
+                                    }
+                                }
+                                catch { }
+                            }
                         }
                         catch (Exception ex)
                         {
