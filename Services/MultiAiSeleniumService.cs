@@ -3042,9 +3042,8 @@ namespace yz.Services
                     Console.WriteLine($"[BulkLogin] {acc.ModelType} hesabi icin hazirlik yapiliyor: {acc.Email}");
                     
                     var options = new ChromeOptions();
-                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                     string profileName = $"{acc.ModelType}ChromeProfile_{acc.ProfileIndex}";
-                    string profileDir = Path.Combine(appData, "MegaImageStudio_Profiles", profileName);
+                    string profileDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, profileName);
 
                     options.AddArgument($"--user-data-dir={profileDir}");
                     options.AddArgument("--profile-directory=Default");
