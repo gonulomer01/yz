@@ -3187,6 +3187,52 @@ namespace yz.Services
                                 }
                                 catch { }
                             }
+
+                            // ChatGPT Onboarding (Ad, Yaş, Onaylama vs.)
+                            for (int step = 0; step < 4; step++)
+                            {
+                                await Task.Delay(2500);
+                                try
+                                {
+                                    var fullNameInput = driver.FindElements(By.CssSelector("input[name='fullName'], input[name='name'], input#fullName, input[placeholder*='isim'], input[placeholder*='name'], input[name='firstName'], input[name='given_name'], input#firstName")).FirstOrDefault(e => e.Displayed);
+                                    if (fullNameInput != null)
+                                    {
+                                        fullNameInput.Clear();
+                                        string nAttr = fullNameInput.GetAttribute("name") ?? "";
+                                        fullNameInput.SendKeys(nAttr.ToLower().Contains("first") ? "Ahmet" : "Ahmet Yılmaz");
+                                        
+                                        var lastNameInput = driver.FindElements(By.CssSelector("input[name='lastName'], input[name='family_name'], input#lastName")).FirstOrDefault(e => e.Displayed);
+                                        if (lastNameInput != null) { lastNameInput.Clear(); lastNameInput.SendKeys("Yılmaz"); }
+
+                                        var ageInput = driver.FindElements(By.CssSelector("input[name='age'], input[placeholder*='Yaş'], input[placeholder*='age']")).FirstOrDefault(e => e.Displayed);
+                                        if (ageInput != null) {
+                                            ageInput.Clear();
+                                            ageInput.SendKeys("28");
+                                        } else {
+                                            var dobInput = driver.FindElements(By.CssSelector("input[name='birthday'], input[name='dob'], input[type='date']")).FirstOrDefault(e => e.Displayed);
+                                            if (dobInput != null) {
+                                                dobInput.Click();
+                                                await Task.Delay(300);
+                                                dobInput.SendKeys(Keys.ArrowRight);
+                                                dobInput.SendKeys(Keys.ArrowRight);
+                                                dobInput.SendKeys(Keys.ArrowRight);
+                                                await Task.Delay(100);
+                                                dobInput.SendKeys("2000");
+                                            }
+                                        }
+                                        await Task.Delay(1000);
+                                        var infoSubmit = driver.FindElements(By.CssSelector("button[type='submit'], button.btn-primary")).FirstOrDefault(e => e.Displayed);
+                                        infoSubmit?.Click();
+                                    }
+
+                                    var agreeBtn = driver.FindElements(By.XPath("//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')] | //button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'kabul')] | //button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tamam')] | //button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'okay')] | //button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'devam')]")).FirstOrDefault(e => e.Displayed);
+                                    if (agreeBtn != null)
+                                    {
+                                        agreeBtn.Click();
+                                    }
+                                }
+                                catch { }
+                            }
                         }
                         catch (Exception ex)
                         {
